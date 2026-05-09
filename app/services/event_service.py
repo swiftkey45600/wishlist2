@@ -1,10 +1,12 @@
 from app.models import Event
 from app.repositories import EventRepository
+from app.repositories import GiftRepository
 
 
 class EventService:
-    def __init__(self, event_repository: EventRepository):
+    def __init__(self, event_repository: EventRepository, gift_repository: GiftRepository):
         self.event_repository = event_repository
+        self.gift_repository = gift_repository
 
     def create_event(self, owner_id: int, title: str, description: str | None = None) -> Event:
         raise NotImplementedError
@@ -20,3 +22,5 @@ class EventService:
 
     def delete_event(self, event_id: int) -> None:
         self.event_repository.delete_event(event_id)
+
+    
