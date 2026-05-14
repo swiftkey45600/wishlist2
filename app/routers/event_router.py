@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+from fastapi import HTTPException
 from app.models.event import EventCreateRequest
 from app.services.event_service import EventService
 from app.repositories.event_repository import EventRepository
@@ -23,7 +24,10 @@ async def get_user_events(owner_id: int):
 @router.get("/{event_id}")
 async def get_event(event_id: int):
     event = event_service.get_event(event_id)
-    return {"event": event} if event else {"error": "Event not found"}
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    else:
+        return {"event": event}
 
 @router.post("/")
 async def create_event(event_request: EventCreateRequest):
@@ -31,7 +35,7 @@ async def create_event(event_request: EventCreateRequest):
         owner_id=1,
         title=event_request.title,
         description=event_request.description,
-        date=event_request.date,
+        event_date=event_request.event_date,
         place=event_request.place
     )
     return {"event": event} if event else {"error": "Event cannot be created"}
@@ -39,5 +43,8 @@ async def create_event(event_request: EventCreateRequest):
 
 @router.delete("/{event_id}")
 async def delete_event(event_id: int):
-    deleted = event_service.delete_event(event_id)
-    return {"deleted": True} if deleted else {"deleted": False, "error": "Event not found"}
+    is_deleted = event_service.delete_event(event_id)
+    if not is_deleted:
+        raise HTTPException(status_code=404, detail="Event not found")
+    else:
+        return {"deleted": True}

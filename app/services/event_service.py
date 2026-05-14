@@ -15,14 +15,14 @@ class EventService:
         owner_id: int,
         title: str,
         description: str | None = None,
-        date: str | None = None,
+        event_date: str | None = None,
         place: str | None = None,
     ) -> Event:
         new_event = Event(
             owner_id=owner_id,
             title=title,
             description=description,
-            date=date,
+            event_date=event_date,
             place=place,
         )
 
