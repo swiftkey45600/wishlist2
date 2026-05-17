@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from app.models import Reservation
 from app.repositories import ReservationRepository
 
@@ -7,7 +8,11 @@ class ReservationService:
         self.reservation_repository = reservation_repository
 
     def reserve_gift(self, gift_id: int, reserver_name: str | None = None, is_anonymous: bool = False) -> Reservation:
-        raise NotImplementedError
+        existing = self.reservation_repository.get_reservation_by_gift(gift_id)
+        if existing:
+            raise HTTPException(status_code=409, detail="Gift is already reserved")
+        reservation = Reservation(gift_id=gift_id, is_anonymous=is_anonymous, reserver_name=reserver_name)
+        return self.reservation_repository.reserve_gift(reservation)
 
     def unreserve_gift(self, gift_id: int) -> None:
         self.reservation_repository.unreserve_gift(gift_id)
