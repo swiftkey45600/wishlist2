@@ -3,7 +3,7 @@ from app.models import Reservation
 
 class ReservationRepository:
     def __init__(self):
-        self.reservations: List[Reservation] = []
+        self.reservations: list[Reservation] = []
         self._next_id = 1
 
     def reserve_gift(self, reservation: Reservation) -> Reservation:
