@@ -16,6 +16,7 @@ event_service = EventService(event_repository)
 async def get_events():
     return {"events": event_service.list_events()}
 
+#TODO путь /users/user_id/events
 @router.get("/user/{owner_id}")
 async def get_user_events(owner_id: int):
     events = event_service.get_user_events(owner_id)
