@@ -1,18 +1,20 @@
 import "./EventsList.css"
 import EventCard from "../EventCard/EventCard"
 
-function EventsList({ events }) {
+function EventsList({ events, onDeleteEvent }) {
     return (
         <div className="events-list">
 			<h2>Список событий</h2>
 			{
-				events.map((event, index) => 
+				events.map((event) => 
 					<EventCard 
-					key={index}
+					key={event.id}
+					id={event.id}
 					title={event.title}
 					description={event.description}
 					place={event.place}
-					date={event.date}
+					date={event.event_date}
+					onDeleteEvent={onDeleteEvent}
 					/>
 				)
 			}

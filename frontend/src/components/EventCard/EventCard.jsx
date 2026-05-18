@@ -1,6 +1,6 @@
 import "./EventCard.css"
 
-function EventCard({ title, description, place, date }) {
+function EventCard({ id, title, description, place, date, onDeleteEvent }) {
     return(
         <div className="event-card">
             <div className="event-card-header">
@@ -12,7 +12,7 @@ function EventCard({ title, description, place, date }) {
 
                 <div className="event-card-actions">
                     <button className="edit-button">Изменить</button>
-                    <button className="delete-button">Удалить</button>
+                    <button className="delete-button" onClick={() => onDeleteEvent(id)}>Удалить</button>
                 </div>
 
             </div>
