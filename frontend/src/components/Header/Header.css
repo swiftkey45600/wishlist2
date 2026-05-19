@@ -1,0 +1,14 @@
+.header {
+    margin-bottom: 40px;
+}
+
+.header h1 {
+    margin-bottom: 20px;
+
+    font-size: 48px;
+}
+
+.header p {
+    color: #777;
+    font-size: 18px;
+}

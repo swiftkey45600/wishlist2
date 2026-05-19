@@ -1,0 +1,56 @@
+.event-details-card {
+    display: flex;
+    align-items: center;
+    gap: 56px;
+
+    padding: 28px 36px;
+    margin-bottom: 28px;
+
+    border-radius: 24px;
+
+
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+
+}
+
+.event-image {
+    width: 280px;
+    height: 200px;
+
+    border-radius: 20px;
+
+    object-fit: cover;
+
+    flex-shrink: 0;
+}
+
+.event-info {
+    display: flex;
+    flex-direction: column;
+
+    gap: 12px;
+
+    flex: 1;
+}
+
+.event-info h1 {
+    font-size: 52px;
+}
+
+.event-info p {
+    color: #555;
+
+    font-size: 26px;
+}
+
+.event-meta {
+    margin-top: 24px;
+
+    display: flex;
+    gap: 48px;
+
+    color: #8b8b8b;
+
+    font-size: 22px;
+}
