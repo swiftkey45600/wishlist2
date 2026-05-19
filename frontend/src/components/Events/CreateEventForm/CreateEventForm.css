@@ -16,26 +16,27 @@
 
 
 
-.form-row {
-    padding: 8px 0;
-}
-
-.form-row-header {
+.create-event-form-fields {
     display: flex;
-    justify-content: space-between;
+    flex-wrap: wrap;
     gap: 16px;
 }
 
-.form-row-footer {
+.create-event-form-header {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.create-event-form-footer {
     margin-top: 16px;
 
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 16px;
 }
 
-.form-row input {
-    flex: 1;
+.create-event-form-fields input {
     padding: 16px 20px;
 
     border: 1px solid #ddd;
@@ -46,7 +47,7 @@
     transition: 0.2s;
 }
 
-.form-row input:focus {
+.create-event-form-fields input:focus {
     outline: none;
 
     border-color: #7c5cff;
@@ -54,7 +55,11 @@
     box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.1);
 }
 
-.form-row button {
+.create-event-form-fields button {
+    width: 100%;
+
+    min-height: 52px;
+
     padding: 16px 28px;
 
     border: none;
@@ -69,7 +74,7 @@
     transition: 0.2s;
 }
 
-.form-row button:hover {
+.create-event-form-fields button:hover {
     opacity: 0.92;
 
     transform: translateY(-1px);

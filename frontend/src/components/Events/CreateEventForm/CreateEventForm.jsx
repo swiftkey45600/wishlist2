@@ -11,8 +11,8 @@ function CreateEventForm({ onCreateEvent }) {
         <div className="create-event-form">
             <h2>Создать новое событие</h2>
 
-            <div className="form-row">
-                <div className="form-row-header">
+            <div className="create-event-form-fields">
+                <div className="create-event-form-header">
                     <input
                         placeholder="Название события"
                         value={title}
@@ -26,7 +26,7 @@ function CreateEventForm({ onCreateEvent }) {
                     />
                 </div>
 
-                <div className="form-row-footer">
+                <div className="create-event-form-footer">
                     <input
                         placeholder="Место"
                         value={place}

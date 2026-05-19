@@ -1,0 +1,30 @@
+.event-page-layout {
+    display: flex;
+
+    height: 100vh;
+}
+
+.event-page-content {
+    flex: 1;
+    overflow-y: auto;
+
+    padding: 32px 48px;
+}
+
+.back-button {
+    margin-bottom: 24px;
+
+    border: none;
+    background: transparent;
+    color: #7c5cff;
+
+    font-size: 18px;
+
+    cursor: pointer;
+
+    transition: .2s;
+}
+
+.back-button:hover {
+    opacity: .7;
+}

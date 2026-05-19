@@ -1,62 +1,21 @@
-import { useEffect, useState } from "react"
+import { Routes, Route } from "react-router-dom"
 
-import "./App.css"
-
-import { getEvents, createEvent, deleteEvent } from "./application/eventApplication"
-
-import Sidebar from "./components/Sidebar/Sidebar"
-import Header from "./components/Header/Header"
-import CreateEventForm from "./components/CreateEventForm/CreateEventForm"
-import EventsList from "./components/EventList/EventsList"
+import HomePage from "./pages/HomePage/HomePage"
+import EventPage from "./pages/EventPage/EventPage"
 
 function App() {
-  // TODO архитектурная прослойка (словарь) - посмотреть гайд
-
-  const [events, setEvents] = useState([])
-
-  useEffect(() => {
-    async function loadEvents() {
-      const data = await getEvents()
-      setEvents(data)
-    }
-
-    loadEvents()
-  }, [])
-
-
-  async function handleCreateEvent(title, description, place, date) {
-    const createdEvent = await createEvent({
-      title,
-      description,
-      place,
-      date
-    })
-
-    setEvents([...events, createdEvent])
-  }
-
-  async function handleDeleteEvent(eventId) {
-    await deleteEvent(eventId)
-
-    setEvents(events.filter(event => event.id !== eventId))
-  }
-
-
   return (
-    <div className="app-layout">
-      <Sidebar />
+    <Routes>
+      <Route 
+        path="/"
+        element={<HomePage />}
+      />
 
-      <div className="main-content">
-        <Header />
-
-        <CreateEventForm onCreateEvent={handleCreateEvent} />
-
-        <EventsList 
-          events={events}
-          onDeleteEvent={handleDeleteEvent}
-        />
-      </div>
-    </div>
+      <Route 
+        path="/events/:id"
+        element={<EventPage />}
+      />
+    </Routes>
   )
 }
 
