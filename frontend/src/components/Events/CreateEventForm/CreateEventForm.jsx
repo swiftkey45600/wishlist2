@@ -34,6 +34,7 @@ function CreateEventForm({ onCreateEvent }) {
                     />
 
                     <input
+                        type="datetime-local"
                         placeholder="Время"
                         value={date}
                         onChange={(event) => setDate(event.target.value)}

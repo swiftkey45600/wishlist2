@@ -1,13 +1,13 @@
 import "./EventCard.css"
 
-function EventCard({ id, title, description, place, date, onDeleteEvent }) {
+function EventCard({ event, onDeleteEvent }) {
     return(
         <div className="event-card">
             <div className="event-card-header">
 
                 <div className="event-card-info">
-                    <h2>{title}</h2>
-                    <p>{description}</p>
+                    <h2>{event.title}</h2>
+                    <p>{event.EventCarddescription}</p>
                 </div>
 
                 <div className="event-card-actions">
@@ -36,8 +36,8 @@ function EventCard({ id, title, description, place, date, onDeleteEvent }) {
             </div>
             
             <div className="event-card-footer">
-                <span>{place}</span>
-                <span>{date}</span>
+                <span>{event.place}</span>
+                <span>{event.date}</span>
             </div>
         </div>
     )

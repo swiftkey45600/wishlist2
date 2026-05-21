@@ -36,8 +36,7 @@ function GiftList() {
                     gifts.map(gift => (
                         <GiftCard 
                             key={gift.id}
-                            title={gift.title}
-                            price={gift.price}
+                            gift={gift}
                         />
                     ))
                 }
