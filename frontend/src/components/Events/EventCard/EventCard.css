@@ -1,0 +1,91 @@
+.event-card {
+    background: white;
+
+    margin-top: 20px;
+    padding: 28px;
+    
+    border-radius: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.event-card:hover {
+    transform: translateY(-2px);
+
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+}
+
+
+.event-card-header {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: flex-start;
+
+    gap: 24px;
+}
+
+.event-card-header h2 {
+    margin-bottom: 12px;
+
+    font-size: 36px;
+}
+
+.event-card-header p {
+    margin-bottom: 8px;
+
+    color: #666;
+    font-size: 20px;
+}
+
+
+.event-card-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.event-card-actions button {
+    padding: 10px 16px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    cursor: pointer;
+
+    font-size: 15px;
+
+    transition: 0.2s;
+}
+
+.event-card-actions button:hover {
+    transform: translateY(-1px);
+}
+
+.edit-button {
+    background: #f3f0ff;
+
+    color: #7c5cff;
+}
+
+.delete-button {
+    background: #fff0f0;
+
+    color: #ff4d4f;
+}
+
+
+.event-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    margin-top: 12px;
+}
+
+.event-card-footer span {
+    color: #999;
+}

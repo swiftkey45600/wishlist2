@@ -1,0 +1,81 @@
+.create-event-form {
+    margin-bottom: 28px;
+    padding: 36px;
+
+    border-radius: 24px;
+
+    background-color: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.create-event-form h2 {
+    margin-bottom: 20px;
+
+    font-size: 28px;
+}
+
+
+
+.create-event-form-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.create-event-form-header {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.create-event-form-footer {
+    margin-top: 16px;
+
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.create-event-form-fields input {
+    padding: 16px 20px;
+
+    border: 1px solid #ddd;
+    border-radius: 12px;
+
+    font-size: 17px;
+
+    transition: 0.2s;
+}
+
+.create-event-form-fields input:focus {
+    outline: none;
+
+    border-color: #7c5cff;
+
+    box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.1);
+}
+
+.create-event-form-fields button {
+    width: 100%;
+
+    min-height: 52px;
+
+    padding: 16px 28px;
+
+    border: none;
+    border-radius: 12px;
+
+    background: #7c5cff;
+    color: white;
+    font-size: 16px;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+}
+
+.create-event-form-fields button:hover {
+    opacity: 0.92;
+
+    transform: translateY(-1px);
+}
