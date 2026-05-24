@@ -1,37 +1,125 @@
-from app.models import Gift
-
+from app.models.gift import Gift
+from app.database import get_connection
 
 class GiftRepository:
-    def __init__(self):
-        self.gifts: List[Gift] = []
-        self._next_id = 1
+    def _row_to_gift(self, row) -> Gift:
+        return Gift(
+            id=row["id"],
+            event_id=row["event_id"],
+            title=row["title"],
+            price=row["price"],
+            status=row["status"],
+            description=row["description"],
+            picture_url=row["picture_url"],
+            marketplace_url=row["marketplace_url"],
+            category_id=row["category_id"],
+        )
 
     def create_gift(self, gift: Gift) -> Gift:
-        gift.id = self._next_id
-        
-        self.gifts.append(gift)
-        self._next_id += 1
+        with get_connection() as connection:
+            cursor = connection.execute(
+                """
+                INSERT INTO gifts (
+                    event_id,
+                    title,
+                    price,
+                    status,
+                    description,
+                    picture_url,
+                    marketplace_url,
+                    category_id
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    gift.event_id,
+                    gift.title,
+                    gift.price,
+                    gift.status,
+                    gift.description,
+                    gift.picture_url,
+                    gift.marketplace_url,
+                    gift.category_id,
+                ),
+            )
 
-        return gift
+            connection.commit()
+            gift.id = cursor.lastrowid
 
-    def get_gift_by_id(self, gift_id: int) -> Optional[Gift]:
-        for gift in self.gifts:
-            if gift.id == gift_id:
-                return gift
-        return None
+            return gift
 
-    def get_gifts_by_event(self, event_id: int) -> List[Gift]:
-        return [gift for gift in self.gifts if gift.event_id == event_id]
+    def get_gift_by_id(self, gift_id: int) -> Gift | None:
+        with get_connection() as connection:
+            row = connection.execute(
+                """
+                SELECT
+                    id,
+                    event_id,
+                    title,
+                    price,
+                    status,
+                    description,
+                    picture_url,
+                    marketplace_url,
+                    category_id
+                FROM gifts
+                WHERE id = ?
+                """,
+                (gift_id,),
+            ).fetchone()
 
-    def update_gift_status(self, gift_id: int, status: str) -> Optional[Gift]:
-        gift = self.get_gift_by_id(gift_id)
-        if gift:
-            gift.status = status
-        return gift
+            if row is None:
+                return None
+
+            return self._row_to_gift(row)
+
+    def get_gifts_by_event(self, event_id: int) -> list[Gift]:
+        with get_connection() as connection:
+            rows = connection.execute(
+                """
+                SELECT
+                    id,
+                    event_id,
+                    title,
+                    price,
+                    status,
+                    description,
+                    picture_url,
+                    marketplace_url,
+                    category_id
+                FROM gifts
+                WHERE event_id = ?
+                """,
+                (event_id,),
+            ).fetchall()
+
+            return [self._row_to_gift(row) for row in rows]
+
+    def update_gift_status(self, gift_id: int, status: str) -> Gift | None:
+        with get_connection() as connection:
+            connection.execute(
+                """
+                UPDATE gifts
+                SET status = ?
+                WHERE id = ?
+                """,
+                (status, gift_id),
+            )
+
+            connection.commit()
+
+        return self.get_gift_by_id(gift_id)
 
     def delete_gift(self, gift_id: int) -> bool:
-        gift = self.get_gift_by_id(gift_id)
-        if gift:
-            self.gifts.remove(gift)
-            return True
-        return False
+        with get_connection() as connection:
+            cursor = connection.execute(
+                """
+                DELETE FROM gifts
+                WHERE id = ?
+                """,
+                (gift_id,),
+            )
+
+            connection.commit()
+
+            return cursor.rowcount > 0
