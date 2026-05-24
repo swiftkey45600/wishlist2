@@ -6,6 +6,7 @@ from app.models.user import UserRegisterRequest
 from app.routers import user_routers
 from app.routers import auth_router
 from app.routers import event_router
+from app.routers import gift_router
 
 app = FastAPI()
 
@@ -20,6 +21,7 @@ app.add_middleware(
 app.include_router(user_routers.router)
 app.include_router(auth_router.router)
 app.include_router(event_router.router)
+app.include_router(gift_router.router)
 
 
 @app.get("/")
