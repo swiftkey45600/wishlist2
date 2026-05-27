@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS images (
     id INTEGER PRIMARY KEY,
     image_path TEXT NOT NULL,
     image_type TEXT,
-    hash TEXT
+    hash TEXT NOT NULL UNIQUE
 );
 
 INSERT OR IGNORE INTO users (id, name, login, password_hash)

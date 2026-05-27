@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
+
 from app.models.image import Image
 from app.repositories.image_repository import ImageRepository
 
@@ -13,7 +14,12 @@ image_repository = ImageRepository()
 
 @router.post("/images", response_model=Image)
 def create_image(image: Image):
-    return image_repository.create_image(image)
+    try:
+        return image_repository.create_image(image)
+    except FileNotFoundError:
+        raise HTTPException(status_code=400, detail="Image file not found")
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error))
 
 
 @router.get("/images/{image_id}")
