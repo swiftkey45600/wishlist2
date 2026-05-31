@@ -2,10 +2,10 @@
     margin-bottom: 28px;
     padding: 36px;
 
-    border-radius: 24px;
+    border-radius: var(--card-radius);
 
-    background-color: white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    background-color: var(--card-background);
+    box-shadow: var(--shadow-card);
 }
 
 .create-event-form h2 {
@@ -39,20 +39,20 @@
 .create-event-form-fields input {
     padding: 16px 20px;
 
-    border: 1px solid #ddd;
-    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-medium);
 
     font-size: 17px;
 
-    transition: 0.2s;
+    transition: var(--transition-fast);
 }
 
 .create-event-form-fields input:focus {
     outline: none;
 
-    border-color: #7c5cff;
+    border-color: var(--primary-color);
 
-    box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.1);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary-color) 12%, transparent);
 }
 
 .create-event-form-fields button {
@@ -63,15 +63,15 @@
     padding: 16px 28px;
 
     border: none;
-    border-radius: 12px;
+    border-radius: var(--border-radius-medium);
 
-    background: #7c5cff;
-    color: white;
+    background: var(--primary-color);
+    color: var(--text-on-primary);
     font-size: 16px;
 
     cursor: pointer;
 
-    transition: 0.2s;
+    transition: var(--transition-fast);
 }
 
 .create-event-form-fields button:hover {

@@ -1,3 +1,5 @@
+import { NavLink } from "react-router-dom"
+
 import "./Sidebar.css"
 
 function Sidebar() {
@@ -7,13 +9,29 @@ function Sidebar() {
         <h1>Wishlist</h1>
 
         <div className="sidebar-menu">
-          <div className="sidebar-item active">
-            Мои события
-          </div>
 
-          <div className="sidebar-item">
+          <NavLink
+            to="/"
+            className={({ isActive }) =>
+              isActive
+                ? "sidebar-link active"
+                : "sidebar-link"
+            }
+          >
+            Мои события
+          </NavLink>
+
+          <NavLink
+            to="/profile"
+            className={({ isActive }) =>
+              isActive
+                ? "sidebar-link active"
+                : "sidebar-link"
+            }
+          >
             Профиль
-          </div>
+          </NavLink>
+
         </div>
       </div>
 

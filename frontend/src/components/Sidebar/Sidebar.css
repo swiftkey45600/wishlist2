@@ -6,11 +6,11 @@
     flex-direction: column;
     justify-content: space-between;
 
-    background: white;
+    background: var(--card-background);
 
     padding: 32px;
 
-    border-right: 1px solid #e5e5e5;
+    border-right: 1px solid var(--border-color);
 }
 
 .sidebar-top h1 {
@@ -28,35 +28,42 @@
     gap: 12px;
 }
 
-.sidebar-item {
-    padding: 16px 20px;
-
-    border-radius: 16px;
-
-    font-size: 20px;
-
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-.sidebar-item:hover {
-    background: #f3f0ff;
-}
-
-.sidebar-item.active {
-    background: #f7f7fa;
-    color: #7c5cff;
-    font-weight: 600;
-}
 
 .sidebar-bottom {
-    color: #777;
+    color: var(--text-secondary-color);
 }
 
 .sidebar-profile {
     padding: 16px;
 
-    border-radius: 16px;
+    border-radius: var(--border-radius-medium);
 
-    background: #f7f7fa;
+    background: var(--surface-color);
+}
+
+
+.sidebar-link {
+    display: block;
+
+    padding: 16px 20px;
+
+    border-radius: var(--border-radius-medium);
+
+    color: var(--text-color);
+
+    text-decoration: none;
+
+    font-size: 20px;
+
+    transition: var(--transition-fast);
+}
+
+.sidebar-link:hover {
+    background: var(--primary-color-soft);
+}
+
+.sidebar-link.active {
+    background: var(--surface-color);
+    color: var(--primary-color);
+    font-weight: 600;
 }

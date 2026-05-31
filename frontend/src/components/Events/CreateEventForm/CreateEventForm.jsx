@@ -37,7 +37,9 @@ function CreateEventForm({ onCreateEvent }) {
                         type="datetime-local"
                         placeholder="Время"
                         value={date}
-                        onChange={(event) => setDate(event.target.value)}
+                        onChange={
+                            (event) => {console.log(event.target.value); 
+                            setDate(event.target.value)}}
                     />
 
                     <button onClick={() => onCreateEvent(title, description, place, date)}>Создать событие</button>

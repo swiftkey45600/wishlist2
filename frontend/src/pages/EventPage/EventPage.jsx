@@ -1,4 +1,5 @@
 import "./EventPage.css"
+import "../../Styles/common.css"
 
 import { useNavigate } from "react-router-dom"
 
@@ -10,10 +11,10 @@ function EventPage() {
 	const navigate = useNavigate()
 
 	return (
-		<div className="event-page-layout">
+		<div className="page-layout">
 				<Sidebar />
 
-				<div className="event-page-content">
+				<div className="page-content">
 					<button className="back-button" onClick={() => navigate("/")}>
 						← Назад к событиям
 					</button>

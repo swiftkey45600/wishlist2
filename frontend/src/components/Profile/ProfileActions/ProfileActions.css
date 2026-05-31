@@ -1,0 +1,34 @@
+.profile-actions {
+    padding: 32px;
+
+    background: var(--card-background);
+
+    border-radius: var(--card-radius);
+}
+
+.profile-actions h2 {
+    margin-bottom: 24px;
+
+    font-size: 32px;
+}
+
+.logout-button {
+    padding: 14px 28px;
+
+    border: none;
+    border-radius: var(--border-radius-medium);
+    background: var(--danger-color);
+
+    color: var(--text-on-primary);
+
+    font-size: 16px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: var(--transition-fast);
+}
+
+.logout-button:hover {
+    opacity: .9;
+}

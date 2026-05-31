@@ -8,7 +8,7 @@
     flex: 1;
     overflow-y: auto;
 
-    padding: 32px 48px;
+    padding: var(--page-padding-y) var(--page-padding-x);
 }
 
 .back-button {
@@ -16,13 +16,13 @@
 
     border: none;
     background: transparent;
-    color: #7c5cff;
+    color: var(--primary-color);
 
     font-size: 18px;
 
     cursor: pointer;
 
-    transition: .2s;
+    transition: var(--transition-fast);
 }
 
 .back-button:hover {
