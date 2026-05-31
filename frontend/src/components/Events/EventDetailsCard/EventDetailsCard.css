@@ -6,11 +6,11 @@
     padding: 28px 36px;
     margin-bottom: 28px;
 
-    border-radius: 24px;
+    border-radius: var(--card-radius);
 
 
-    background: white;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    background: var(--card-background);
+    box-shadow: var(--shadow-card);
 
 }
 
@@ -18,7 +18,7 @@
     width: 280px;
     height: 200px;
 
-    border-radius: 20px;
+    border-radius: var(--border-radius-medium);
 
     object-fit: cover;
 
@@ -39,7 +39,7 @@
 }
 
 .event-info p {
-    color: #555;
+    color: var(--text-secondary-color);
 
     font-size: 26px;
 }
@@ -50,7 +50,7 @@
     display: flex;
     gap: 48px;
 
-    color: #8b8b8b;
+    color: var(--text-secondary-color);
 
     font-size: 22px;
 }

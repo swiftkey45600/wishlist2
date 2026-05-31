@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react"
 
 import "./HomePage.css"
+import "../../Styles/common.css"
 
 import { getEvents, createEvent, deleteEvent } from "../../application/eventApplication"
 
 import Sidebar from "../../components/Sidebar/Sidebar"
-import Header from "../../components/Header/Header"
 import CreateEventForm from "../../components/Events/CreateEventForm/CreateEventForm"
 import EventsList from "../../components/Events/EventsList/EventsList"
 
@@ -41,11 +41,14 @@ function HomePage() {
 
 
   return (
-    <div className="home-page-layout">
+    <div className="page-layout">
       <Sidebar />
 
-      <div className="home-page-content">
-        <Header />
+      <div className="page-content">
+        <div className="page-header">
+            <h1>Мои события</h1>
+            <p>Создавайте свои события и управляйте ими</p>
+        </div>
 
         <CreateEventForm onCreateEvent={handleCreateEvent} />
 

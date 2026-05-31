@@ -1,0 +1,38 @@
+@import "./variables.css";
+
+.page-header {
+    margin-bottom: 40px;
+}
+
+.page-header h1 {
+    margin-bottom: 20px;
+    font-size: 48px;
+}
+
+.page-header p {
+    color: var(--text-secondary-color);
+    font-size: 18px;
+}
+
+
+.page-layout {
+    display: flex;
+    height: 100vh;
+}
+
+.page-content {
+    flex: 1;
+    overflow-y: auto;
+    padding:
+        var(--page-padding-y)
+        var(--page-padding-x);
+}
+
+.card {
+
+    background: var(--card-background);
+
+    border-radius: var(--border-radius-medium);
+
+    box-shadow: var(--shadow-card);
+}
