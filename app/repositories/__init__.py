@@ -4,6 +4,7 @@ from .gift_repository import GiftRepository
 from .contribution_repository import ContributionRepository
 from .reservation_repository import ReservationRepository
 from .image_repository import ImageRepository
+from .manager_repository import ManagerRepository
 
 __all__ = [
     'UserRepository',
