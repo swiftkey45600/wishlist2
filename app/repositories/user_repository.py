@@ -1,17 +1,17 @@
 from app.models import User
 from app.models.user import UserRegisterRequest
-
+from app.utils.security import hash_password, verify_password
 class UserRepository:
     def __init__(self):
-        self.users: list[User] = [User(id=1, name="John Doe", login="johndoe", password_hash="hashedpassword")]
-        self._next_id = 2
+        self.users: list[User] = []
+        self._next_id = 1
 
     def create_user(self, user: UserRegisterRequest) -> User:
         new_user = User(
             id=self._next_id,
             name=user.name,
             login=user.login,
-            password_hash=user.password
+            password=hash_password(user.password)
 
         )
         self.users.append(new_user)
@@ -24,7 +24,10 @@ class UserRepository:
                 return user
         return None
 
-    def get_user_by_login(self, login: str) -> User | None:
+    def get_user_by_login(self, login: str | None) -> User | None:
+        if not login:
+            return None
+        
         for user in self.users:
             if user.login == login:
                 return user

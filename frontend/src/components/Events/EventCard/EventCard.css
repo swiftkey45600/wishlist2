@@ -1,0 +1,91 @@
+.event-card {
+    background: var(--card-background);
+
+    margin-top: 20px;
+    padding: 28px;
+    
+    border-radius: var(--border-radius-medium);
+    box-shadow: var(--shadow-card);
+
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.event-card:hover {
+    transform: translateY(-2px);
+
+    box-shadow: var(--shadow-card);
+}
+
+
+.event-card-header {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: flex-start;
+
+    gap: 24px;
+}
+
+.event-card-header h2 {
+    margin-bottom: 12px;
+
+    font-size: 36px;
+}
+
+.event-card-header p {
+    margin-bottom: 8px;
+
+    color: var(--text-secondary-color);
+    font-size: 20px;
+}
+
+
+.event-card-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.event-card-actions button {
+    padding: 10px 16px;
+
+    border: none;
+
+    border-radius: var(--border-radius-small);
+
+    cursor: pointer;
+
+    font-size: 15px;
+
+    transition: var(--transition-fast);
+}
+
+.event-card-actions button:hover {
+    transform: translateY(-1px);
+}
+
+.edit-button {
+    background: var(--primary-color-soft);
+
+    color: var(--primary-color);
+}
+
+.delete-button {
+    background: var(--background-color);
+
+    color: var(--danger-color);
+}
+
+
+.event-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    margin-top: 12px;
+}
+
+.event-card-footer span {
+    color: var(--text-placeholder-color);
+}

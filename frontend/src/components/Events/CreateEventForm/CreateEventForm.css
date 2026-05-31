@@ -1,0 +1,81 @@
+.create-event-form {
+    margin-bottom: 28px;
+    padding: 36px;
+
+    border-radius: var(--card-radius);
+
+    background-color: var(--card-background);
+    box-shadow: var(--shadow-card);
+}
+
+.create-event-form h2 {
+    margin-bottom: 20px;
+
+    font-size: 28px;
+}
+
+
+
+.create-event-form-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.create-event-form-header {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.create-event-form-footer {
+    margin-top: 16px;
+
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.create-event-form-fields input {
+    padding: 16px 20px;
+
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-medium);
+
+    font-size: 17px;
+
+    transition: var(--transition-fast);
+}
+
+.create-event-form-fields input:focus {
+    outline: none;
+
+    border-color: var(--primary-color);
+
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary-color) 12%, transparent);
+}
+
+.create-event-form-fields button {
+    width: 100%;
+
+    min-height: 52px;
+
+    padding: 16px 28px;
+
+    border: none;
+    border-radius: var(--border-radius-medium);
+
+    background: var(--primary-color);
+    color: var(--text-on-primary);
+    font-size: 16px;
+
+    cursor: pointer;
+
+    transition: var(--transition-fast);
+}
+
+.create-event-form-fields button:hover {
+    opacity: 0.92;
+
+    transform: translateY(-1px);
+}

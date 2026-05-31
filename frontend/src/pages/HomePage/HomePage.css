@@ -1,0 +1,12 @@
+.home-page-layout {
+    display: flex;
+
+    height: 100vh;
+}
+
+.home-page-content {
+    flex: 1;
+    overflow-y: auto;
+
+    padding: var(--page-padding-y) var(--page-padding-x);
+}

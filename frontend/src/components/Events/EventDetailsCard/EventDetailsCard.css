@@ -1,0 +1,56 @@
+.event-details-card {
+    display: flex;
+    align-items: center;
+    gap: 56px;
+
+    padding: 28px 36px;
+    margin-bottom: 28px;
+
+    border-radius: var(--card-radius);
+
+
+    background: var(--card-background);
+    box-shadow: var(--shadow-card);
+
+}
+
+.event-image {
+    width: 280px;
+    height: 200px;
+
+    border-radius: var(--border-radius-medium);
+
+    object-fit: cover;
+
+    flex-shrink: 0;
+}
+
+.event-info {
+    display: flex;
+    flex-direction: column;
+
+    gap: 12px;
+
+    flex: 1;
+}
+
+.event-info h1 {
+    font-size: 52px;
+}
+
+.event-info p {
+    color: var(--text-secondary-color);
+
+    font-size: 26px;
+}
+
+.event-meta {
+    margin-top: 24px;
+
+    display: flex;
+    gap: 48px;
+
+    color: var(--text-secondary-color);
+
+    font-size: 22px;
+}

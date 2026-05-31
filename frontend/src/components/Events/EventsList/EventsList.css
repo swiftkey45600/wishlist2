@@ -1,0 +1,13 @@
+.events-list {
+    padding: 32px;
+
+    background: var(--card-background);
+    border-radius: var(--card-radius);
+    box-shadow: var(--shadow-card);
+}
+
+.events-list h2 {
+    margin-bottom: 24px;
+
+    font-size: 28px;
+}

@@ -1,0 +1,66 @@
+.gift-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    padding: 18px;
+
+    background: var(--surface-color);
+    border-radius: var(--card-radius);
+
+    transition: var(--transition-fast);
+}
+
+.gift-card:hover {
+    transform: translateY(-4px);
+}
+
+
+.gift-image {
+    width: 100%;
+    height: 170px;
+
+    object-fit: cover;
+
+    border-radius: var(--border-radius-medium);
+}
+
+.gift-card h3 {
+    font-size: 22px;
+}
+
+.gift-card span {
+    color: var(--text-secondary-color);
+}
+
+
+.gift-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.gift-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.edit-gift-button,
+.delete-gift-button {
+    border: none;
+    background: none;
+
+    font-size: 20px;
+
+    opacity: 0.6;
+
+    cursor: pointer;
+
+    transition: var(--transition-fast);
+}
+
+.edit-gift-button:hover,
+.delete-gift-button:hover {
+    opacity:1;
+    transform:scale(1.1);
+}

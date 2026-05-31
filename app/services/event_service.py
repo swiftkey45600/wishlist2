@@ -28,6 +28,7 @@ class EventService:
 
         return self.event_repository.create_event(new_event)
 
+    #TODO фалйловая база данных - использование словарей для кеширования (айди и токены)
     def get_event(self, event_id: int) -> Event | None:
         return self.event_repository.get_event_by_id(event_id)
 

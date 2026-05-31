@@ -5,7 +5,7 @@ from dataclasses import dataclass
 class User:
     name: str
     login: str
-    password_hash: str
+    password: str
     id: int | None = None
     birthday: str | None = None
     gender: str | None = None
@@ -19,5 +19,4 @@ class UserRegisterRequest:
 @dataclass
 class UserLoginRequest:
     login: str
-    
     password: str

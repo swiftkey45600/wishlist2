@@ -1,0 +1,69 @@
+.sidebar {
+    width: 300px;
+    height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+
+    background: var(--card-background);
+
+    padding: 32px;
+
+    border-right: 1px solid var(--border-color);
+}
+
+.sidebar-top h1 {
+    margin-bottom: 48px;
+
+    font-size: 42px;
+}
+
+.sidebar-menu {
+    margin-top: 24px;
+    
+    display: flex;
+    flex-direction: column;
+
+    gap: 12px;
+}
+
+
+.sidebar-bottom {
+    color: var(--text-secondary-color);
+}
+
+.sidebar-profile {
+    padding: 16px;
+
+    border-radius: var(--border-radius-medium);
+
+    background: var(--surface-color);
+}
+
+
+.sidebar-link {
+    display: block;
+
+    padding: 16px 20px;
+
+    border-radius: var(--border-radius-medium);
+
+    color: var(--text-color);
+
+    text-decoration: none;
+
+    font-size: 20px;
+
+    transition: var(--transition-fast);
+}
+
+.sidebar-link:hover {
+    background: var(--primary-color-soft);
+}
+
+.sidebar-link.active {
+    background: var(--surface-color);
+    color: var(--primary-color);
+    font-weight: 600;
+}
