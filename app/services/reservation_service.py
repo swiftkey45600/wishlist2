@@ -27,11 +27,10 @@ class ReservationService:
 
         return self.reservation_repository.reserve_gift(reservation)
 
-    def unreserve_gift(self, gift_id: int) -> None:
-        deleted = self.reservation_repository.unreserve_gift(gift_id)
-
+    def unreserve_gift(self, reservation_id: int) -> None:
+        deleted = self.reservation_repository.unreserve_by_id(reservation_id)
         if not deleted:
             raise HTTPException(status_code=404, detail="Reservation not found")
 
-    def get_reservation(self, gift_id: int) -> Reservation | None:
-        return self.reservation_repository.get_reservation_by_gift(gift_id)
+    def get_reservation(self, reservation_id: int) -> Reservation | None:
+        return self.reservation_repository.get_reservation_by_id(reservation_id)

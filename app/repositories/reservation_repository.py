@@ -67,3 +67,21 @@ class ReservationRepository:
                 return None
 
             return self._row_to_reservation(row)
+
+    def get_reservation_by_id(self, reservation_id: int) -> Reservation | None:
+        with get_connection() as connection:
+            row = connection.execute(
+                "SELECT id, gift_id, reserver_name, is_anonymous FROM reservations WHERE id = ?",
+                (reservation_id,),
+            ).fetchone()
+            if row is None:
+                return None
+            return self._row_to_reservation(row)
+
+    def unreserve_by_id(self, reservation_id: int) -> bool:
+        with get_connection() as connection:
+            cursor = connection.execute(
+                "DELETE FROM reservations WHERE id = ?", (reservation_id,)
+            )
+            connection.commit()
+            return cursor.rowcount > 0
