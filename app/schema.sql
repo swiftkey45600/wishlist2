@@ -49,5 +49,13 @@ CREATE TABLE IF NOT EXISTS images (
     hash TEXT NOT NULL UNIQUE
 );
 
+CREATE TABLE IF NOT EXISTS marketplaces (
+    id INTEGER PRIMARY KEY,
+    slug TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    base_url TEXT NOT NULL,
+    logo_url TEXT
+);
+
 INSERT OR IGNORE INTO users (id, name, login, password_hash)
 VALUES (1, 'John Doe', 'johndoe', 'hashedpassword');
