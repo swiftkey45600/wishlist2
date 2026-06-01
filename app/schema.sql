@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     login TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     birthday TEXT,
-    gender TEXT
+    gender INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS events (
