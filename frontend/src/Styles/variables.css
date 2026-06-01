@@ -1,0 +1,38 @@
+:root {
+    /* Шрифт */
+    --font-family-base: sans-serif;
+
+    /* Цвета */
+    --primary-color: #7c5cff;
+    --primary-color-soft: #f3f0ff;
+
+    --background-color: #f5f5f7;
+    --surface-color: #f7f7fa;
+    --card-background: #fff;
+
+    --text-color: #222;
+    --text-secondary-color: #777;
+    --text-on-primary: #fff;
+    --text-placeholder-color: #999;
+
+    --danger-color: #ff4d4f;
+
+    --border-color: #ddd;
+
+    /* Радиус */
+    --border-radius-small: 12px;
+    --border-radius-medium: 16px;
+    --card-radius: 32px;
+
+    /* Layout */
+    --page-padding-x: 48px;
+    --page-padding-y: 32px;
+
+    /* Эффекты */
+    --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.05);
+    --shadow-modal: 0 8px 32px rgba(0, 0, 0, 0.12);
+
+    --overlay-color: rgba(0, 0, 0, 0.35);
+
+    --transition-fast: 0.2s;
+}

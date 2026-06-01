@@ -3,13 +3,15 @@ from typing import List
 from app.models.gift import Gift
 from app.repositories.gift_repository import GiftRepository
 from app.services.gift_service import GiftService
+from app.repositories.contribution_repository import ContributionRepository
 
 router = APIRouter(
     tags=["Gifts"]
 )
 
 gift_repo = GiftRepository()
-gift_service = GiftService(gift_repo)
+contribution_repo = ContributionRepository()
+gift_service = GiftService(gift_repo, contribution_repo)
 
 @router.post("/gifts/", response_model=Gift)
 def create_gift(gift: Gift):

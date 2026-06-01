@@ -1,20 +1,20 @@
 .event-card {
-    background: white;
+    background: var(--card-background);
 
     margin-top: 20px;
     padding: 28px;
     
-    border-radius: 20px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border-radius: var(--border-radius-medium);
+    box-shadow: var(--shadow-card);
 
     cursor: pointer;
-    transition: 0.2s;
+    transition: var(--transition-fast);
 }
 
 .event-card:hover {
     transform: translateY(-2px);
 
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--shadow-card);
 }
 
 
@@ -37,7 +37,7 @@
 .event-card-header p {
     margin-bottom: 8px;
 
-    color: #666;
+    color: var(--text-secondary-color);
     font-size: 20px;
 }
 
@@ -52,13 +52,13 @@
 
     border: none;
 
-    border-radius: 10px;
+    border-radius: var(--border-radius-small);
 
     cursor: pointer;
 
     font-size: 15px;
 
-    transition: 0.2s;
+    transition: var(--transition-fast);
 }
 
 .event-card-actions button:hover {
@@ -66,15 +66,15 @@
 }
 
 .edit-button {
-    background: #f3f0ff;
+    background: var(--primary-color-soft);
 
-    color: #7c5cff;
+    color: var(--primary-color);
 }
 
 .delete-button {
-    background: #fff0f0;
+    background: var(--background-color);
 
-    color: #ff4d4f;
+    color: var(--danger-color);
 }
 
 
@@ -87,5 +87,5 @@
 }
 
 .event-card-footer span {
-    color: #999;
+    color: var(--text-placeholder-color);
 }

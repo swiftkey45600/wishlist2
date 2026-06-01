@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     login TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     birthday TEXT,
-    gender TEXT
+    gender INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS events (
@@ -47,6 +47,14 @@ CREATE TABLE IF NOT EXISTS images (
     image_path TEXT NOT NULL,
     image_type TEXT,
     hash TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS marketplaces (
+    id INTEGER PRIMARY KEY,
+    slug TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    base_url TEXT NOT NULL,
+    logo_url TEXT
 );
 
 INSERT OR IGNORE INTO users (id, name, login, password_hash)

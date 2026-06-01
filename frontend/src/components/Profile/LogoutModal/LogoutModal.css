@@ -1,0 +1,98 @@
+.modal-overlay {
+    position: fixed;
+
+    top: 0;
+    left: 0;
+
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+
+    background: var(--overlay-color);
+
+    z-index: 1000;
+}
+
+.logout-modal {
+    width: 420px;
+
+    padding: 32px;
+
+    background: var(--card-background);
+
+    border-radius: var(--card-radius);
+
+    box-shadow: var(--shadow-modal);
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 16px;
+}
+
+.logout-modal h2 {
+    font-size: 32px;
+}
+
+.logout-modal p {
+    color: var(--text-secondary-color);
+
+    font-size: 18px;
+
+    line-height: 1.5;
+}
+
+.logout-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+
+    margin-top: 16px;
+}
+
+.cancel-button {
+    padding: 14px 28px;
+
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-medium);
+
+    background: var(--card-background);
+
+    color: var(--text-secondary-color);
+    font-size: 16px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: var(--transition-fast);
+}
+
+.cancel-button:hover {
+    background: var(--background-color);
+}
+
+.confirm-logout-button {
+    padding: 14px 28px;
+
+    border: none;
+    border-radius: var(--border-radius-medium);
+    background: var(--danger-color);
+
+    color: var(--text-on-primary);
+
+    font-size: 16px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: var(--transition-fast);
+}
+
+.confirm-logout-button:hover {
+    opacity: .9;
+}

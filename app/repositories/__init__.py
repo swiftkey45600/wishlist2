@@ -5,6 +5,7 @@ from .contribution_repository import ContributionRepository
 from .reservation_repository import ReservationRepository
 from .image_repository import ImageRepository
 from .gifts_manager import GiftsManager
+from .marketplace_links_repository import MarketplacesLinksRepository
 
 __all__ = [
     'UserRepository',
@@ -14,4 +15,5 @@ __all__ = [
     'ReservationRepository',
     'ImageRepository',
     'GiftsManager',
+    'MarketplacesLinksRepository'
 ]
