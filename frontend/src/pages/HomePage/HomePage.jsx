@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 
 import "./HomePage.css"
 import "../../Styles/common.css"
@@ -10,6 +11,7 @@ import CreateEventForm from "../../components/Events/CreateEventForm/CreateEvent
 import EventsList from "../../components/Events/EventsList/EventsList"
 
 function HomePage() {
+  const navigate = useNavigate()
   const [events, setEvents] = useState([])
 
   useEffect(() => {
@@ -22,12 +24,12 @@ function HomePage() {
   }, [])
 
 
-  async function handleCreateEvent(title, description, place, date) {
+  async function handleCreateEvent(title, description, place, eventDate) {
     const createdEvent = await createEvent({
       title,
       description,
       place,
-      date
+      event_date: eventDate
     })
 
     setEvents([...events, createdEvent])
@@ -37,6 +39,10 @@ function HomePage() {
     await deleteEvent(eventId)
 
     setEvents(events.filter(event => event.id !== eventId))
+  }
+
+  function handleOpenEvent(eventId) {
+    navigate(`/events/${eventId}`)
   }
 
 
@@ -55,6 +61,7 @@ function HomePage() {
         <EventsList 
           events={events}
           onDeleteEvent={handleDeleteEvent}
+          onOpenEvent={handleOpenEvent}
         />
       </div>
     </div>

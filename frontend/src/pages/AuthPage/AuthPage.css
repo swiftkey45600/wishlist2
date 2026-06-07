@@ -58,6 +58,18 @@
     cursor: pointer;
 }
 
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.auth-error {
+    color: #d32f2f;
+    font-size: 14px;
+    margin: 0;
+}
+
 .auth-tabs {
     display: flex;
     gap: 12px;
