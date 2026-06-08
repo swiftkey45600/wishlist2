@@ -49,3 +49,4 @@ class MarketplacesLinksRepository:
             )
             connection.commit()
             return cursor.rowcount > 0
+    
