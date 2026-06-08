@@ -13,6 +13,7 @@ class GiftRepository:
             picture_url=row["picture_url"],
             marketplace_url=row["marketplace_url"],
             category_id=row["category_id"],
+            image_id=row["image_id"],
         )
 
     def create_gift(self, gift: Gift) -> Gift:
@@ -27,9 +28,10 @@ class GiftRepository:
                     description,
                     picture_url,
                     marketplace_url,
-                    category_id
+                    category_id,
+                    image_id
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     gift.event_id,
@@ -40,6 +42,7 @@ class GiftRepository:
                     gift.picture_url,
                     gift.marketplace_url,
                     gift.category_id,
+                    gift.image_id,
                 ),
             )
 
@@ -61,7 +64,8 @@ class GiftRepository:
                     description,
                     picture_url,
                     marketplace_url,
-                    category_id
+                    category_id,
+                    image_id
                 FROM gifts
                 WHERE id = ?
                 """,
@@ -86,7 +90,8 @@ class GiftRepository:
                     description,
                     picture_url,
                     marketplace_url,
-                    category_id
+                    category_id,
+                    image_id
                 FROM gifts
                 WHERE event_id = ?
                 """,
