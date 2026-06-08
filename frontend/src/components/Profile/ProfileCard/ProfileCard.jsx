@@ -1,6 +1,6 @@
 import "./ProfileCard.css"
 
-function ProfileCard() {
+function ProfileCard({ user }) {
     return (
         <div className="profile-card">
             <button className="edit-profile-button">
@@ -8,12 +8,14 @@ function ProfileCard() {
             </button>
 
             <div className="profile-avatar">
-                <img></img>
+                <img src="https://via.placeholder.com/96" alt="Avatar" />
             </div>
 
             <div className="profile-info">
-                <h2>Арсений</h2>
-                <p>arseniytyurin52@mail.com</p>
+                <h2>{user?.name || "Пользователь"}</h2>
+                <p>{user?.login || "Не задан"}</p>
+                {user?.birthday && <p>Дата рождения: {user.birthday}</p>}
+                {user?.gender && <p>Пол: {user.gender}</p>}
             </div>
         </div>
     )

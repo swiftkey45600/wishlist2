@@ -5,7 +5,7 @@ function CreateEventForm({ onCreateEvent }) {
     const [title, setTitle] = useState("")
     const [description, setDescription] = useState("")
     const [place, setPlace] = useState("")
-    const [date, setDate] = useState("")
+    const [eventDate, setEventDate] = useState("")
 
     return (
         <div className="create-event-form">
@@ -36,13 +36,13 @@ function CreateEventForm({ onCreateEvent }) {
                     <input
                         type="datetime-local"
                         placeholder="Время"
-                        value={date}
+                        value={eventDate}
                         onChange={
                             (event) => {console.log(event.target.value); 
-                            setDate(event.target.value)}}
+                            setEventDate(event.target.value)}}
                     />
 
-                    <button onClick={() => onCreateEvent(title, description, place, date)}>Создать событие</button>
+                    <button onClick={() => onCreateEvent(title, description, place, eventDate)}>Создать событие</button>
                 </div>
             </div>
         </div>

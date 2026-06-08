@@ -16,6 +16,50 @@
     margin-bottom: 32px;
 }
 
+.gift-create-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: var(--border-radius-medium);
+    background: var(--surface-color);
+}
+
+.gift-create-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.gift-create-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-weight: 600;
+}
+
+.gift-create-form input,
+.gift-create-form textarea {
+    padding: 12px 14px;
+    border: 1px solid rgba(0, 0, 0, 0.16);
+    border-radius: var(--border-radius-medium);
+    font-size: 14px;
+    background: var(--background-color);
+    color: var(--text-color);
+}
+
+.gift-create-form textarea {
+    resize: vertical;
+    min-height: 96px;
+}
+
+.gift-form-error {
+    color: #d32f2f;
+    font-size: 14px;
+}
+
 .gift-list h2 {
     font-size: 42px;
 }
