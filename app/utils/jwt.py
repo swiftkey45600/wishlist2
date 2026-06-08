@@ -2,6 +2,9 @@ from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from app.repositories.user_repository import UserRepository
+
+_user_repository = UserRepository()
 
 SECRET_KEY = "secret-key"
 ALGORITHM = "HS256"
@@ -42,7 +45,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 
     user_login = payload.get("sub")
     
-    user = None #user_repository.get_user_by_login(user_login) - нужен синглтон для репо или база данных
+    user = _user_repository.get_user_by_login(user_login)
 
     if user is None:
         raise HTTPException(

@@ -15,3 +15,4 @@ build/
 .vscode/
 *.log
 node_modules
+*.db
