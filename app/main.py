@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.database import init_db
 from app.models.user import UserRegisterRequest
 from app.routers import user_routers
 from app.routers import auth_router
@@ -11,7 +12,14 @@ from app.routers import gift_router
 from app.routers import image_router
 from app.routers import marketplace_router
 
+
 app = FastAPI()
+
+
+@app.on_event("startup")
+def on_startup():
+    init_db()
+
 
 app.add_middleware(
     CORSMiddleware,
