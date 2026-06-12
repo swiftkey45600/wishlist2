@@ -1,6 +1,6 @@
 import "./GiftCard.css"
 
-function GiftCard({ gift, onToggleStatus, onDelete }) {
+function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit }) {
     const toggleText = gift.status === "available" ? "Занять" : "Снять бронь"
 
     return (
@@ -11,6 +11,18 @@ function GiftCard({ gift, onToggleStatus, onDelete }) {
                 alt={gift.title}
             />
             <h3>{gift.title}</h3>
+            
+            {gift.marketplace_url && (
+                <a
+                    href={gift.marketplace_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="marketplace-link"
+                >
+                    Посмотреть на маркетплейсе →
+                </a>
+            )}
+
             <p className="gift-status-label">Статус: {gift.status}</p>
 
             <div className="gift-card-footer">
@@ -23,6 +35,21 @@ function GiftCard({ gift, onToggleStatus, onDelete }) {
                             onClick={() => onToggleStatus(gift)}
                         >
                             {toggleText}
+                        </button>
+                    )}
+
+                    {gift.status === "reserved" && onMarkBought && (
+                        <button
+                            className="bought-button"
+                            onClick={() => onMarkBought(gift.id)}
+                        >
+                            Куплено ✓
+                        </button>
+                    )}
+
+                    {onEdit && (
+                        <button className="edit-gift-button" onClick={() => onEdit(gift)}>
+                            ✏️
                         </button>
                     )}
 

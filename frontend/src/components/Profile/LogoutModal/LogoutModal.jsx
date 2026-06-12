@@ -8,7 +8,9 @@ function LogoutModal({
     const navigate = useNavigate()
 
     function handleLogout() {
-       navigate("/auth")
+        localStorage.removeItem("accessToken")
+        localStorage.removeItem("user")
+        navigate("/auth")
     }
 
     return (

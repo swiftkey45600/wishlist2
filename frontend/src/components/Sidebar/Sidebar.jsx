@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom"
 import "./Sidebar.css"
 
 function Sidebar() {
+  const user = JSON.parse(localStorage.getItem("user") || "null")
   return (
     <div className="sidebar">
       <div className="sidebar-top">
@@ -37,7 +38,7 @@ function Sidebar() {
 
       <div className="sidebar-bottom">
           <div className="sidebar-profile">
-              John Doe
+            {user ? user.name : "Гость"}
           </div>
       </div>
     </div>
