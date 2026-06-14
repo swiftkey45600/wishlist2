@@ -22,6 +22,25 @@ export async function updateGiftStatus(giftId, status) {
   return response.data
 }
 
+export async function updateGift(giftId, data) {
+  const response = await api.patch(`/gifts/${giftId}`, data)
+  return response.data
+}
+
+export async function reserveGift(giftId, reserverName, isAnonymous = false) {
+  const response = await api.post("/reservations/", {
+    gift_id: giftId,
+      reserver_name: reserverName,
+      is_anonymous: isAnonymous
+    })
+
+  return response.data
+}
+
+export async function unreserveGift(reservationId) {
+  await api.delete(`/reservations/${reservationId}`)
+}
+
 export async function deleteGift(giftId) {
   await api.delete(`/gifts/${giftId}`)
 }
