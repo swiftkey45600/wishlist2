@@ -4,12 +4,13 @@ import HomePage from "./pages/HomePage/HomePage"
 import EventPage from "./pages/EventPage/EventPage"
 import ProfilePage from "./pages/ProfilePage/ProfilePage";
 import AuthPage from "./pages/AuthPage/AuthPage"
+import PublicEventPage from "./pages/PublicEventPage/PublicEventPage"
 
 function App() {
-  // function ProtectedRoute({ children }) {
-  //   const token = localStorage.getItem("accessToken")
-  //   return token ? children : <Navigate to="/auth" replace />
-  // }
+  function ProtectedRoute({ children }) {
+    const token = localStorage.getItem("accessToken")
+    return token ? children : <Navigate to="/auth" replace />
+  }
 
   return (
     
@@ -22,18 +23,22 @@ function App() {
 
       <Route 
         path="/" 
-        element={<HomePage />} 
+        element={<ProtectedRoute><HomePage /></ProtectedRoute>} 
       />
 
       <Route 
         path="/profile" 
-        element={<ProfilePage />}
+        element={<ProtectedRoute><ProfilePage /></ProtectedRoute>}
       />
 
       <Route 
         path="/events/:id" 
-        element={<EventPage />}
+        element={<ProtectedRoute><EventPage /></ProtectedRoute>}
       />
+
+      <Route 
+        path="/share/:token"
+        element={<PublicEventPage />} />
     </Routes>
   )
 }

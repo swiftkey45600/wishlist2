@@ -3,6 +3,7 @@ from app.models.event import EventCreateRequest
 from app.models.user import User
 from app.services.event_service import EventService
 from app.repositories.event_repository import EventRepository
+from app.repositories.gift_repository import GiftRepository
 from app.utils.jwt import get_current_user
 
 router = APIRouter(
@@ -11,11 +12,13 @@ router = APIRouter(
 )
 
 event_repository = EventRepository()
+gift_repository = GiftRepository()
 event_service = EventService(event_repository)
 
 @router.get("/")
 async def get_events(current_user: User = Depends(get_current_user)):
-    return {"events": event_service.list_events()}
+    return {"events": event_service.get_user_events(current_user.id)}
+
 
 
 @router.get("/user/{owner_id}")
@@ -24,6 +27,16 @@ async def get_user_events(owner_id: int, current_user: User = Depends(get_curren
     if not events:
         raise HTTPException(status_code=404, detail="Owner has no events")
     return {"events": events}
+
+
+@router.get("/public/{public_token}")
+async def get_public_event(public_token: str):
+    event = event_service.get_event_by_token(public_token)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    gifts = gift_repository.get_gifts_by_event(event.id)
+    return {"event": event, "gifts": gifts}
 
 
 @router.get("/{event_id}")

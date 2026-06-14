@@ -12,6 +12,8 @@ import {
   editGift
 } from "../../../application/giftApplication"
 
+import GiftEditForm from "../GiftEditForm/GiftEditForm"
+
 function GiftList({ eventId }) {
     const [gifts, setGifts] = useState([])
     const [isLoading, setIsLoading] = useState(true)
@@ -217,6 +219,23 @@ function GiftList({ eventId }) {
                         />
                     ))}
                 </div>
+            )}
+
+            {editingGift && (
+                <GiftEditForm
+                    gift={editingGift}
+                    onChange={setEditingGift}
+                    onSave={() =>
+                        handleEditGift(editingGift.id, {
+                            title: editingGift.title,
+                            price: Number(editingGift.price),
+                            description: editingGift.description,
+                            picture_url: editingGift.picture_url,
+                            marketplace_url: editingGift.marketplace_url
+                        })
+                    }
+                    onCancel={() => setEditingGift(null)}
+                />
             )}
         </div>
     )
