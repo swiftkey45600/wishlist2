@@ -1,0 +1,22 @@
+name: Database check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  db-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Initialize database
+        run: python -c "from app.database import init_db; init_db(); print('DB initialized')"
