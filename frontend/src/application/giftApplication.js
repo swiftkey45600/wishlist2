@@ -3,7 +3,10 @@ import {
   fetchGiftsByEvent,
   createGift as createGiftRepository,
   updateGiftStatus as updateGiftStatusRepository,
-  deleteGift as deleteGiftRepository
+  deleteGift as deleteGiftRepository,
+  reserveGift as reserveGiftRepository,
+  unreserveGift as unreserveGiftRepository,
+  updateGift as updateGiftRepository
 } from "../repositories/giftRepository"
 
 export async function getGift(giftId) {
@@ -42,10 +45,37 @@ export async function updateGiftStatus(giftId, status) {
   }
 }
 
+export async function editGift(giftId, data) {
+  try {
+    return await updateGiftRepository(giftId, data)
+  } catch (error) {
+    console.error(error)
+    return null
+  }
+}
+
 export async function deleteGift(giftId) {
   try {
     return await deleteGiftRepository(giftId)
   } catch (error) {
     console.error(error)
+  }
+}
+
+export async function reserveGift(giftId, reserverName, isAnonymous = false) {
+  try {
+    return await reserveGiftRepository(giftId, reserverName, isAnonymous)
+  } catch (error) {
+    console.error(error)
+    return null
+  }
+}
+
+export async function unreserveGift(reservationId) {
+  try {
+    return await unreserveGiftRepository(reservationId)
+  } catch (error) {
+    console.error(error)
+    return null
   }
 }

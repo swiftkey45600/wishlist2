@@ -14,6 +14,7 @@ function EventPage() {
     const { id } = useParams()
     const [event, setEvent] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
+    const [showToast, setShowToast] = useState(false)
 
     useEffect(() => {
         async function loadEvent() {
@@ -28,14 +29,55 @@ function EventPage() {
         loadEvent()
     }, [id])
 
+    useEffect(() => {
+        if (!showToast) return
+
+        const timer = window.setTimeout(() => setShowToast(false), 2000)
+
+        return () => window.clearTimeout(timer)
+    }, [showToast])
+
+    async function handleShare() {
+        const shareLink = event?.public_token
+            ? `${window.location.origin}/share/${event.public_token}`
+            : window.location.href
+
+        try {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(shareLink)
+            } else {
+                const textArea = document.createElement("textarea")
+                textArea.value = shareLink
+                textArea.setAttribute("readonly", "")
+                textArea.style.position = "fixed"
+                textArea.style.top = "-9999px"
+                document.body.appendChild(textArea)
+                textArea.select()
+                document.execCommand("copy")
+                document.body.removeChild(textArea)
+            }
+
+            setShowToast(true)
+        } catch (error) {
+            console.error("Не удалось скопировать ссылку", error)
+        }
+    }
+
 	return (
 		<div className="page-layout">
 				<Sidebar />
 
 				<div className="page-content">
-					<button className="back-button" onClick={() => navigate("/")}>
-						← Назад к событиям
-					</button>
+					<div className="event-page-actions">
+						<button className="back-button" onClick={() => navigate("/")}>
+							← Назад к событиям
+						</button>
+						<button className="share-button" onClick={handleShare}>
+							Поделиться
+						</button>
+					</div>
+
+					{showToast && <div className="share-toast">Ссылка скопирована</div>}
 
                     {
                         isLoading && (

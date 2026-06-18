@@ -5,8 +5,14 @@ import GiftCard from "../GiftCard/GiftCard"
 import {
   getGiftsByEvent,
   createGift,
-  updateGiftStatus
+  updateGiftStatus,
+  deleteGift, 
+  reserveGift,
+  unreserveGift,
+  editGift
 } from "../../../application/giftApplication"
+
+import GiftEditForm from "../GiftEditForm/GiftEditForm"
 
 function GiftList({ eventId }) {
     const [gifts, setGifts] = useState([])
@@ -18,6 +24,8 @@ function GiftList({ eventId }) {
     const [description, setDescription] = useState("")
     const [imageUrl, setImageUrl] = useState("")
     const [formError, setFormError] = useState(null)
+    const [marketplaceUrl, setMarketplaceUrl] = useState("")
+    const [editingGift, setEditingGift] = useState(null)
 
     useEffect(() => {
         if (!eventId) {
@@ -66,6 +74,7 @@ function GiftList({ eventId }) {
             price: parsedPrice,
             description: description.trim() || undefined,
             picture_url: imageUrl.trim() || undefined,
+            marketplace_url: marketplaceUrl.trim() || undefined,
             status: "available"
         })
 
@@ -79,19 +88,40 @@ function GiftList({ eventId }) {
         setPrice("")
         setDescription("")
         setImageUrl("")
+        setMarketplaceUrl("")
         setIsFormOpen(false)
     }
 
     async function handleToggleStatus(gift) {
-        const newStatus = gift.status === "available" ? "reserved" : "available"
-        const updatedGift = await updateGiftStatus(gift.id, newStatus)
-
-        if (!updatedGift) {
-            setError("Не удалось обновить статус подарка")
-            return
+        if (gift.status === "available") {
+            const user = JSON.parse(localStorage.getItem("user") || "null")
+            await reserveGift(gift.id, user?.name ?? "Аноним")
+        } else {
+            await unreserveGift(gift.reservation_id)
         }
 
-        setGifts(prev => prev.map(item => item.id === gift.id ? updatedGift : item))
+        const updated = await getGiftsByEvent(eventId)
+        setGifts(Array.isArray(updated) ? updated : [])
+    }
+
+    async function handleDeleteGift(giftId) {
+        await deleteGift(giftId)
+        setGifts(prev => prev.filter(g => g.id !== giftId))
+    }
+
+    async function handleMarkBought(giftId) {
+        const updated = await updateGiftStatus(giftId, "bought")
+        if (updated) {
+            setGifts(prev => prev.map(g => g.id === giftId ? updated : g))
+        }
+    }
+
+    async function handleEditGift(giftId, data) {
+        const updated = await editGift(giftId, data)
+        if (updated) {
+            setGifts(prev => prev.map(g => g.id === giftId ? updated : g))
+            setEditingGift(null)
+        }
     }
 
     return (
@@ -147,6 +177,15 @@ function GiftList({ eventId }) {
                         />
                     </label>
 
+                    <label>
+                        Ссылка на маркетплейс
+                        <input
+                            value={marketplaceUrl}
+                            onChange={e => setMarketplaceUrl(e.target.value)}
+                            placeholder="https://..."
+                        />
+                    </label>
+
                     {formError && <p className="gift-form-error">{formError}</p>}
 
                     <button type="submit" className="add-gift-button">
@@ -174,9 +213,29 @@ function GiftList({ eventId }) {
                             key={gift.id}
                             gift={gift}
                             onToggleStatus={handleToggleStatus}
+                            onDelete={handleDeleteGift}
+                            onMarkBought={handleMarkBought}
+                            onEdit={setEditingGift}
                         />
                     ))}
                 </div>
+            )}
+
+            {editingGift && (
+                <GiftEditForm
+                    gift={editingGift}
+                    onChange={setEditingGift}
+                    onSave={() =>
+                        handleEditGift(editingGift.id, {
+                            title: editingGift.title,
+                            price: Number(editingGift.price),
+                            description: editingGift.description,
+                            picture_url: editingGift.picture_url,
+                            marketplace_url: editingGift.marketplace_url
+                        })
+                    }
+                    onCancel={() => setEditingGift(null)}
+                />
             )}
         </div>
     )
