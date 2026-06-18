@@ -31,7 +31,9 @@ CREATE TABLE IF NOT EXISTS gifts (
     picture_url TEXT,
     marketplace_url TEXT,
     category_id INTEGER,
-    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+    image_id INTEGER,
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+    FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS reservations (
