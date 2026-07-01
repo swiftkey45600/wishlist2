@@ -14,6 +14,7 @@ class GiftRepository:
             marketplace_url=row["marketplace_url"],
             category_id=row["category_id"],
             image_id=row["image_id"],
+            reservation_id=row["reservation_id"] if "reservation_id" in row.keys() else None,
         )
 
     def create_gift(self, gift: Gift) -> Gift:
@@ -56,18 +57,20 @@ class GiftRepository:
             row = connection.execute(
                 """
                 SELECT
-                    id,
-                    event_id,
-                    title,
-                    price,
-                    status,
-                    description,
-                    picture_url,
-                    marketplace_url,
-                    category_id,
-                    image_id
+                    gifts.id,
+                    gifts.event_id,
+                    gifts.title,
+                    gifts.price,
+                    gifts.status,
+                    gifts.description,
+                    gifts.picture_url,
+                    gifts.marketplace_url,
+                    gifts.category_id,
+                    gifts.image_id,
+                    reservations.id AS reservation_id
                 FROM gifts
-                WHERE id = ?
+                LEFT JOIN reservations ON reservations.gift_id = gifts.id
+                WHERE gifts.id = ?
                 """,
                 (gift_id,),
             ).fetchone()
@@ -82,18 +85,20 @@ class GiftRepository:
             rows = connection.execute(
                 """
                 SELECT
-                    id,
-                    event_id,
-                    title,
-                    price,
-                    status,
-                    description,
-                    picture_url,
-                    marketplace_url,
-                    category_id,
-                    image_id
+                    gifts.id,
+                    gifts.event_id,
+                    gifts.title,
+                    gifts.price,
+                    gifts.status,
+                    gifts.description,
+                    gifts.picture_url,
+                    gifts.marketplace_url,
+                    gifts.category_id,
+                    gifts.image_id,
+                    reservations.id AS reservation_id
                 FROM gifts
-                WHERE event_id = ?
+                LEFT JOIN reservations ON reservations.gift_id = gifts.id
+                WHERE gifts.event_id = ?
                 """,
                 (event_id,),
             ).fetchall()
@@ -113,6 +118,19 @@ class GiftRepository:
 
             connection.commit()
 
+        return self.get_gift_by_id(gift_id)
+
+    def update_gift(self, gift_id: int, data: dict) -> Gift | None:
+        fields = {k: v for k, v in data.items() if v is not None}
+        if not fields:
+            return self.get_gift_by_id(gift_id)
+        set_clause = ", ".join(f"{k} = ?" for k in fields)
+        with get_connection() as connection:
+            connection.execute(
+                f"UPDATE gifts SET {set_clause} WHERE id = ?",
+                (*fields.values(), gift_id),
+            )
+            connection.commit()
         return self.get_gift_by_id(gift_id)
 
     def delete_gift(self, gift_id: int) -> bool:

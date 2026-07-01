@@ -28,13 +28,13 @@ function GiftList({ eventId }) {
     const [editingGift, setEditingGift] = useState(null)
 
     useEffect(() => {
-        if (!eventId) {
-            setGifts([])
-            setIsLoading(false)
-            return
-        }
-
         async function loadGifts() {
+            if (!eventId) {
+                setGifts([])
+                setIsLoading(false)
+                return
+            }
+
             setIsLoading(true)
             setError(null)
 
@@ -96,8 +96,10 @@ function GiftList({ eventId }) {
         if (gift.status === "available") {
             const user = JSON.parse(localStorage.getItem("user") || "null")
             await reserveGift(gift.id, user?.name ?? "Аноним")
-        } else {
+        } else if (gift.reservation_id) {
             await unreserveGift(gift.reservation_id)
+        } else {
+            await updateGiftStatus(gift.id, "available")
         }
 
         const updated = await getGiftsByEvent(eventId)
