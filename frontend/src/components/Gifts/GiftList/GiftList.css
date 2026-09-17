@@ -41,7 +41,8 @@
 }
 
 .gift-create-form input,
-.gift-create-form textarea {
+.gift-create-form textarea,
+.gift-create-form select {
     padding: 12px 14px;
     border: 1px solid rgba(0, 0, 0, 0.16);
     border-radius: var(--border-radius-medium);
