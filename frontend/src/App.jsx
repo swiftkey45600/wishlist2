@@ -6,12 +6,12 @@ import ProfilePage from "./pages/ProfilePage/ProfilePage";
 import AuthPage from "./pages/AuthPage/AuthPage"
 import PublicEventPage from "./pages/PublicEventPage/PublicEventPage"
 
-function App() {
-  function ProtectedRoute({ children }) {
+function ProtectedRoute({ children }) {
     const token = localStorage.getItem("accessToken")
     return token ? children : <Navigate to="/auth" replace />
-  }
+}
 
+function App() {
   return (
     
 

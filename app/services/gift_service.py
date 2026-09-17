@@ -74,6 +74,12 @@ class GiftService:
             raise HTTPException(status_code=404, detail="Gift not found")
         return self._prepare_gift_response(gift)
 
+    def update_gift(self, gift_id: int, data: dict) -> Gift:
+        gift = self.gift_repository.update_gift(gift_id, data)
+        if gift is None:
+            raise HTTPException(status_code=404, detail="Gift not found")
+        return self._prepare_gift_response(gift)
+
     def delete_gift(self, gift_id: int) -> None:
         if not self.gift_repository.delete_gift(gift_id):
             raise HTTPException(status_code=404, detail="Gift not found")

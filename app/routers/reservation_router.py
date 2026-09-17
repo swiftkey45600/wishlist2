@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from app.repositories.reservation_repository import ReservationRepository
+from app.repositories.gift_repository import GiftRepository
 from app.models.reservation import ReservationCreateRequest
 from app.services.reservation_service import ReservationService
 
@@ -10,7 +11,8 @@ router = APIRouter(
 )
 
 reservation_repo = ReservationRepository()
-reservation_service = ReservationService(reservation_repo)
+gift_repo = GiftRepository()
+reservation_service = ReservationService(reservation_repo, gift_repo)
 
 
 @router.post("/")

@@ -1,3 +1,5 @@
+import secrets
+
 from app.models import Event
 from app.repositories import EventRepository
 from app.repositories import GiftRepository
@@ -24,6 +26,7 @@ class EventService:
             description=description,
             event_date=event_date,
             place=place,
+            public_token=secrets.token_urlsafe(16),
         )
 
         return self.event_repository.create_event(new_event)
