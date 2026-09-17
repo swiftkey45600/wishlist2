@@ -61,11 +61,5 @@ CREATE TABLE IF NOT EXISTS marketplaces (
     logo_url TEXT
 );
 
-INSERT OR IGNORE INTO marketplaces (slug, name, base_url)
-VALUES
-    ('ozon', 'Ozon', 'https://www.ozon.ru/'),
-    ('wildberries', 'Wildberries', 'https://www.wildberries.ru/'),
-    ('yandex-market', 'Яндекс Маркет', 'https://market.yandex.ru/');
-
 INSERT OR IGNORE INTO users (id, name, login, password_hash)
 VALUES (1, 'John Doe', 'johndoe', 'hashedpassword');

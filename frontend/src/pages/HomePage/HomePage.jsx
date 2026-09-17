@@ -13,6 +13,7 @@ import EventsList from "../../components/Events/EventsList/EventsList"
 function HomePage() {
   const navigate = useNavigate()
   const [events, setEvents] = useState([])
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     async function loadEvents() {
@@ -25,6 +26,13 @@ function HomePage() {
 
 
   async function handleCreateEvent(title, description, place, eventDate) {
+    setError(null)
+
+    if (!title.trim()) {
+      setError("Введите название события")
+      return
+    }
+
     const createdEvent = await createEvent({
       title,
       description,
@@ -32,7 +40,11 @@ function HomePage() {
       event_date: eventDate
     })
 
-    setEvents([...events, createdEvent])
+    if (createdEvent) {
+      setEvents([...events, createdEvent])
+    } else {
+      setError("Не удалось создать событие")
+    }
   }
 
   async function handleDeleteEvent(eventId) {
@@ -73,6 +85,8 @@ function HomePage() {
         </div>
 
         <CreateEventForm onCreateEvent={handleCreateEvent} />
+
+        {error && <p className="error-text">{error}</p>}
 
         <EventsList 
           events={events}

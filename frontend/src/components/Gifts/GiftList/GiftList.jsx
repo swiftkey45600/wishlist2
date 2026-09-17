@@ -10,7 +10,6 @@ import {
 } from "../../../application/giftApplication"
 
 import GiftEditForm from "../GiftEditForm/GiftEditForm"
-import { getMarketplaces } from "../../../application/marketplaceApplication"
 
 function GiftList({ eventId, isOwner }) {
     const [gifts, setGifts] = useState([])
@@ -23,9 +22,7 @@ function GiftList({ eventId, isOwner }) {
     const [imageUrl, setImageUrl] = useState("")
     const [formError, setFormError] = useState(null)
     const [marketplaceUrl, setMarketplaceUrl] = useState("")
-    const [selectedMarketplaceUrl, setSelectedMarketplaceUrl] = useState("")
     const [editingGift, setEditingGift] = useState(null)
-    const [marketplaces, setMarketplaces] = useState([])
 
     useEffect(() => {
         async function loadGifts() {
@@ -52,15 +49,6 @@ function GiftList({ eventId, isOwner }) {
 
         loadGifts()
     }, [eventId])
-
-    useEffect(() => {
-        async function loadMarketplaces() {
-            const data = await getMarketplaces()
-            setMarketplaces(Array.isArray(data) ? data : [])
-        }
-
-        loadMarketplaces()
-    }, [])
 
     async function handleSubmit(event) {
         event.preventDefault()
@@ -98,7 +86,6 @@ function GiftList({ eventId, isOwner }) {
         setDescription("")
         setImageUrl("")
         setMarketplaceUrl("")
-        setSelectedMarketplaceUrl("")
         setIsFormOpen(false)
     }
 
@@ -186,24 +173,6 @@ function GiftList({ eventId, isOwner }) {
                             onChange={e => setImageUrl(e.target.value)}
                             placeholder="https://..."
                         />
-                    </label>
-
-                    <label>
-                        Маркетплейс
-                        <select
-                            value={selectedMarketplaceUrl}
-                            onChange={e => {
-                                setSelectedMarketplaceUrl(e.target.value)
-                                if (e.target.value) setMarketplaceUrl(e.target.value)
-                            }}
-                        >
-                            <option value="">Выберите магазин или вставьте ссылку ниже</option>
-                            {marketplaces.map(marketplace => (
-                                <option key={marketplace.id} value={marketplace.base_url}>
-                                    {marketplace.name}
-                                </option>
-                            ))}
-                        </select>
                     </label>
 
                     <label>
