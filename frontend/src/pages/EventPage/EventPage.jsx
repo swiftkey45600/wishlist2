@@ -15,6 +15,8 @@ function EventPage() {
     const [event, setEvent] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
     const [showToast, setShowToast] = useState(false)
+    const user = JSON.parse(localStorage.getItem("user") || "null")
+    const isOwner = user?.id === event?.owner_id
 
     useEffect(() => {
         async function loadEvent() {
@@ -99,7 +101,7 @@ function EventPage() {
                         !isLoading && event && (
                             <>
                                 <EventDetailsCard event={event} />
-                                <GiftList eventId={id} />
+                                <GiftList eventId={id} isOwner={isOwner} />
                             </>
                         )
                     }

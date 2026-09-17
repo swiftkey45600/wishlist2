@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom"
 import "./HomePage.css"
 import "../../Styles/common.css"
 
-import { getEvents, createEvent, deleteEvent } from "../../application/eventApplication"
+import { getEvents, createEvent, deleteEvent, editEvent } from "../../application/eventApplication"
 
 import Sidebar from "../../components/Sidebar/Sidebar"
 import CreateEventForm from "../../components/Events/CreateEventForm/CreateEventForm"
@@ -41,6 +41,22 @@ function HomePage() {
     setEvents(events.filter(event => event.id !== eventId))
   }
 
+  async function handleEditEvent(event) {
+    const title = window.prompt("Название события", event.title)
+    if (title === null) return
+
+    const description = window.prompt("Описание события", event.description || "")
+    if (description === null) return
+
+    const place = window.prompt("Место события", event.place || "")
+    if (place === null) return
+
+    const updatedEvent = await editEvent(event.id, { title, description, place })
+    if (updatedEvent) {
+      setEvents(events.map(item => item.id === event.id ? updatedEvent : item))
+    }
+  }
+
   function handleOpenEvent(eventId) {
     navigate(`/events/${eventId}`)
   }
@@ -62,6 +78,7 @@ function HomePage() {
           events={events}
           onDeleteEvent={handleDeleteEvent}
           onOpenEvent={handleOpenEvent}
+          onEditEvent={handleEditEvent}
         />
       </div>
     </div>

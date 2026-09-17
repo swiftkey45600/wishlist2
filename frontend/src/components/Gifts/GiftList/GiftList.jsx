@@ -5,16 +5,13 @@ import GiftCard from "../GiftCard/GiftCard"
 import {
   getGiftsByEvent,
   createGift,
-  updateGiftStatus,
   deleteGift, 
-  reserveGift,
-  unreserveGift,
   editGift
 } from "../../../application/giftApplication"
 
 import GiftEditForm from "../GiftEditForm/GiftEditForm"
 
-function GiftList({ eventId }) {
+function GiftList({ eventId, isOwner }) {
     const [gifts, setGifts] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(null)
@@ -93,17 +90,14 @@ function GiftList({ eventId }) {
     }
 
     async function handleToggleStatus(gift) {
-        if (gift.status === "available") {
-            const user = JSON.parse(localStorage.getItem("user") || "null")
-            await reserveGift(gift.id, user?.name ?? "Аноним")
-        } else if (gift.reservation_id) {
-            await unreserveGift(gift.reservation_id)
+        const updatedGift = await editGift(gift.id, {
+            is_reserved: gift.status === "available"
+        })
+        if (updatedGift) {
+            setGifts(prev => prev.map(item => item.id === gift.id ? updatedGift : item))
         } else {
-            await updateGiftStatus(gift.id, "available")
+            setError("Не удалось изменить бронь подарка")
         }
-
-        const updated = await getGiftsByEvent(eventId)
-        setGifts(Array.isArray(updated) ? updated : [])
     }
 
     async function handleDeleteGift(giftId) {
@@ -112,7 +106,7 @@ function GiftList({ eventId }) {
     }
 
     async function handleMarkBought(giftId) {
-        const updated = await updateGiftStatus(giftId, "bought")
+        const updated = await editGift(giftId, { status: "bought" })
         if (updated) {
             setGifts(prev => prev.map(g => g.id === giftId ? updated : g))
         }
@@ -131,15 +125,17 @@ function GiftList({ eventId }) {
             <div className="gift-list-header">
                 <h2>Подарки • {gifts.length}</h2>
 
-                <button
-                    className="add-gift-button"
-                    onClick={() => setIsFormOpen(prev => !prev)}
-                >
-                    {isFormOpen ? "Отмена" : "+ Добавить подарок"}
-                </button>
+                {isOwner && (
+                    <button
+                        className="add-gift-button"
+                        onClick={() => setIsFormOpen(prev => !prev)}
+                    >
+                        {isFormOpen ? "Отмена" : "+ Добавить подарок"}
+                    </button>
+                )}
             </div>
 
-            {isFormOpen && (
+            {isOwner && isFormOpen && (
                 <form className="gift-create-form" onSubmit={handleSubmit}>
                     <div className="gift-create-row">
                         <label>
@@ -214,16 +210,16 @@ function GiftList({ eventId }) {
                         <GiftCard
                             key={gift.id}
                             gift={gift}
-                            onToggleStatus={handleToggleStatus}
-                            onDelete={handleDeleteGift}
-                            onMarkBought={handleMarkBought}
-                            onEdit={setEditingGift}
+                            onToggleStatus={!isOwner ? handleToggleStatus : undefined}
+                            onDelete={isOwner ? handleDeleteGift : undefined}
+                            onMarkBought={isOwner ? handleMarkBought : undefined}
+                            onEdit={isOwner ? setEditingGift : undefined}
                         />
                     ))}
                 </div>
             )}
 
-            {editingGift && (
+            {isOwner && editingGift && (
                 <GiftEditForm
                     gift={editingGift}
                     onChange={setEditingGift}

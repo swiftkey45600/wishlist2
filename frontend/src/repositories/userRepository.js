@@ -24,3 +24,8 @@ export async function deleteUser(userId) {
     const response = await api.delete(`/users/${userId}`, { headers: getAuthHeaders() })
     return response.data
 }
+
+export async function updateMe(userData) {
+    const response = await api.patch("/users/me", userData, { headers: getAuthHeaders() })
+    return response.data.user
+}

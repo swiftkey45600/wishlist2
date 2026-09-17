@@ -3,7 +3,8 @@ import {
     createEvent as createEventRepository,
     fetchUserEvents as fetchUserEventsRepository,
     fetchEvent as fetchEventRepository,
-    deleteEvent as deleteEventRepository
+    deleteEvent as deleteEventRepository,
+    updateEvent as updateEventRepository
 } from "../repositories/eventRepository"
 
 import { mockEvents } from "../mocks/mockEvents"
@@ -53,5 +54,14 @@ export async function deleteEvent(eventId) {
         return await deleteEventRepository(eventId)
     } catch (error) {
         console.error(error)
+    }
+}
+
+export async function editEvent(eventId, eventData) {
+    try {
+        return await updateEventRepository(eventId, eventData)
+    } catch (error) {
+        console.error(error)
+        return null
     }
 }

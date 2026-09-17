@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from app.models.event import EventCreateRequest
+from app.models.event import EventCreateRequest, EventUpdateRequest
 from app.models.user import User
 from app.services.event_service import EventService
 from app.repositories.event_repository import EventRepository
@@ -62,6 +62,26 @@ async def create_event(event_request: EventCreateRequest, current_user: User = D
     if not event:
         raise HTTPException(status_code=400, detail="Event cannot be created")
     return {"event": event}
+
+
+@router.patch("/{event_id}")
+async def update_event(
+    event_id: int,
+    event_request: EventUpdateRequest,
+    current_user: User = Depends(get_current_user),
+):
+    event = event_service.get_event(event_id)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if event.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Forbidden: you can only edit your own events")
+
+    for field_name in ("title", "description", "event_date", "place"):
+        value = getattr(event_request, field_name)
+        if value is not None:
+            setattr(event, field_name, value)
+
+    return {"event": event_service.update_event(event_id, event)}
 
 
 @router.delete("/{event_id}")

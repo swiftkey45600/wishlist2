@@ -1,6 +1,6 @@
 import "./EventCard.css"
 
-function EventCard({ event, onDeleteEvent, onOpenEvent }) {
+function EventCard({ event, onDeleteEvent, onOpenEvent, onEditEvent }) {
     return(
         <div
             className="event-card"
@@ -19,6 +19,7 @@ function EventCard({ event, onDeleteEvent, onOpenEvent }) {
                         onClick={(clickEvent) => {
                             clickEvent.preventDefault()
                             clickEvent.stopPropagation()
+                            onEditEvent(event)
                         }}
                     >
                         Изменить

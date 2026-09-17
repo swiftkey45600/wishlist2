@@ -46,3 +46,6 @@ class EventService:
 
     def delete_event(self, event_id: int) -> bool:
         return self.event_repository.delete_event(event_id)
+
+    def update_event(self, event_id: int, event: Event) -> Event | None:
+        return self.event_repository.update_event(event_id, event)

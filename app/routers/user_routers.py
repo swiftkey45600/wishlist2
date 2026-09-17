@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from app.models.user import User
+from app.models.user import User, UserUpdateRequest
 from app.services.user_service import UserService
 from app.repositories.user_repository import UserRepository
 from app.utils.jwt import get_current_user
@@ -22,6 +22,33 @@ async def get_my_profile(current_user: User = Depends(get_current_user)):
             "login": current_user.login,
             "birthday": current_user.birthday,
             "gender": current_user.gender
+        }
+    }
+
+
+@router.patch("/me")
+async def update_my_profile(
+    user_request: UserUpdateRequest,
+    current_user: User = Depends(get_current_user),
+):
+    if user_request.name is not None and not user_request.name.strip():
+        raise HTTPException(status_code=400, detail="Name cannot be empty")
+
+    updated_user = users_service.update_user(
+        current_user.id,
+        {
+            "name": user_request.name,
+            "birthday": user_request.birthday,
+            "gender": user_request.gender,
+        },
+    )
+    return {
+        "user": {
+            "id": updated_user.id,
+            "name": updated_user.name,
+            "login": updated_user.login,
+            "birthday": updated_user.birthday,
+            "gender": updated_user.gender,
         }
     }
 
@@ -67,7 +94,6 @@ async def delete_user(user_id: int, current_user: User = Depends(get_current_use
 
     users_service.delete_user(user_id)
     return {"status": "deleted"}
-
 
 
 

@@ -7,6 +7,9 @@ from app.repositories.contribution_repository import ContributionRepository
 from app.repositories.gift_repository import GiftRepository
 from app.repositories.image_repository import ImageRepository
 from app.repositories.marketplace_links_repository import MarketplacesLinksRepository
+from app.repositories.event_repository import EventRepository
+from app.services.reservation_service import ReservationService
+from app.models.user import User
 
 
 class GiftService:
@@ -16,11 +19,15 @@ class GiftService:
         image_repository: ImageRepository,
         marketplace_links_repository: MarketplacesLinksRepository,
         contribution_repository: ContributionRepository,
+        event_repository: EventRepository,
+        reservation_service: ReservationService,
     ):
         self.gift_repository = gift_repository
         self.image_repository = image_repository
         self.marketplace_links_repository = marketplace_links_repository
         self.contribution_repository = contribution_repository
+        self.event_repository = event_repository
+        self.reservation_service = reservation_service
 
     def _get_image_url(self, image_id: int) -> str:
         return f"/images/{image_id}"
@@ -69,16 +76,52 @@ class GiftService:
         return [self._prepare_gift_response(gift) for gift in gifts]
 
     def update_gift_status(self, gift_id: int, status: str) -> Gift:
+        if status != "bought":
+            raise HTTPException(status_code=400, detail="Invalid gift status")
         gift = self.gift_repository.update_gift_status(gift_id, status)
         if gift is None:
             raise HTTPException(status_code=404, detail="Gift not found")
         return self._prepare_gift_response(gift)
 
-    def update_gift(self, gift_id: int, data: dict) -> Gift:
-        gift = self.gift_repository.update_gift(gift_id, data)
-        if gift is None:
-            raise HTTPException(status_code=404, detail="Gift not found")
-        return self._prepare_gift_response(gift)
+    def update_gift(
+        self,
+        gift_id: int,
+        data: dict,
+        current_user: User,
+    ) -> Gift:
+        gift = self.get_gift_by_id(gift_id)
+        event = self.event_repository.get_event_by_id(gift.event_id)
+        if event is None:
+            raise HTTPException(status_code=404, detail="Event not found")
+
+        if event.owner_id != current_user.id:
+            if set(data) - {"is_reserved"}:
+                raise HTTPException(status_code=403, detail="Only the event owner can edit a gift")
+            if "is_reserved" not in data:
+                raise HTTPException(status_code=400, detail="is_reserved is required")
+
+            if data["is_reserved"]:
+                self.reservation_service.reserve_gift(
+                    gift_id,
+                    reserver_name=current_user.name,
+                    reserver_id=current_user.id,
+                )
+            else:
+                self.reservation_service.unreserve_gift_by_user(gift_id, current_user.id)
+
+            return self.get_gift_by_id(gift_id)
+
+        if "is_reserved" in data:
+            raise HTTPException(status_code=403, detail="Event owner cannot reserve their own gift")
+
+        if data.get("image_id") is not None and self.image_repository.get_image_by_id(data["image_id"]) is None:
+            raise HTTPException(status_code=404, detail="Image not found")
+
+        if data.get("status") is not None and data["status"] != "bought":
+            raise HTTPException(status_code=400, detail="Invalid gift status")
+
+        updated_gift = self.gift_repository.update_gift(gift_id, data)
+        return self._prepare_gift_response(updated_gift)
 
     def delete_gift(self, gift_id: int) -> None:
         if not self.gift_repository.delete_gift(gift_id):
