@@ -2,11 +2,12 @@ from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from app.config import get_jwt_secret_key
 from app.repositories.user_repository import UserRepository
 
 _user_repository = UserRepository()
 
-SECRET_KEY = "secret-key"
+SECRET_KEY = get_jwt_secret_key()
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 90
 
