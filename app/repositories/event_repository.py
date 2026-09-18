@@ -51,3 +51,15 @@ class EventRepository:
         with get_connection() as conn:
             cursor = conn.execute("DELETE FROM events WHERE id = ?", (event_id,))
         return cursor.rowcount > 0
+
+    def update_event(self, event_id: int, event: Event) -> Event | None:
+        with get_connection() as conn:
+            conn.execute(
+                """
+                UPDATE events
+                SET title = ?, description = ?, event_date = ?, place = ?
+                WHERE id = ?
+                """,
+                (event.title, event.description, event.event_date, event.place, event_id),
+            )
+        return self.get_event_by_id(event_id)

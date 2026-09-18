@@ -7,8 +7,13 @@ function CreateEventForm({ onCreateEvent }) {
     const [place, setPlace] = useState("")
     const [eventDate, setEventDate] = useState("")
 
+    function handleSubmit(event) {
+        event.preventDefault()
+        onCreateEvent(title, description, place, eventDate)
+    }
+
     return (
-        <div className="create-event-form">
+        <form className="create-event-form" onSubmit={handleSubmit}>
             <h2>Создать новое событие</h2>
 
             <div className="create-event-form-fields">
@@ -37,15 +42,13 @@ function CreateEventForm({ onCreateEvent }) {
                         type="datetime-local"
                         placeholder="Время"
                         value={eventDate}
-                        onChange={
-                            (event) => {console.log(event.target.value); 
-                            setEventDate(event.target.value)}}
+                        onChange={(event) => setEventDate(event.target.value)}
                     />
 
-                    <button onClick={() => onCreateEvent(title, description, place, eventDate)}>Создать событие</button>
+                    <button type="submit">Создать событие</button>
                 </div>
             </div>
-        </div>
+        </form>
     )
 }
 

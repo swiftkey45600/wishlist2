@@ -1,9 +1,9 @@
 import "./ProfileCard.css"
 
-function ProfileCard({ user }) {
+function ProfileCard({ user, onEditProfile }) {
     return (
         <div className="profile-card">
-            <button className="edit-profile-button">
+            <button className="edit-profile-button" onClick={() => onEditProfile(user)}>
                 Изменить профиль      
             </button>
 

@@ -29,5 +29,8 @@ class UserService:
     def delete_user(self, user_id: int) -> None:
         self.user_repository.delete_user(user_id)
 
+    def update_user(self, user_id: int, data: dict) -> User | None:
+        return self.user_repository.update_user(user_id, data)
+
     def list_users(self) -> list[User]:
         return self.user_repository.list_users()

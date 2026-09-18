@@ -20,3 +20,11 @@ class EventCreateRequest:
     description: str | None = None
     event_date: str | None = None
     place: str | None = None
+
+
+@dataclass
+class EventUpdateRequest:
+    title: str | None = None
+    description: str | None = None
+    event_date: str | None = None
+    place: str | None = None

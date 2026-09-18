@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom"
 import "./HomePage.css"
 import "../../Styles/common.css"
 
-import { getEvents, createEvent, deleteEvent } from "../../application/eventApplication"
+import { getEvents, createEvent, deleteEvent, editEvent } from "../../application/eventApplication"
 
 import Sidebar from "../../components/Sidebar/Sidebar"
 import CreateEventForm from "../../components/Events/CreateEventForm/CreateEventForm"
@@ -13,6 +13,7 @@ import EventsList from "../../components/Events/EventsList/EventsList"
 function HomePage() {
   const navigate = useNavigate()
   const [events, setEvents] = useState([])
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     async function loadEvents() {
@@ -25,6 +26,13 @@ function HomePage() {
 
 
   async function handleCreateEvent(title, description, place, eventDate) {
+    setError(null)
+
+    if (!title.trim()) {
+      setError("Введите название события")
+      return
+    }
+
     const createdEvent = await createEvent({
       title,
       description,
@@ -32,13 +40,33 @@ function HomePage() {
       event_date: eventDate
     })
 
-    setEvents([...events, createdEvent])
+    if (createdEvent) {
+      setEvents([...events, createdEvent])
+    } else {
+      setError("Не удалось создать событие")
+    }
   }
 
   async function handleDeleteEvent(eventId) {
     await deleteEvent(eventId)
 
     setEvents(events.filter(event => event.id !== eventId))
+  }
+
+  async function handleEditEvent(event) {
+    const title = window.prompt("Название события", event.title)
+    if (title === null) return
+
+    const description = window.prompt("Описание события", event.description || "")
+    if (description === null) return
+
+    const place = window.prompt("Место события", event.place || "")
+    if (place === null) return
+
+    const updatedEvent = await editEvent(event.id, { title, description, place })
+    if (updatedEvent) {
+      setEvents(events.map(item => item.id === event.id ? updatedEvent : item))
+    }
   }
 
   function handleOpenEvent(eventId) {
@@ -58,10 +86,13 @@ function HomePage() {
 
         <CreateEventForm onCreateEvent={handleCreateEvent} />
 
+        {error && <p className="error-text">{error}</p>}
+
         <EventsList 
           events={events}
           onDeleteEvent={handleDeleteEvent}
           onOpenEvent={handleOpenEvent}
+          onEditEvent={handleEditEvent}
         />
       </div>
     </div>

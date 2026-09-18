@@ -2,7 +2,7 @@ import "./EventsList.css"
 
 import EventCard from "../EventCard/EventCard"
 
-function EventsList({ events, onDeleteEvent, onOpenEvent }) {
+function EventsList({ events, onDeleteEvent, onOpenEvent, onEditEvent }) {
     return (
         <div className="events-list">
 			<h2>Список событий</h2>
@@ -11,8 +11,9 @@ function EventsList({ events, onDeleteEvent, onOpenEvent }) {
 					<EventCard
                         key={event.id}
 						event={event}
-						onDeleteEvent={onDeleteEvent}
+                        onDeleteEvent={onDeleteEvent}
                         onOpenEvent={onOpenEvent}
+                        onEditEvent={onEditEvent}
 					/>
 				)
 			}

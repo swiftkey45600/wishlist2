@@ -20,3 +20,10 @@ class UserRegisterRequest:
 class UserLoginRequest:
     login: str
     password: str
+
+
+@dataclass
+class UserUpdateRequest:
+    name: str | None = None
+    birthday: str | None = None
+    gender: str | None = None
