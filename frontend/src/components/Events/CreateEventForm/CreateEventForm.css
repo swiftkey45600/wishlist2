@@ -1,81 +1,79 @@
 .create-event-form {
-    margin-bottom: 28px;
-    padding: 36px;
-
-    border-radius: var(--card-radius);
-
-    background-color: var(--card-background);
-    box-shadow: var(--shadow-card);
+    padding: 0;
 }
 
 .create-event-form h2 {
-    margin-bottom: 20px;
-
-    font-size: 28px;
+    margin: 0 0 18px;
+    font-size: 20px;
 }
-
-
 
 .create-event-form-fields {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-}
-
-.create-event-form-header {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
+    gap: 12px;
 }
 
-.create-event-form-footer {
-    margin-top: 16px;
-
+.create-event-field {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 16px;
+    gap: 6px;
+    color: #555a67;
+    font-size: 13px;
+    font-weight: 650;
 }
 
-.create-event-form-fields input {
-    padding: 16px 20px;
-
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-medium);
-
-    font-size: 17px;
-
-    transition: var(--transition-fast);
-}
-
-.create-event-form-fields input:focus {
-    outline: none;
-
-    border-color: var(--primary-color);
-
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary-color) 12%, transparent);
-}
-
-.create-event-form-fields button {
+.create-event-form-fields input,
+.create-event-form-fields textarea {
     width: 100%;
-
-    min-height: 52px;
-
-    padding: 16px 28px;
-
-    border: none;
-    border-radius: var(--border-radius-medium);
-
-    background: var(--primary-color);
-    color: var(--text-on-primary);
-    font-size: 16px;
-
-    cursor: pointer;
-
-    transition: var(--transition-fast);
+    padding: 10px 11px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    outline: none;
+    background: #fff;
+    color: var(--text);
+    font: inherit;
 }
 
-.create-event-form-fields button:hover {
-    opacity: 0.92;
+.create-event-form-fields textarea {
+    resize: vertical;
+}
 
-    transform: translateY(-1px);
+.create-event-form-fields input[type="date"] {
+    resize: none;
+}
+
+.create-event-form-fields input:focus,
+.create-event-form-fields textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(101, 92, 255, .12);
+}
+
+.create-event-error {
+    margin: 0;
+    color: var(--danger);
+    font-size: 13px;
+}
+
+.create-event-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 7px;
+}
+
+.create-event-actions button {
+    padding: 10px 15px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.create-event-secondary {
+    border: 1px solid var(--line);
+    background: #fff;
+    color: #555b68;
+}
+
+.create-event-primary {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 6px 15px #655cff2b;
 }
