@@ -28,3 +28,6 @@ def _column_exists(connection: sqlite3.Connection, table_name: str, column_name:
 def _run_migrations(connection: sqlite3.Connection) -> None:
     if not _column_exists(connection, "gifts", "image_id"):
         connection.execute("ALTER TABLE gifts ADD COLUMN image_id INTEGER")
+
+    if not _column_exists(connection, "reservations", "user_id"):
+        connection.execute("ALTER TABLE reservations ADD COLUMN user_id INTEGER")
