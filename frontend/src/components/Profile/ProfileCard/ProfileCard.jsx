@@ -1,21 +1,14 @@
 import "./ProfileCard.css"
 
 function ProfileCard({ user }) {
+    const initial = (user?.name || "П").charAt(0).toUpperCase()
+
     return (
-        <div className="profile-card">
-            <button className="edit-profile-button">
-                Изменить профиль      
-            </button>
-
-            <div className="profile-avatar">
-                <img src="https://via.placeholder.com/96" alt="Avatar" />
-            </div>
-
-            <div className="profile-info">
-                <h2>{user?.name || "Пользователь"}</h2>
-                <p>{user?.login || "Не задан"}</p>
-                {user?.birthday && <p>Дата рождения: {user.birthday}</p>}
-                {user?.gender && <p>Пол: {user.gender}</p>}
+        <div className="profile-hero">
+            <div className="profile-avatar">{initial}</div>
+            <div>
+                <div className="profile-hero-name">{user?.name || "Пользователь"}</div>
+                <div className="profile-hero-login">@{user?.login || "user"}</div>
             </div>
         </div>
     )

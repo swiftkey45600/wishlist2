@@ -1,47 +1,65 @@
-import { NavLink } from "react-router-dom"
+import { NavLink, useNavigate } from "react-router-dom"
 
 import "./Sidebar.css"
 
-function Sidebar() {
-  const user = JSON.parse(localStorage.getItem("user") || "null")
+function Sidebar({ activeSection }) {
+  const navigate = useNavigate()
+
+  function handleLogout() {
+    localStorage.removeItem("accessToken")
+    localStorage.removeItem("user")
+    navigate("/auth")
+  }
+
   return (
-    <div className="sidebar">
-      <div className="sidebar-top">
-        <h1>Wishlist</h1>
+    <aside className="sidebar">
+      <div className="label">Навигация</div>
+      <div className="nav">
+        <NavLink
+          to='/'
+          end
+          className={({ isActive }) =>
+          isActive || activeSection === "events"
+            ? "sidebar-link active"
+            : "sidebar-link"
+          }
+        >
+          Мои события
+        </NavLink>
 
-        <div className="sidebar-menu">
+        <NavLink
+          to='/presents'
+          className={({ isActive }) => isActive ? "sidebar-link active" : "sidebar-link"}
+        >
+          Мои подарки
+        </NavLink>
 
-          <NavLink
-            to="/"
-            className={({ isActive }) =>
-              isActive
-                ? "sidebar-link active"
-                : "sidebar-link"
-            }
-          >
-            Мои события
-          </NavLink>
+        <button type="button" className="sidebar-link future" disabled>
+          Публичные события
+        </button>
 
-          <NavLink
-            to="/profile"
-            className={({ isActive }) =>
-              isActive
-                ? "sidebar-link active"
-                : "sidebar-link"
-            }
-          >
-            Профиль
-          </NavLink>
-
-        </div>
       </div>
 
-      <div className="sidebar-bottom">
-          <div className="sidebar-profile">
-            {user ? user.name : "Гость"}
-          </div>
+      <div className="label" style={{ marginTop: "27px" }}>Аккаунт</div>
+      <div className="nav">
+
+        <NavLink
+          to='/profile'
+          className={({ isActive }) =>
+          isActive
+            ? "sidebar-link active"
+            : "sidebar-link"
+          }
+        >
+          Профиль
+        </NavLink>
+
+        <button type="button" className="sidebar-link future" disabled>
+          Настройки
+        </button>
+
       </div>
-    </div>
+    </aside>
   )
 }
 

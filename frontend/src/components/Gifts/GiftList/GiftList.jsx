@@ -13,6 +13,7 @@ import {
 } from "../../../application/giftApplication"
 
 import GiftEditForm from "../GiftEditForm/GiftEditForm"
+import ConfirmDeleteModal from "../../ConfirmDeleteModal/ConfirmDeleteModal"
 
 function GiftList({ eventId }) {
     const [gifts, setGifts] = useState([])
@@ -26,6 +27,7 @@ function GiftList({ eventId }) {
     const [formError, setFormError] = useState(null)
     const [marketplaceUrl, setMarketplaceUrl] = useState("")
     const [editingGift, setEditingGift] = useState(null)
+    const [giftToDelete, setGiftToDelete] = useState(null)
 
     useEffect(() => {
         if (!eventId) {
@@ -104,9 +106,10 @@ function GiftList({ eventId }) {
         setGifts(Array.isArray(updated) ? updated : [])
     }
 
-    async function handleDeleteGift(giftId) {
-        await deleteGift(giftId)
-        setGifts(prev => prev.filter(g => g.id !== giftId))
+    async function handleDeleteGift() {
+        await deleteGift(giftToDelete.id)
+        setGifts(prev => prev.filter(gift => gift.id !== giftToDelete.id))
+        setGiftToDelete(null)
     }
 
     async function handleMarkBought(giftId) {
@@ -126,9 +129,11 @@ function GiftList({ eventId }) {
 
     return (
         <div className="gift-list">
-            <div className="gift-list-header">
-                <h2>Подарки • {gifts.length}</h2>
-
+            <div className="gift-section-heading">
+                <div>
+                    <h2>Подарки события</h2>
+                    <span>{gifts.length} подарка</span>
+                </div>
                 <button
                     className="add-gift-button"
                     onClick={() => setIsFormOpen(prev => !prev)}
@@ -138,7 +143,8 @@ function GiftList({ eventId }) {
             </div>
 
             {isFormOpen && (
-                <form className="gift-create-form" onSubmit={handleSubmit}>
+                <form className="gift-create-form gift-modal-form" onSubmit={handleSubmit}>
+                    <h3>Добавить подарок</h3>
                     <div className="gift-create-row">
                         <label>
                             Название
@@ -188,9 +194,12 @@ function GiftList({ eventId }) {
 
                     {formError && <p className="gift-form-error">{formError}</p>}
 
-                    <button type="submit" className="add-gift-button">
-                        Сохранить подарок
-                    </button>
+                    <div className="gift-modal-actions">
+                        <button type="button" className="gift-secondary-button" onClick={() => setIsFormOpen(false)}>
+                            Отмена
+                        </button>
+                        <button type="submit" className="add-gift-button">Добавить</button>
+                    </div>
                 </form>
             )}
 
@@ -203,7 +212,7 @@ function GiftList({ eventId }) {
             )}
 
             {!isLoading && !error && gifts.length === 0 && (
-                <p className="gift-list-status">Пока нет подарков для этого события.</p>
+                <p className="gift-list-status">Подарки не найдены.</p>
             )}
 
             {!isLoading && !error && gifts.length > 0 && (
@@ -213,7 +222,7 @@ function GiftList({ eventId }) {
                             key={gift.id}
                             gift={gift}
                             onToggleStatus={handleToggleStatus}
-                            onDelete={handleDeleteGift}
+                            onDelete={(giftId) => setGiftToDelete(gifts.find(gift => gift.id === giftId))}
                             onMarkBought={handleMarkBought}
                             onEdit={setEditingGift}
                         />
@@ -235,6 +244,14 @@ function GiftList({ eventId }) {
                         })
                     }
                     onCancel={() => setEditingGift(null)}
+                />
+            )}
+
+            {giftToDelete && (
+                <ConfirmDeleteModal
+                    itemName="подарок"
+                    onConfirm={handleDeleteGift}
+                    onCancel={() => setGiftToDelete(null)}
                 />
             )}
         </div>

@@ -1,50 +1,80 @@
 import "./CreateEventForm.css"
 import { useState } from "react"
 
-function CreateEventForm({ onCreateEvent }) {
+function CreateEventForm({ onCreateEvent, onCancel }) {
     const [title, setTitle] = useState("")
     const [description, setDescription] = useState("")
     const [place, setPlace] = useState("")
     const [eventDate, setEventDate] = useState("")
+    const [error, setError] = useState("")
+
+    function handleSubmit(event) {
+        event.preventDefault()
+        const trimmedTitle = title.trim()
+
+        if (!trimmedTitle) {
+            setError("Введите название события")
+            return
+        }
+
+        setError("")
+        onCreateEvent(trimmedTitle, description.trim(), place.trim(), eventDate)
+    }
 
     return (
         <div className="create-event-form">
-            <h2>Создать новое событие</h2>
+            <h2>Создать событие</h2>
 
-            <div className="create-event-form-fields">
-                <div className="create-event-form-header">
+            <form className="create-event-form-fields" onSubmit={handleSubmit}>
+                <label className="create-event-field">
+                    Название
                     <input
-                        placeholder="Название события"
                         value={title}
                         onChange={(event) => setTitle(event.target.value)}
+                        placeholder="Например, День рождения"
+                        autoFocus
                     />
+                </label>
 
+                <label className="create-event-field">
+                    Описание
                     <input
-                        placeholder="Описание события"
                         value={description}
                         onChange={(event) => setDescription(event.target.value)}
+                        placeholder="Описание события"
+                        rows="3"
                     />
-                </div>
+                </label>
 
-                <div className="create-event-form-footer">
+                <label className="create-event-field">
+                    Дата
                     <input
-                        placeholder="Место"
+                        value={eventDate}
+                        type="date"
+                        onChange={(event) => setEventDate(event.target.value)}
+                    />
+                </label>
+
+                <label className="create-event-field">
+                    Место
+                    <input
                         value={place}
                         onChange={(event) => setPlace(event.target.value)}
+                        placeholder="Город или место"
                     />
+                </label>
 
-                    <input
-                        type="datetime-local"
-                        placeholder="Время"
-                        value={eventDate}
-                        onChange={
-                            (event) => {console.log(event.target.value); 
-                            setEventDate(event.target.value)}}
-                    />
+                {error && <p className="create-event-error">{error}</p>}
 
-                    <button onClick={() => onCreateEvent(title, description, place, eventDate)}>Создать событие</button>
+                <div className="create-event-actions">
+                    <button type="button" className="create-event-secondary" onClick={onCancel}>
+                        Отмена
+                    </button>
+                    <button type="submit" className="create-event-primary">
+                        Создать
+                    </button>
                 </div>
-            </div>
+            </form>
         </div>
     )
 }

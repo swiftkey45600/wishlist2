@@ -1,74 +1,44 @@
-.profile-card {
-    position: relative;
+.profile-hero {
     display: flex;
     align-items: center;
-
-    gap: 32px;
-
-    padding: 32px;
-    margin-bottom: 32px;
-
-    background: var(--card-background);
-
-    border-radius: var(--card-radius);
+    gap: 20px;
+    padding: 28px 28px 25px;
+    background: linear-gradient(120deg, #f2f0ff, #fff);
 }
-
-
-.edit-profile-button {
-    position: absolute;
-
-    top: 24px;
-    right: 24px;
-
-    padding: 12px 24px;
-
-    border: 1px solid var(--primary-color);
-    border-radius: var(--border-radius-medium);
-
-    background: var(--card-background);
-    color: var(--primary-color);
-
-    font-size: 16px;
-    font-weight: 600;
-
-    cursor: pointer;
-
-    transition: var(--transition-fast);
-}
-
-.edit-profile-button:hover {
-    background: var(--primary-color);
-    color: var(--text-on-primary);
-}
-
 
 .profile-avatar {
-    width: 140px;
-    height: 140px;
-
-    border-radius: 50%;
-
-    background: var(--background-color);
-
+    height: 96px;
+    width: 96px;
+    border: 4px solid #fff;
+    border-radius: 24px;
+    background: #e4e1ff;
+    color: var(--primary-dark);
     display: flex;
     align-items: center;
     justify-content: center;
-
-    font-size: 64px;
+    font-size: 42px;
+    font-weight: 800;
+    box-shadow: 0 7px 18px rgba(0, 0, 0, .05);
 }
 
-.profile-info {
-    display: flex;
-    flex-direction: column;
-
-    gap: 12px;
+.profile-hero-name {
+    margin-bottom: 5px;
+    font-size: 23px;
+    font-weight: 800;
 }
 
-.profile-info h2 {
-    font-size: 40px;
+.profile-hero-login {
+    color: var(--muted);
 }
 
-.profile-info p {
-    color: var(--text-secondary-color);
-    font-size: 20px;
+@media (max-width: 600px) {
+    .profile-hero {
+        padding: 22px;
+    }
+
+    .profile-avatar {
+        width: 68px;
+        height: 68px;
+        border-radius: 20px;
+    }
 }

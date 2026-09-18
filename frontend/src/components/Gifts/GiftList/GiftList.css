@@ -1,58 +1,73 @@
 .gift-list {
-    background: var(--card-background);
-
-    padding: 36px;
-
-    border-radius: var(--card-radius);
-    box-shadow: var(--shadow-card);
+    padding: 0;
 }
 
-
-.gift-list-header {
+.gift-section-heading {
     display: flex;
     justify-content: space-between;
     align-items: center;
-
-    margin-bottom: 32px;
+    margin: 27px 0 14px;
 }
+
+.gift-section-heading h2 { margin: 0; font-size: 20px; }
+.gift-section-heading span { color: var(--muted); font-size: 13px; }
 
 .gift-create-form {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    margin-bottom: 24px;
-    padding: 20px;
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    border-radius: var(--border-radius-medium);
-    background: var(--surface-color);
+    gap: 15px;
+    margin-bottom: 18px;
+    padding: 23px 28px;
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    background: var(--card);
+    box-shadow: var(--shadow);
+}
+
+.gift-modal-form h3 {
+    margin: 0 0 2px;
+    color: var(--text);
+    font-size: 18px;
 }
 
 .gift-create-row {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
+    gap: 15px;
 }
 
 .gift-create-form label {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    font-weight: 600;
+    gap: 7px;
+    color: #555a67;
+    font-size: 12px;
+    font-weight: 700;
 }
 
 .gift-create-form input,
 .gift-create-form textarea {
-    padding: 12px 14px;
-    border: 1px solid rgba(0, 0, 0, 0.16);
-    border-radius: var(--border-radius-medium);
+    box-sizing: border-box;
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--text);
     font-size: 14px;
-    background: var(--background-color);
-    color: var(--text-color);
+    outline: none;
+    transition: var(--transition-fast);
 }
 
 .gift-create-form textarea {
-    resize: vertical;
     min-height: 96px;
+    resize: vertical;
+}
+
+.gift-create-form input:focus,
+.gift-create-form textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px #655cff1c;
 }
 
 .gift-form-error {
@@ -61,20 +76,17 @@
 }
 
 .gift-list h2 {
-    font-size: 42px;
+    font-size: 22px;
 }
 
 .add-gift-button {
-    min-height: 52px;
+    padding: 10px 15px;
+    border-radius: 10px;
 
-    padding: 16px 28px;
-
-    border: none;
-    border-radius: var(--border-radius-medium);
-
-    background: var(--primary-color);
-    color: var(--text-on-primary);
-    font-size: 16px;
+    background: var(--primary);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
 
     cursor: pointer;
 
@@ -87,14 +99,22 @@
     transform: translateY(-1px);
 }
 
-
 .gift-grid {
-    display: grid;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
 
-    grid-template-columns: repeat(
-        auto-fill,
-        minmax(250px,1fr)
-    );
+.gift-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 3px; }
+.gift-secondary-button, .gift-danger-button { padding: 10px 15px; border-radius: 10px; font-weight: 700; cursor: pointer; }
+.gift-secondary-button { border: 1px solid var(--line); background: #fff; color: #555b68; }
+.gift-danger-button { border: 1px solid #f0d9de; background: #fff; color: var(--danger); }
+.gift-list-status { color: var(--muted); }
 
-    gap: 24px;
+@media (max-width: 600px) {
+    .gift-create-row {
+        grid-template-columns: 1fr;
+    }
+
+    .gift-create-form { padding: 20px; }
 }
