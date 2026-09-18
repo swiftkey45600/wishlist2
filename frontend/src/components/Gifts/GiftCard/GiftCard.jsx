@@ -1,66 +1,47 @@
 import "./GiftCard.css"
 
 function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit }) {
-    const toggleText = gift.status === "available" ? "Занять" : "Снять бронь"
-
     return (
         <div className="gift-card">
-            <img
-                className="gift-image"
-                src={gift.picture_url || "https://via.placeholder.com/300x200?text=No+Image"}
-                alt={gift.title}
-            />
-            <h3>{gift.title}</h3>
-            
-            {gift.marketplace_url && (
-                <a
-                    href={gift.marketplace_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="marketplace-link"
-                >
-                    Посмотреть на маркетплейсе →
-                </a>
-            )}
-
-            <p className="gift-status-label">Статус: {gift.status}</p>
-
-            <div className="gift-card-footer">
-                <span>{gift.price} ₽</span>
-
-                <div className="gift-actions">
+            <div className="gift-card-main">
+                <img
+                    className="gift-image"
+                    src={gift.picture_url || "https://via.placeholder.com/120x120?text=Gift"}
+                    alt={gift.title}
+                />
+                <div className="gift-card-info">
+                    <h3>{gift.title}</h3>
+                    <p className="gift-description">{gift.description || "Описание подарка пока не добавлено."}</p>
+                    <strong>{gift.price} ₽</strong>
+                </div>
+                <div className="gift-card-right">
+                    <span className={`gift-status ${gift.status}`}>{gift.status}</span>
                     {onToggleStatus && (
                         <button
-                            className="edit-gift-button"
+                            className="gift-secondary-button"
                             onClick={() => onToggleStatus(gift)}
                         >
-                            {toggleText}
+                            {gift.status === "available" ? "Забронировать" : "Отменить"}
                         </button>
                     )}
-
                     {gift.status === "reserved" && onMarkBought && (
                         <button
-                            className="bought-button"
+                            className="gift-secondary-button"
                             onClick={() => onMarkBought(gift.id)}
                         >
-                            Куплено ✓
+                            Куплено
                         </button>
                     )}
+                </div>
+            </div>
 
-                    {onEdit && (
-                        <button className="edit-gift-button" onClick={() => onEdit(gift)}>
-                            ✏️
-                        </button>
-                    )}
-
-                    {onDelete && (
-                        <button
-                            className="delete-gift-button"
-                            onClick={() => onDelete(gift.id)}
-                        >
-                            🗑️
-                        </button>
-                    )}
+            <div className="gift-card-footer">
+                {gift.marketplace_url ? (
+                    <a className="gift-marketplace" href={gift.marketplace_url} target="_blank" rel="noopener noreferrer">Открыть товар ↗</a>
+                ) : <span className="gift-marketplace">Маркетплейс не указан</span>}
+                <div className="gift-actions">
+                    {onEdit && <button className="gift-secondary-button" onClick={() => onEdit(gift)}>Изменить</button>}
+                    {onDelete && <button className="gift-danger-button" onClick={() => onDelete(gift.id)}>Удалить</button>}
                 </div>
             </div>
         </div>

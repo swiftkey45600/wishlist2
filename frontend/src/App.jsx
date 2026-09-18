@@ -5,6 +5,7 @@ import EventPage from "./pages/EventPage/EventPage"
 import ProfilePage from "./pages/ProfilePage/ProfilePage";
 import AuthPage from "./pages/AuthPage/AuthPage"
 import PublicEventPage from "./pages/PublicEventPage/PublicEventPage"
+import PresentsPage from "./pages/PresentsPage/PresentsPage"
 
 function ProtectedRoute({ children }) {
     const token = localStorage.getItem("accessToken")
@@ -31,6 +32,11 @@ function App() {
         element={<ProtectedRoute><ProfilePage /></ProtectedRoute>}
       />
 
+      <Route
+        path="/presents"
+        element={<ProtectedRoute><PresentsPage /></ProtectedRoute>}
+      />
+
       <Route 
         path="/events/:id" 
         element={<ProtectedRoute><EventPage /></ProtectedRoute>}
@@ -39,6 +45,8 @@ function App() {
       <Route 
         path="/share/:token"
         element={<PublicEventPage />} />
+
+      <Route path="*" element={<Navigate to="/auth" replace />} />
     </Routes>
   )
 }

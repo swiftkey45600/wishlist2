@@ -1,69 +1,58 @@
 .sidebar {
-    width: 300px;
-    height: 100vh;
-
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-
-    background: var(--card-background);
-
-    padding: 32px;
-
+    min-height: calc(100vh - 70px);
     border-right: 1px solid var(--border-color);
+    padding: 25px 17px;
 }
 
-.sidebar-top h1 {
-    margin-bottom: 48px;
-
-    font-size: 42px;
+.label {
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #a0a4af;
+    margin: 9px 12px;
 }
 
-.sidebar-menu {
-    margin-top: 24px;
-    
-    display: flex;
-    flex-direction: column;
-
-    gap: 12px;
+.nav {
+    display: grid;
+    gap: 4px;
 }
-
-
-.sidebar-bottom {
-    color: var(--text-secondary-color);
-}
-
-.sidebar-profile {
-    padding: 16px;
-
-    border-radius: var(--border-radius-medium);
-
-    background: var(--surface-color);
-}
-
 
 .sidebar-link {
     display: block;
-
-    padding: 16px 20px;
-
-    border-radius: var(--border-radius-medium);
-
-    color: var(--text-color);
-
-    text-decoration: none;
-
-    font-size: 20px;
-
-    transition: var(--transition-fast);
-}
-
-.sidebar-link:hover {
-    background: var(--primary-color-soft);
+    width: 100%;
+    background: transparent;
+    text-align: left;
+    padding: 11px 12px;
+    border: 0;
+    border-radius: 10px;
+    color: #5e6370;
+    font-size: 14px;
+    transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .sidebar-link.active {
-    background: var(--surface-color);
+    background: #eceaff;
     color: var(--primary-color);
-    font-weight: 600;
+    font-weight: 700;
+}
+
+.sidebar-link:hover {
+    background: #f0efff;
+}
+
+.sidebar-link.future::after {
+    content: "будущее";
+    float: right;
+    margin-top: 1px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    background: #eceaff;
+    color: var(--primary-color);
+    font-size: 8px;
+}
+
+@media (max-width: 800px) {
+    .sidebar {
+        display: none;
+    }
 }

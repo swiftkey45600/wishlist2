@@ -10,6 +10,7 @@ import {
 } from "../../../application/giftApplication"
 
 import GiftEditForm from "../GiftEditForm/GiftEditForm"
+import ConfirmDeleteModal from "../../ConfirmDeleteModal/ConfirmDeleteModal"
 
 function GiftList({ eventId, isOwner }) {
     const [gifts, setGifts] = useState([])
@@ -23,15 +24,10 @@ function GiftList({ eventId, isOwner }) {
     const [formError, setFormError] = useState(null)
     const [marketplaceUrl, setMarketplaceUrl] = useState("")
     const [editingGift, setEditingGift] = useState(null)
+    const [giftToDelete, setGiftToDelete] = useState(null)
 
     useEffect(() => {
         async function loadGifts() {
-            if (!eventId) {
-                setGifts([])
-                setIsLoading(false)
-                return
-            }
-
             setIsLoading(true)
             setError(null)
 
@@ -100,9 +96,10 @@ function GiftList({ eventId, isOwner }) {
         }
     }
 
-    async function handleDeleteGift(giftId) {
-        await deleteGift(giftId)
-        setGifts(prev => prev.filter(g => g.id !== giftId))
+    async function handleDeleteGift() {
+        await deleteGift(giftToDelete.id)
+        setGifts(prev => prev.filter(gift => gift.id !== giftToDelete.id))
+        setGiftToDelete(null)
     }
 
     async function handleMarkBought(giftId) {
@@ -122,21 +119,22 @@ function GiftList({ eventId, isOwner }) {
 
     return (
         <div className="gift-list">
-            <div className="gift-list-header">
-                <h2>Подарки • {gifts.length}</h2>
-
-                {isOwner && (
-                    <button
-                        className="add-gift-button"
-                        onClick={() => setIsFormOpen(prev => !prev)}
-                    >
-                        {isFormOpen ? "Отмена" : "+ Добавить подарок"}
-                    </button>
-                )}
+            <div className="gift-section-heading">
+                <div>
+                    <h2>Подарки события</h2>
+                    <span>{gifts.length} подарка</span>
+                </div>
+                {isOwner && <button
+                    className="add-gift-button"
+                    onClick={() => setIsFormOpen(prev => !prev)}
+                >
+                    {isFormOpen ? "Отмена" : "+ Добавить подарок"}
+                </button>}
             </div>
 
             {isOwner && isFormOpen && (
-                <form className="gift-create-form" onSubmit={handleSubmit}>
+                <form className="gift-create-form gift-modal-form" onSubmit={handleSubmit}>
+                    <h3>Добавить подарок</h3>
                     <div className="gift-create-row">
                         <label>
                             Название
@@ -176,7 +174,7 @@ function GiftList({ eventId, isOwner }) {
                     </label>
 
                     <label>
-                        Ссылка на товар
+                        Ссылка на маркетплейс
                         <input
                             value={marketplaceUrl}
                             onChange={e => setMarketplaceUrl(e.target.value)}
@@ -186,9 +184,12 @@ function GiftList({ eventId, isOwner }) {
 
                     {formError && <p className="gift-form-error">{formError}</p>}
 
-                    <button type="submit" className="add-gift-button">
-                        Сохранить подарок
-                    </button>
+                    <div className="gift-modal-actions">
+                        <button type="button" className="gift-secondary-button" onClick={() => setIsFormOpen(false)}>
+                            Отмена
+                        </button>
+                        <button type="submit" className="add-gift-button">Добавить</button>
+                    </div>
                 </form>
             )}
 
@@ -201,7 +202,7 @@ function GiftList({ eventId, isOwner }) {
             )}
 
             {!isLoading && !error && gifts.length === 0 && (
-                <p className="gift-list-status">Пока нет подарков для этого события.</p>
+                <p className="gift-list-status">Подарки не найдены.</p>
             )}
 
             {!isLoading && !error && gifts.length > 0 && (
@@ -211,7 +212,7 @@ function GiftList({ eventId, isOwner }) {
                             key={gift.id}
                             gift={gift}
                             onToggleStatus={!isOwner ? handleToggleStatus : undefined}
-                            onDelete={isOwner ? handleDeleteGift : undefined}
+                            onDelete={isOwner ? (giftId) => setGiftToDelete(gifts.find(gift => gift.id === giftId)) : undefined}
                             onMarkBought={isOwner ? handleMarkBought : undefined}
                             onEdit={isOwner ? setEditingGift : undefined}
                         />
@@ -219,7 +220,7 @@ function GiftList({ eventId, isOwner }) {
                 </div>
             )}
 
-            {isOwner && editingGift && (
+            {editingGift && (
                 <GiftEditForm
                     gift={editingGift}
                     onChange={setEditingGift}
@@ -233,6 +234,14 @@ function GiftList({ eventId, isOwner }) {
                         })
                     }
                     onCancel={() => setEditingGift(null)}
+                />
+            )}
+
+            {giftToDelete && (
+                <ConfirmDeleteModal
+                    itemName="подарок"
+                    onConfirm={handleDeleteGift}
+                    onCancel={() => setGiftToDelete(null)}
                 />
             )}
         </div>

@@ -18,13 +18,11 @@
 }
 
 .logout-modal {
-    width: 420px;
-
-    padding: 32px;
-
+    width: min(420px, 100%);
+    padding: 24px;
     background: var(--card-background);
-
-    border-radius: var(--card-radius);
+    border: 1px solid var(--border-color);
+    border-radius: 19px;
 
     box-shadow: var(--shadow-modal);
 
@@ -32,17 +30,17 @@
 
     flex-direction: column;
 
-    gap: 16px;
+    gap: 12px;
 }
 
 .logout-modal h2 {
-    font-size: 32px;
+    font-size: 22px;
 }
 
 .logout-modal p {
     color: var(--text-secondary-color);
 
-    font-size: 18px;
+    font-size: 14px;
 
     line-height: 1.5;
 }
@@ -56,16 +54,15 @@
 }
 
 .cancel-button {
-    padding: 14px 28px;
-
+    padding: 10px 15px;
     border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-medium);
+    border-radius: 10px;
 
     background: var(--card-background);
 
     color: var(--text-secondary-color);
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 700;
 
     cursor: pointer;
 
@@ -77,16 +74,15 @@
 }
 
 .confirm-logout-button {
-    padding: 14px 28px;
-
+    padding: 10px 15px;
     border: none;
-    border-radius: var(--border-radius-medium);
+    border-radius: 10px;
     background: var(--danger-color);
 
     color: var(--text-on-primary);
 
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 700;
 
     cursor: pointer;
 
