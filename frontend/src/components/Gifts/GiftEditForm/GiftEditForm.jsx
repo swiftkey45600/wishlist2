@@ -1,13 +1,36 @@
 import "./GiftEditForm.css"
+import { useState } from "react"
 
 function GiftEditForm({ gift, onChange, onSave, onCancel }) {
+    const [error, setError] = useState("")
+    const [isSaving, setIsSaving] = useState(false)
+
+    async function handleSubmit(event) {
+        event.preventDefault()
+
+        if (!gift.title?.trim()) {
+            setError("Введите название подарка")
+            return
+        }
+
+        const price = Number(gift.price)
+        if (!gift.price || Number.isNaN(price) || price <= 0) {
+            setError("Цена должна быть положительным числом")
+            return
+        }
+
+        setError("")
+        setIsSaving(true)
+        const saved = await onSave()
+        setIsSaving(false)
+
+        if (!saved) setError("Не удалось сохранить подарок")
+    }
+
     return (
         <form
             className="gift-edit-form"
-            onSubmit={e => {
-                e.preventDefault()
-                onSave()
-            }}
+            onSubmit={handleSubmit}
         >
             <h3>Редактирование подарка</h3>
 
@@ -77,16 +100,14 @@ function GiftEditForm({ gift, onChange, onSave, onCancel }) {
                 />
             </label>
 
-            <div className="gift-edit-actions">
-                <button type="submit">
-                    Сохранить
-                </button>
+            {error && <p className="gift-edit-error">{error}</p>}
 
-                <button
-                    type="button"
-                    onClick={onCancel}
-                >
+            <div className="gift-edit-actions">
+                <button type="button" onClick={onCancel}>
                     Отмена
+                </button>
+                <button type="submit" disabled={isSaving}>
+                    {isSaving ? "Сохранение..." : "Сохранить"}
                 </button>
             </div>
         </form>

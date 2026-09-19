@@ -1,6 +1,6 @@
 import "./EventDetailsCard.css"
 
-function EventDetailsCard({ event, onShare, onDelete }) {
+function EventDetailsCard({ event, onShare, onEdit, onDelete }) {
     const eventDate = event.event_date ? new Date(event.event_date) : null
     const formattedDate = eventDate
         ? eventDate.toLocaleDateString("ru-RU", {
@@ -24,9 +24,10 @@ function EventDetailsCard({ event, onShare, onDelete }) {
                     </div>
                     {event.description && <p>{event.description}</p>}
                 </div>
-                {(onShare || onDelete) && (
+                {(onShare || onEdit || onDelete) && (
                     <div className="event-details-actions">
                         {onShare && <button className="event-secondary" onClick={onShare}>Поделиться</button>}
+                        {onEdit && <button className="event-secondary" onClick={onEdit}>Редактировать</button>}
                         {onDelete && <button className="event-danger" onClick={onDelete}>Удалить событие</button>}
                     </div>
                 )}

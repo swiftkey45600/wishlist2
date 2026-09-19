@@ -111,6 +111,24 @@
 .gift-danger-button { border: 1px solid #f0d9de; background: #fff; color: var(--danger); }
 .gift-list-status { color: var(--muted); }
 
+.gift-edit-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(24, 27, 38, .45);
+}
+
+.gift-edit-dialog {
+    width: min(100%, 520px);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    background: var(--card);
+    box-shadow: 0 18px 45px rgba(30, 34, 55, .2);
+}
+
 @media (max-width: 600px) {
     .gift-create-row {
         grid-template-columns: 1fr;

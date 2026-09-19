@@ -33,11 +33,18 @@ async def update_my_profile(
 ):
     if user_request.name is not None and not user_request.name.strip():
         raise HTTPException(status_code=400, detail="Name cannot be empty")
+    if user_request.login is not None:
+        if not user_request.login.strip():
+            raise HTTPException(status_code=400, detail="Login cannot be empty")
+        existing_user = user_repository.get_user_by_login(user_request.login.strip())
+        if existing_user and existing_user.id != current_user.id:
+            raise HTTPException(status_code=409, detail="Login already exists")
 
     updated_user = users_service.update_user(
         current_user.id,
         {
-            "name": user_request.name,
+            "name": user_request.name.strip() if user_request.name is not None else None,
+            "login": user_request.login.strip() if user_request.login is not None else None,
             "birthday": user_request.birthday,
             "gender": user_request.gender,
         },

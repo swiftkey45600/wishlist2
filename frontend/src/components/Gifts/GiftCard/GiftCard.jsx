@@ -21,7 +21,11 @@ function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit }) {
                             className="gift-secondary-button"
                             onClick={() => onToggleStatus(gift)}
                         >
-                            {gift.status === "available" ? "Забронировать" : "Отменить"}
+                            {gift.status === "available"
+                                ? "Забронировать"
+                                : gift.status === "bought"
+                                    ? "Отменить"
+                                    : "Отменить"}
                         </button>
                     )}
                     {gift.status === "reserved" && onMarkBought && (

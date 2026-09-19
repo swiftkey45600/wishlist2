@@ -20,6 +20,19 @@ export async function updateGift(giftId, data) {
   return response.data
 }
 
+export async function reserveGift(giftId, isAnonymous = false) {
+  const response = await api.post("/reservations/", {
+    gift_id: giftId,
+    is_anonymous: isAnonymous
+  })
+  return response.data
+}
+
+export async function unreserveGift(reservationId) {
+  const response = await api.delete(`/reservations/${reservationId}`)
+  return response.data
+}
+
 export async function deleteGift(giftId) {
   await api.delete(`/gifts/${giftId}`)
 }

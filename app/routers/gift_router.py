@@ -82,7 +82,7 @@ def update_gift(
     data: GiftUpdateRequest,
     current_user: User = Depends(get_current_user),
 ):
-    return gift_service.update_gift(gift_id, data.model_dump(exclude_none=True), current_user)
+    return gift_service.update_gift(gift_id, data.model_dump(exclude_unset=True), current_user)
 
 
 @router.delete("/gifts/{gift_id}")

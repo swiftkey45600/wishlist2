@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom"
 import "./HomePage.css"
 import "../../Styles/common.css"
 
-import { getEvents, createEvent, editEvent } from "../../application/eventApplication"
+import { getEvents, createEvent } from "../../application/eventApplication"
 
 import Header from "../../components/Header/Header"
 import Sidebar from "../../components/Sidebar/Sidebar"
@@ -47,20 +47,6 @@ function HomePage() {
 
   function handleOpenEvent(eventId) {
     navigate(`/events/${eventId}`)
-  }
-
-  async function handleEditEvent(event) {
-    const title = window.prompt("Название события", event.title)
-    if (title === null) return
-    const description = window.prompt("Описание события", event.description || "")
-    if (description === null) return
-    const place = window.prompt("Место события", event.place || "")
-    if (place === null) return
-
-    const updatedEvent = await editEvent(event.id, { title, description, place })
-    if (updatedEvent) {
-      setEvents((currentEvents) => currentEvents.map((item) => item.id === event.id ? updatedEvent : item))
-    }
   }
 
   const handleGiftsLoaded = useCallback((giftsByEvent) => {
@@ -118,7 +104,6 @@ function HomePage() {
           <EventsList
             events={events}
             onOpenEvent={handleOpenEvent}
-            onEditEvent={handleEditEvent}
             onGiftsLoaded={handleGiftsLoaded}
           />
           {error && <p className="error-text">{error}</p>}

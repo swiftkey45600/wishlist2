@@ -6,7 +6,9 @@ import {
   getGiftsByEvent,
   createGift,
   deleteGift, 
-  editGift
+    editGift,
+    reserveGift,
+    unreserveGift
 } from "../../../application/giftApplication"
 
 import GiftEditForm from "../GiftEditForm/GiftEditForm"
@@ -86,11 +88,18 @@ function GiftList({ eventId, isOwner }) {
     }
 
     async function handleToggleStatus(gift) {
-        const updatedGift = await editGift(gift.id, {
-            is_reserved: gift.status === "available"
-        })
-        if (updatedGift) {
-            setGifts(prev => prev.map(item => item.id === gift.id ? updatedGift : item))
+        let result
+        if (gift.status === "available") {
+            result = await reserveGift(gift.id)
+        } else if (gift.status === "bought") {
+            result = await editGift(gift.id, { status: "available" })
+        } else {
+            result = gift.reservation_id ? await unreserveGift(gift.reservation_id) : null
+        }
+
+        if (result) {
+            const updatedGifts = await getGiftsByEvent(eventId)
+            setGifts(Array.isArray(updatedGifts) ? updatedGifts : [])
         } else {
             setError("Не удалось изменить бронь подарка")
         }
@@ -114,7 +123,10 @@ function GiftList({ eventId, isOwner }) {
         if (updated) {
             setGifts(prev => prev.map(g => g.id === giftId ? updated : g))
             setEditingGift(null)
+            return true
         }
+
+        return false
     }
 
     return (
@@ -211,7 +223,7 @@ function GiftList({ eventId, isOwner }) {
                         <GiftCard
                             key={gift.id}
                             gift={gift}
-                            onToggleStatus={!isOwner ? handleToggleStatus : undefined}
+                            onToggleStatus={handleToggleStatus}
                             onDelete={isOwner ? (giftId) => setGiftToDelete(gifts.find(gift => gift.id === giftId)) : undefined}
                             onMarkBought={isOwner ? handleMarkBought : undefined}
                             onEdit={isOwner ? setEditingGift : undefined}
@@ -221,20 +233,26 @@ function GiftList({ eventId, isOwner }) {
             )}
 
             {editingGift && (
-                <GiftEditForm
-                    gift={editingGift}
-                    onChange={setEditingGift}
-                    onSave={() =>
-                        handleEditGift(editingGift.id, {
-                            title: editingGift.title,
-                            price: Number(editingGift.price),
-                            description: editingGift.description,
-                            picture_url: editingGift.picture_url,
-                            marketplace_url: editingGift.marketplace_url
-                        })
-                    }
-                    onCancel={() => setEditingGift(null)}
-                />
+                <div className="gift-edit-modal" onClick={(event) => {
+                    if (event.target === event.currentTarget) setEditingGift(null)
+                }}>
+                    <div className="gift-edit-dialog">
+                        <GiftEditForm
+                            gift={editingGift}
+                            onChange={setEditingGift}
+                            onSave={() =>
+                                handleEditGift(editingGift.id, {
+                                    title: editingGift.title.trim(),
+                                    price: Number(editingGift.price),
+                                    description: editingGift.description?.trim() || null,
+                                    picture_url: editingGift.picture_url?.trim() || null,
+                                    marketplace_url: editingGift.marketplace_url?.trim() || null
+                                })
+                            }
+                            onCancel={() => setEditingGift(null)}
+                        />
+                    </div>
+                </div>
             )}
 
             {giftToDelete && (

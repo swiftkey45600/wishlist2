@@ -63,5 +63,10 @@ class ReservationService:
         if gift is not None and gift.status != "bought":
             self.gift_repository.update_gift_status(gift_id, "available")
 
+    def clear_reservation_for_gift(self, gift_id: int) -> None:
+        reservation = self.reservation_repository.get_reservation_by_gift(gift_id)
+        if reservation is not None:
+            self.unreserve_gift(reservation.id)
+
     def get_reservation(self, reservation_id: int) -> Reservation | None:
         return self.reservation_repository.get_reservation_by_id(reservation_id)
