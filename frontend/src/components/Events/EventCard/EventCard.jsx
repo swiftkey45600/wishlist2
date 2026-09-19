@@ -7,16 +7,17 @@ function formatEventDate(value) {
     return date.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })
 }
 
-function EventCard({ event, gifts, onOpenEvent, onEditEvent }) {
+function EventCard({ event, gifts, onOpenEvent }) {
+    const eventTitle = event.title || event.name || event.event_name || "Без названия"
+
     return (
         <div className="event-card" onClick={() => onOpenEvent(event.id)}>
             <div className="event-card-header">
                 <div className="event-card-info">
-                    <h2 className="event-card-title">{event.title || "Без названия"}</h2>
+                    <h2 className="event-card-title">{eventTitle}</h2>
                     {event.description && <p className="event-card-description">{event.description}</p>}
                     <p className="event-card-date">{formatEventDate(event.event_date)}{event.place ? ` · ${event.place}` : ""}</p>
                 </div>
-                {onEditEvent && <button className="event-secondary" onClick={(clickEvent) => { clickEvent.stopPropagation(); onEditEvent(event) }}>Изменить</button>}
             </div>
             <div className="event-card-gifts">
                 {gifts.length === 0 && <p className="empty-gifts">Пока нет подарков для этого события.</p>}

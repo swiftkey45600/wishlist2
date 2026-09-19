@@ -121,7 +121,7 @@ class GiftRepository:
         return self.get_gift_by_id(gift_id)
 
     def update_gift(self, gift_id: int, data: dict) -> Gift | None:
-        fields = {k: v for k, v in data.items() if v is not None}
+        fields = data
         if not fields:
             return self.get_gift_by_id(gift_id)
         set_clause = ", ".join(f"{k} = ?" for k in fields)

@@ -117,8 +117,11 @@ class GiftService:
         if data.get("image_id") is not None and self.image_repository.get_image_by_id(data["image_id"]) is None:
             raise HTTPException(status_code=404, detail="Image not found")
 
-        if data.get("status") is not None and data["status"] != "bought":
+        if data.get("status") is not None and data["status"] not in {"available", "bought"}:
             raise HTTPException(status_code=400, detail="Invalid gift status")
+
+        if data.get("status") == "available":
+            self.reservation_service.clear_reservation_for_gift(gift_id)
 
         updated_gift = self.gift_repository.update_gift(gift_id, data)
         return self._prepare_gift_response(updated_gift)

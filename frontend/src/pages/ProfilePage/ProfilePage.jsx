@@ -13,7 +13,9 @@ function ProfilePage() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const [name, setName] = useState("")
+    const [login, setLogin] = useState("")
     const [showSaved, setShowSaved] = useState(false)
+    const [isSaving, setIsSaving] = useState(false)
 
     useEffect(() => {
         async function loadCurrentUser() {
@@ -26,6 +28,7 @@ function ProfilePage() {
             } else {
                 setUser(profile)
                 setName(profile.name || "")
+                setLogin(profile.login || "")
             }
 
             setLoading(false)
@@ -35,7 +38,17 @@ function ProfilePage() {
     }, [])
 
     async function handleSave() {
-        const updatedUser = await editMe({ name: name.trim() })
+        if (!name.trim() || !login.trim()) {
+            setError("Имя и логин не могут быть пустыми")
+            return
+        }
+
+        setError(null)
+        setShowSaved(false)
+        setIsSaving(true)
+        const updatedUser = await editMe({ name: name.trim(), login: login.trim() })
+        setIsSaving(false)
+
         if (!updatedUser) {
             setError("Не удалось обновить профиль")
             return
@@ -43,6 +56,7 @@ function ProfilePage() {
 
         setUser(updatedUser)
         setName(updatedUser.name || "")
+        setLogin(updatedUser.login || "")
         localStorage.setItem("user", JSON.stringify(updatedUser))
         setShowSaved(true)
     }
@@ -86,7 +100,10 @@ function ProfilePage() {
 
                                         <label className="profile-field">
                                             <span>Логин</span>
-                                            <input value={user.login || ""} readOnly />
+                                            <input
+                                                value={login}
+                                                onChange={(event) => setLogin(event.target.value)}
+                                            />
                                         </label>
 
                                         <label className="profile-field profile-field-full">
@@ -103,8 +120,9 @@ function ProfilePage() {
                                         <button
                                             className="profile-button primary"
                                             onClick={handleSave}
+                                            disabled={isSaving}
                                         >
-                                            Сохранить изменения
+                                            {isSaving ? "Сохранение..." : "Сохранить изменения"}
                                         </button>
                                     </div>
                                 </div>

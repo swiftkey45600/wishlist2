@@ -1,15 +1,11 @@
 .gift-edit-form {
-    margin-top: 20px;
     padding: 20px;
-    border: 1px solid var(--border-color);
-    border-radius: 13px;
-
-    background: var(--card-background);
-    box-shadow: var(--shadow-card);
+    border: 0;
+    background: var(--card);
 }
 
 .gift-edit-form h3 {
-    margin-bottom: 18px;
+    margin: 0 0 18px;
 
     font-size: 20px;
 }
@@ -21,7 +17,9 @@
 
     margin-bottom: 14px;
 
-    color: var(--text-color);
+    color: #555a67;
+    font-size: 13px;
+    font-weight: 700;
     font-weight: 600;
 }
 
@@ -30,14 +28,14 @@
     box-sizing: border-box;
     width: 100%;
 
-    padding: 11px;
-
-    border: 1px solid var(--border-color);
+    padding: 11px 12px;
+    border: 1px solid var(--line);
     border-radius: 10px;
 
-    background: var(--surface-color);
-    color: var(--text-color);
-    font-size: 15px;
+    background: #fff;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
 
     transition: var(--transition-fast);
 }
@@ -52,24 +50,29 @@
 .gift-edit-form textarea:focus {
     outline: none;
 
-    border-color: var(--primary-color);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px #655cff1c;
+}
 
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary-color) 12%, transparent);
+.gift-edit-error {
+    margin: 0;
+    color: var(--danger);
+    font-size: 13px;
 }
 
 .gift-edit-actions {
     display: flex;
     justify-content: flex-end;
-    gap: 12px;
-
+    gap: 8px;
     margin-top: 18px;
 }
 
 .gift-edit-actions button {
     padding: 10px 15px;
+    border: 0;
     border-radius: 10px;
 
-    font-weight: 600;
+    font-weight: 700;
 
     cursor: pointer;
 
@@ -77,23 +80,26 @@
 }
 
 .gift-edit-actions button[type="submit"] {
-    background: var(--primary-color);
-    color: var(--text-on-primary);
+    background: var(--primary);
+    color: #fff;
 }
 
-.gift-edit-actions button[type="submit"]:hover {
-    opacity: 0.92;
-
+.gift-edit-actions button[type="submit"]:hover:not(:disabled) {
+    background: var(--primary-dark);
     transform: translateY(-1px);
 }
 
 .gift-edit-actions button[type="button"] {
-    border: 1px solid var(--border-color);
-
-    background: var(--surface-color);
-    color: var(--text-color);
+    border: 1px solid var(--line);
+    background: #fff;
+    color: #555b68;
 }
 
 .gift-edit-actions button[type="button"]:hover {
     background: #eff0f4;
+}
+
+.gift-edit-actions button:disabled {
+    cursor: wait;
+    opacity: .65;
 }

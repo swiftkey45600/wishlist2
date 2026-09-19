@@ -4,7 +4,7 @@ import "./EventsList.css"
 import EventCard from "../EventCard/EventCard"
 import { getGiftsByEvent } from "../../../application/giftApplication"
 
-function EventsList({ events, onOpenEvent, onEditEvent, onGiftsLoaded }) {
+function EventsList({ events, onOpenEvent, onGiftsLoaded }) {
     const [giftsByEvent, setGiftsByEvent] = useState({})
 
     useEffect(() => {
@@ -30,7 +30,7 @@ function EventsList({ events, onOpenEvent, onEditEvent, onGiftsLoaded }) {
     return (
         <div className="events-list">
             <h2>События</h2>
-            {events.map((event) => <EventCard key={event.id} event={event} gifts={giftsByEvent[event.id] || []} onOpenEvent={onOpenEvent} onEditEvent={onEditEvent} />)}
+            {events.map((event) => <EventCard key={event.id} event={event} gifts={giftsByEvent[event.id] || []} onOpenEvent={onOpenEvent} />)}
         </div>
     )
 }
