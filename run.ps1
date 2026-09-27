@@ -97,7 +97,9 @@ function Initialize-Backend {
             Fail 'Python не найден в PATH. Установите Python 3.10+ с https://www.python.org/downloads/ и включите опцию "Add python.exe to PATH".'
         }
 
-        $version = & $systemPython '-c' 'import sys; print("%d.%d" % sys.version_info[:2])'
+        # Кавычки внутри кода — одинарные: PowerShell 5.1 при вызове нативного exe
+        # съедает вложенные двойные кавычки, и Python получал бы битый синтаксис.
+        $version = & $systemPython '-c' "import sys; print('.'.join(map(str, sys.version_info[:2])))"
         Write-Ok "использую Python $version ($systemPython)"
 
         $tooOld = & $systemPython '-c' 'import sys; print(1 if sys.version_info < (3, 10) else 0)'
