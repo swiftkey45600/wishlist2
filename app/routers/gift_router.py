@@ -1,17 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from typing import List, Optional
 
-from pydantic import BaseModel
 from app.models.gift import Gift
+from app.models.user import User
 from app.repositories.contribution_repository import ContributionRepository
 from app.repositories.gift_repository import GiftRepository
+from app.repositories.event_repository import EventRepository
 from app.repositories.image_repository import ImageRepository
 from app.repositories.marketplace_links_repository import MarketplacesLinksRepository
-from app.repositories.event_repository import EventRepository
 from app.repositories.reservation_repository import ReservationRepository
 from app.services.gift_service import GiftService
 from app.services.reservation_service import ReservationService
-from app.models.user import User
 from app.utils.jwt import get_current_user
 
 router = APIRouter(

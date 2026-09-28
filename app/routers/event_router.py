@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
+from pydantic import BaseModel
 from app.models.event import EventCreateRequest, EventUpdateRequest
 from app.models.user import User
 from app.services.event_service import EventService

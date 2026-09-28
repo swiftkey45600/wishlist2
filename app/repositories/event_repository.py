@@ -47,6 +47,19 @@ class EventRepository:
             rows = conn.execute("SELECT * FROM events").fetchall()
         return [self._row_to_event(row) for row in rows]
 
+    def update_event(self, event_id: int, data: dict) -> Event | None:
+        if not data:
+            return self.get_event_by_id(event_id)
+
+        set_clause = ", ".join(f"{field} = ?" for field in data)
+        with get_connection() as conn:
+            conn.execute(
+                f"UPDATE events SET {set_clause} WHERE id = ?",
+                (*data.values(), event_id),
+            )
+
+        return self.get_event_by_id(event_id)
+
     def delete_event(self, event_id: int) -> bool:
         with get_connection() as conn:
             cursor = conn.execute("DELETE FROM events WHERE id = ?", (event_id,))
