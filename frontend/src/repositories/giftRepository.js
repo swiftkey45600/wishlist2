@@ -15,30 +15,22 @@ export async function createGift(giftData) {
   return response.data
 }
 
-export async function updateGiftStatus(giftId, status) {
-  const response = await api.patch(`/gifts/${giftId}/status`, null, {
-    params: { status }
-  })
-  return response.data
-}
-
 export async function updateGift(giftId, data) {
   const response = await api.patch(`/gifts/${giftId}`, data)
   return response.data
 }
 
-export async function reserveGift(giftId, reserverName, isAnonymous = false) {
+export async function reserveGift(giftId, isAnonymous = false) {
   const response = await api.post("/reservations/", {
     gift_id: giftId,
-      reserver_name: reserverName,
-      is_anonymous: isAnonymous
-    })
-
+    is_anonymous: isAnonymous
+  })
   return response.data
 }
 
 export async function unreserveGift(reservationId) {
-  await api.delete(`/reservations/${reservationId}`)
+  const response = await api.delete(`/reservations/${reservationId}`)
+  return response.data
 }
 
 export async function deleteGift(giftId) {

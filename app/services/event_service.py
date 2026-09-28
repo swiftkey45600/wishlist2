@@ -1,3 +1,5 @@
+import secrets
+
 from app.models import Event
 from app.repositories import EventRepository
 from app.repositories import GiftRepository
@@ -24,6 +26,7 @@ class EventService:
             description=description,
             event_date=event_date,
             place=place,
+            public_token=secrets.token_urlsafe(16),
         )
 
         return self.event_repository.create_event(new_event)
@@ -46,3 +49,6 @@ class EventService:
 
     def delete_event(self, event_id: int) -> bool:
         return self.event_repository.delete_event(event_id)
+
+    def update_event(self, event_id: int, event: Event) -> Event | None:
+        return self.event_repository.update_event(event_id, event)

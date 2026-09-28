@@ -44,3 +44,17 @@ class UserRepository:
     def delete_user(self, user_id: int) -> None:
         with get_connection() as conn:
             conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
+
+    def update_user(self, user_id: int, data: dict) -> User | None:
+        fields = {key: value for key, value in data.items() if value is not None}
+        if not fields:
+            return self.get_user_by_id(user_id)
+
+        set_clause = ", ".join(f"{key} = ?" for key in fields)
+        with get_connection() as conn:
+            conn.execute(
+                f"UPDATE users SET {set_clause} WHERE id = ?",
+                (*fields.values(), user_id),
+            )
+
+        return self.get_user_by_id(user_id)

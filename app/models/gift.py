@@ -17,6 +17,7 @@ class Gift:
     image_id: int | None = None
 
     image_url: str | None = None
+    reservation_id: int | None = None
     marketplace_links: list[Marketplace] = field(default_factory=list)
     contribution_total: int = 0
 

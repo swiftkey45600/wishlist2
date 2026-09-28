@@ -8,6 +8,7 @@ class ReservationRepository:
             id=row["id"],
             gift_id=row["gift_id"],
             reserver_name=row["reserver_name"],
+            reserver_id=row["reserver_id"],
             is_anonymous=bool(row["is_anonymous"]),
         )
 
@@ -18,13 +19,15 @@ class ReservationRepository:
                 INSERT INTO reservations (
                     gift_id,
                     reserver_name,
+                    reserver_id,
                     is_anonymous
                 )
-                VALUES (?, ?, ?)
+                VALUES (?, ?, ?, ?)
                 """,
                 (
                     reservation.gift_id,
                     reservation.reserver_name,
+                    reservation.reserver_id,
                     reservation.is_anonymous,
                 ),
             )
@@ -56,6 +59,7 @@ class ReservationRepository:
                     id,
                     gift_id,
                     reserver_name,
+                    reserver_id,
                     is_anonymous
                 FROM reservations
                 WHERE gift_id = ?
@@ -71,7 +75,7 @@ class ReservationRepository:
     def get_reservation_by_id(self, reservation_id: int) -> Reservation | None:
         with get_connection() as connection:
             row = connection.execute(
-                "SELECT id, gift_id, reserver_name, is_anonymous FROM reservations WHERE id = ?",
+                "SELECT id, gift_id, reserver_name, reserver_id, is_anonymous FROM reservations WHERE id = ?",
                 (reservation_id,),
             ).fetchone()
             if row is None:

@@ -40,8 +40,10 @@ CREATE TABLE IF NOT EXISTS reservations (
     id INTEGER PRIMARY KEY,
     gift_id INTEGER NOT NULL UNIQUE,
     reserver_name TEXT,
+    reserver_id INTEGER,
     is_anonymous INTEGER NOT NULL DEFAULT 0,
-    FOREIGN KEY (gift_id) REFERENCES gifts(id) ON DELETE CASCADE
+    FOREIGN KEY (gift_id) REFERENCES gifts(id) ON DELETE CASCADE,
+    FOREIGN KEY (reserver_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS images (

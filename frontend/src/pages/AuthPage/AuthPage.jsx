@@ -47,12 +47,14 @@ function AuthPage() {
                 ? await login({ login: loginValue, password })
                 : await register({ name, login: loginValue, password })
 
-            if (response?.access_token) {
-                localStorage.setItem("accessToken", response.access_token)
-                localStorage.setItem("user", JSON.stringify(response.user))
+            if (!response?.access_token) {
+                setError("Не удалось подтвердить авторизацию")
+                return
             }
 
-            navigate("/")
+            localStorage.setItem("accessToken", response.access_token)
+            localStorage.setItem("user", JSON.stringify(response.user))
+            navigate("/", { replace: true })
         } catch (submitError) {
             const message = submitError?.response?.data?.detail || submitError?.message || "Ошибка авторизации"
             setError(message)

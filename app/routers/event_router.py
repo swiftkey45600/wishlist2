@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from app.models.event import EventCreateRequest
+from app.models.event import EventCreateRequest, EventUpdateRequest
 from app.models.user import User
 from app.services.event_service import EventService
 from app.repositories.event_repository import EventRepository
@@ -65,17 +65,10 @@ async def create_event(event_request: EventCreateRequest, current_user: User = D
     return {"event": event}
 
 
-class EventUpdateRequest(BaseModel):
-    title: str | None = None
-    description: str | None = None
-    event_date: str | None = None
-    place: str | None = None
-
-
 @router.patch("/{event_id}")
 async def update_event(
     event_id: int,
-    data: EventUpdateRequest,
+    event_request: EventUpdateRequest,
     current_user: User = Depends(get_current_user),
 ):
     event = event_service.get_event(event_id)
@@ -84,11 +77,12 @@ async def update_event(
     if event.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Forbidden: you can only edit your own events")
 
-    updated_event = event_service.update_event(
-        event_id,
-        data.model_dump(exclude_unset=True),
-    )
-    return {"event": updated_event}
+    for field_name in ("title", "description", "event_date", "place"):
+        value = getattr(event_request, field_name)
+        if value is not None:
+            setattr(event, field_name, value)
+
+    return {"event": event_service.update_event(event_id, event)}
 
 
 @router.delete("/{event_id}")

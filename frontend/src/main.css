@@ -10,9 +10,26 @@ body {
   font-family: var(--font-family-base);
   background: var(--background-color);
   color: var(--text-color);
+  font-size: 14px;
 }
 
 a {
   text-decoration: none;
   color: inherit;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  border: 0;
+}
+
+button:disabled {
+  opacity: .42;
+  cursor: not-allowed;
 }

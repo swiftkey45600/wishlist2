@@ -7,8 +7,7 @@ function ProfileActions() {
 
     return (
         <>
-            <div className="profile-actions">
-                <h2>Действия</h2>
+            <div className="profile-section profile-danger-zone">
                 <button
                     className="logout-button"
                     onClick={() => setIsOpen(true)}

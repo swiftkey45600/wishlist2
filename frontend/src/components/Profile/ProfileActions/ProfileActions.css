@@ -1,28 +1,12 @@
-.profile-actions {
-    padding: 32px;
-
-    background: var(--card-background);
-
-    border-radius: var(--card-radius);
-}
-
-.profile-actions h2 {
-    margin-bottom: 24px;
-
-    font-size: 32px;
-}
-
 .logout-button {
-    padding: 14px 28px;
+    padding: 10px 15px;
+    border: 1px solid #f0d9de;
+    border-radius: 10px;
+    background: var(--dangerbg);
+    color: var(--danger-color);
 
-    border: none;
-    border-radius: var(--border-radius-medium);
-    background: var(--danger-color);
-
-    color: var(--text-on-primary);
-
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 14px;
+    font-weight: 700;
 
     cursor: pointer;
 

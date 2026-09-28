@@ -3,11 +3,14 @@ import "./EventPage.css"
 import "../../Styles/common.css"
 
 import { useNavigate, useParams } from "react-router-dom"
-import { getEvent } from "../../application/eventApplication"
+import { deleteEvent, editEvent, getEvent } from "../../application/eventApplication"
 
+import Header from "../../components/Header/Header"
 import Sidebar from "../../components/Sidebar/Sidebar"
 import EventDetailsCard from "../../components/Events/EventDetailsCard/EventDetailsCard"
 import GiftList from "../../components/Gifts/GiftList/GiftList"
+import ConfirmDeleteModal from "../../components/ConfirmDeleteModal/ConfirmDeleteModal"
+import EditEventForm from "../../components/Events/EditEventForm/EditEventForm"
 
 function EventPage() {
 	const navigate = useNavigate()
@@ -15,6 +18,10 @@ function EventPage() {
     const [event, setEvent] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
     const [showToast, setShowToast] = useState(false)
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+    const user = JSON.parse(localStorage.getItem("user") || "null")
+    const isOwner = user?.id === event?.owner_id
 
     useEffect(() => {
         async function loadEvent() {
@@ -63,19 +70,30 @@ function EventPage() {
         }
     }
 
-	return (
-		<div className="page-layout">
-				<Sidebar />
+    async function handleDeleteEvent() {
+        await deleteEvent(id)
+        navigate("/")
+    }
 
-				<div className="page-content">
-					<div className="event-page-actions">
-						<button className="back-button" onClick={() => navigate("/")}>
-							← Назад к событиям
-						</button>
-						<button className="share-button" onClick={handleShare}>
-							Поделиться
-						</button>
-					</div>
+    async function handleEditEvent(eventData) {
+        const updatedEvent = await editEvent(id, eventData)
+        if (!updatedEvent) return false
+
+        setEvent(updatedEvent)
+        setIsEditModalOpen(false)
+        return true
+    }
+
+    return (
+        <div className="event-shell">
+            <Header />
+            <div className="page-layout event-layout">
+                <Sidebar activeSection="events" />
+
+                <main className="page-content event-content">
+                    <button className="event-back" onClick={() => navigate("/")}>
+                        ← Все события
+                    </button>
 
 					{showToast && <div className="share-toast">Ссылка скопирована</div>}
 
@@ -98,13 +116,39 @@ function EventPage() {
                     {
                         !isLoading && event && (
                             <>
-                                <EventDetailsCard event={event} />
-                                <GiftList eventId={id} />
+                                <EventDetailsCard
+                                    event={event}
+                                    onShare={isOwner ? handleShare : undefined}
+                                    onEdit={isOwner ? () => setIsEditModalOpen(true) : undefined}
+                                    onDelete={isOwner ? () => setIsDeleteModalOpen(true) : undefined}
+                                />
+                                <GiftList eventId={id} isOwner={isOwner} />
+                                {isEditModalOpen && (
+                                    <div className="event-edit-modal" onClick={(modalEvent) => {
+                                        if (modalEvent.target === modalEvent.currentTarget) setIsEditModalOpen(false)
+                                    }}>
+                                        <div className="event-edit-dialog">
+                                            <EditEventForm
+                                                event={event}
+                                                onSave={handleEditEvent}
+                                                onCancel={() => setIsEditModalOpen(false)}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                                {isDeleteModalOpen && (
+                                    <ConfirmDeleteModal
+                                        itemName="событие"
+                                        onConfirm={handleDeleteEvent}
+                                        onCancel={() => setIsDeleteModalOpen(false)}
+                                    />
+                                )}
                             </>
                         )
                     }
-				</div>
+                </main>
 		</div>
+        </div>
 	)
 }
 

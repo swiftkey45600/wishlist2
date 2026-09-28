@@ -17,6 +17,10 @@ def init_db() -> None:
     with get_connection() as connection:
         schema = SCHEMA_PATH.read_text(encoding="utf-8")
         connection.executescript(schema)
+
+        columns = connection.execute("PRAGMA table_info(reservations)").fetchall()
+        if "reserver_id" not in {column["name"] for column in columns}:
+            connection.execute("ALTER TABLE reservations ADD COLUMN reserver_id INTEGER")
         _run_migrations(connection)
         connection.commit()
 

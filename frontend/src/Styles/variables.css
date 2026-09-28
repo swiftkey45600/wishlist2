@@ -1,38 +1,39 @@
 :root {
-    /* Шрифт */
-    --font-family-base: sans-serif;
+    --bg: #f5f6fa;
+    --card: #fff;
+    --text: #171923;
+    --muted: #737887;
+    --line: #e6e8ef;
+    --primary: #655cff;
+    --primary-dark: #5148e8;
+    --ok: #168b68;
+    --okbg: #e8f7f1;
+    --warn: #bd7418;
+    --warnbg: #fff3df;
+    --danger: #d64f60;
+    --dangerbg: #fff0f2;
+    --shadow: 0 12px 34px rgba(30, 34, 55, .07);
+    --r: 18px;
 
-    /* Цвета */
-    --primary-color: #7c5cff;
-    --primary-color-soft: #f3f0ff;
-
-    --background-color: #f5f5f7;
-    --surface-color: #f7f7fa;
-    --card-background: #fff;
-
-    --text-color: #222;
-    --text-secondary-color: #777;
-    --text-on-primary: #fff;
+    --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --background-color: var(--bg);
+    --card-background: var(--card);
+    --surface-color: #fafaff;
+    --text-color: var(--text);
+    --text-secondary-color: var(--muted);
     --text-placeholder-color: #999;
-
-    --danger-color: #ff4d4f;
-
-    --border-color: #ddd;
-
-    /* Радиус */
-    --border-radius-small: 12px;
-    --border-radius-medium: 16px;
-    --card-radius: 32px;
-
-    /* Layout */
-    --page-padding-x: 48px;
-    --page-padding-y: 32px;
-
-    /* Эффекты */
-    --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.05);
-    --shadow-modal: 0 8px 32px rgba(0, 0, 0, 0.12);
-
-    --overlay-color: rgba(0, 0, 0, 0.35);
-
-    --transition-fast: 0.2s;
+    --text-on-primary: #fff;
+    --border-color: var(--line);
+    --primary-color: var(--primary);
+    --primary-color-soft: #eceaff;
+    --danger-color: var(--danger);
+    --border-radius-small: 10px;
+    --border-radius-medium: 10px;
+    --card-radius: var(--r);
+    --page-padding-x: 44px;
+    --page-padding-y: 38px;
+    --shadow-card: var(--shadow);
+    --shadow-modal: 0 25px 70px rgba(0, 0, 0, .2);
+    --overlay-color: rgba(17, 19, 29, .4);
+    --transition-fast: .2s;
 }

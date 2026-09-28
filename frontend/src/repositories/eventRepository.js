@@ -32,3 +32,8 @@ export async function fetchEvent(eventId) {
 export async function deleteEvent(eventId) {
     await api.delete(`/events/${eventId}`)
 }
+
+export async function updateEvent(eventId, eventData) {
+    const response = await api.patch(`/events/${eventId}`, eventData)
+    return response.data.event
+}

@@ -1,15 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException
-from typing import List
 from pydantic import BaseModel
+from typing import List, Optional
 
 from app.models.gift import Gift
 from app.models.user import User
 from app.repositories.contribution_repository import ContributionRepository
 from app.repositories.gift_repository import GiftRepository
 from app.repositories.event_repository import EventRepository
-from app.repositories.reservation_repository import ReservationRepository
 from app.repositories.image_repository import ImageRepository
 from app.repositories.marketplace_links_repository import MarketplacesLinksRepository
+from app.repositories.reservation_repository import ReservationRepository
 from app.services.gift_service import GiftService
 from app.services.reservation_service import ReservationService
 from app.utils.jwt import get_current_user
@@ -24,17 +24,24 @@ marketplace_links_repo = MarketplacesLinksRepository()
 contribution_repo = ContributionRepository()
 event_repo = EventRepository()
 reservation_repo = ReservationRepository()
-reservation_service = ReservationService(reservation_repo)
+reservation_service = ReservationService(reservation_repo, gift_repo)
 gift_service = GiftService(
     gift_repo,
     image_repo,
     marketplace_links_repo,
     contribution_repo,
+    event_repo,
+    reservation_service,
 )
 
 
 @router.post("/gifts/", response_model=Gift)
-def create_gift(gift: Gift):
+def create_gift(gift: Gift, current_user: User = Depends(get_current_user)):
+    event = event_repo.get_event_by_id(gift.event_id)
+    if event is None:
+        raise HTTPException(status_code=404, detail="Event not found")
+    if event.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the event owner can create gifts")
     return gift_service.create_gift(gift)
 
 
@@ -49,12 +56,24 @@ def get_gifts_by_event(event_id: int):
 
 
 class GiftUpdateRequest(BaseModel):
-    title: str | None = None
-    price: int | None = None
-    description: str | None = None
-    picture_url: str | None = None
-    marketplace_url: str | None = None
-    reserved: bool | None = None
+    title: Optional[str] = None
+    price: Optional[int] = None
+    description: Optional[str] = None
+    picture_url: Optional[str] = None
+    marketplace_url: Optional[str] = None
+    category_id: Optional[int] = None
+    image_id: Optional[int] = None
+    status: Optional[str] = None
+    is_reserved: Optional[bool] = None
+
+
+@router.patch("/gifts/{gift_id}/status", response_model=Gift)
+def update_gift_status(gift_id: int, status: str, current_user: User = Depends(get_current_user)):
+    gift = gift_service.get_gift_by_id(gift_id)
+    event = event_repo.get_event_by_id(gift.event_id)
+    if event is None or event.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the event owner can change gift status")
+    return gift_service.update_gift_status(gift_id, status)
 
 
 @router.patch("/gifts/{gift_id}", response_model=Gift)
@@ -63,49 +82,14 @@ def update_gift(
     data: GiftUpdateRequest,
     current_user: User = Depends(get_current_user),
 ):
-    gift = gift_repo.get_gift_by_id(gift_id)
-    if gift is None:
-        raise HTTPException(status_code=404, detail="Gift not found")
-
-    event = event_repo.get_event_by_id(gift.event_id)
-    if event is None:
-        raise HTTPException(status_code=404, detail="Event not found")
-
-    fields = data.model_dump(exclude_unset=True)
-    reserved = fields.pop("reserved", None)
-
-    if event.owner_id == current_user.id:
-        if reserved is not None:
-            raise HTTPException(status_code=403, detail="Gift owner cannot reserve own gift")
-        return gift_service.update_gift(gift_id, fields)
-
-    if fields:
-        raise HTTPException(status_code=403, detail="Only gift owner can edit gift fields")
-    if reserved is None:
-        raise HTTPException(status_code=400, detail="reserved is required")
-
-    existing = reservation_repo.get_reservation_by_gift(gift_id)
-
-    if reserved:
-        if existing is not None:
-            raise HTTPException(status_code=409, detail="Gift is already reserved")
-        reservation_service.reserve_gift(gift_id, current_user.name, False)
-        gift_repo.update_gift_status(gift_id, "reserved")
-    else:
-        if existing is None:
-            raise HTTPException(status_code=404, detail="Reservation not found")
-        reservation_service.unreserve_gift(existing.id)
-        gift_repo.update_gift_status(gift_id, "available")
-
-    return gift_service.get_gift_by_id(gift_id)
-
-
-@router.patch("/gifts/{gift_id}/status", response_model=Gift)
-def update_gift_status(gift_id: int, status: str):
-    return gift_service.update_gift_status(gift_id, status)
+    return gift_service.update_gift(gift_id, data.model_dump(exclude_unset=True), current_user)
 
 
 @router.delete("/gifts/{gift_id}")
-def delete_gift(gift_id: int):
+def delete_gift(gift_id: int, current_user: User = Depends(get_current_user)):
+    gift = gift_service.get_gift_by_id(gift_id)
+    event = event_repo.get_event_by_id(gift.event_id)
+    if event is None or event.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the event owner can delete gifts")
     gift_service.delete_gift(gift_id)
     return {"message": "Gift deleted"}

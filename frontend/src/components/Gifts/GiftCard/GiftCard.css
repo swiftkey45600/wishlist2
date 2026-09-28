@@ -1,66 +1,116 @@
 .gift-card {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-
-    padding: 18px;
-
-    background: var(--surface-color);
-    border-radius: var(--card-radius);
-
-    transition: var(--transition-fast);
+    padding: 15px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: var(--shadow);
 }
 
-.gift-card:hover {
-    transform: translateY(-4px);
+.gift-card-main {
+    display: grid;
+    grid-template-columns: 76px 1fr auto;
+    align-items: center;
+    gap: 15px;
 }
-
 
 .gift-image {
-    width: 100%;
-    height: 170px;
-
+    width: 76px;
+    height: 76px;
+    border-radius: 14px;
+    background: #f0f1f5;
     object-fit: cover;
-
-    border-radius: var(--border-radius-medium);
 }
 
-.gift-card h3 {
-    font-size: 22px;
+.gift-card-info h3 {
+    margin: 0 0 5px;
+    font-size: 16px;
 }
 
-.gift-card span {
-    color: var(--text-secondary-color);
+.gift-description {
+    margin: 0 0 8px;
+    color: var(--muted);
+    font-size: 13px;
 }
 
+.gift-card-info strong {
+    font-weight: 800;
+}
+
+.gift-card-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.gift-status {
+    padding: 6px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.gift-status.available {
+    background: var(--okbg);
+    color: var(--ok);
+}
+
+.gift-status.reserved {
+    background: var(--warnbg);
+    color: var(--warn);
+}
+
+.gift-status.bought {
+    background: #eeeef5;
+    color: #666a78;
+}
 
 .gift-card-footer {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+}
+
+.gift-marketplace {
+    color: var(--muted);
+    font-size: 12px;
 }
 
 .gift-actions {
     display: flex;
-    gap: 12px;
+    justify-content: flex-end;
+    gap: 7px;
+    flex-wrap: wrap;
 }
 
-.edit-gift-button,
-.delete-gift-button {
-    border: none;
-    background: none;
+@media (max-width: 900px) {
+    .gift-card-main {
+        grid-template-columns: 60px 1fr;
+    }
 
-    font-size: 20px;
+    .gift-image {
+        width: 60px;
+        height: 60px;
+    }
 
-    opacity: 0.6;
-
-    cursor: pointer;
-
-    transition: var(--transition-fast);
+    .gift-card-right {
+        grid-column: 2;
+        justify-content: flex-start;
+    }
 }
 
-.edit-gift-button:hover,
-.delete-gift-button:hover {
-    opacity:1;
-    transform:scale(1.1);
+@media (max-width: 600px) {
+    .gift-card-footer {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .gift-actions {
+        justify-content: flex-start;
+    }
 }

@@ -1,0 +1,13 @@
+# Shell-скрипты всегда с LF. С CRLF bash на Linux/macOS падает сразу же
+# с "\r: command not found", а у разработчиков на Windows core.autocrlf=true
+# по умолчанию подменяет переводы строк при checkout.
+*.sh text eol=lf
+
+# PowerShell читает оба варианта, но для Windows родной формат — CRLF.
+*.ps1 text eol=crlf
+
+# Бинарные файлы не трогать.
+*.db binary
+*.png binary
+*.jpg binary
+*.ico binary

@@ -2,7 +2,8 @@ import {
     getUsers as getUsersRepository,
     getMe as getMeRepository,
     getUser as getUserRepository,
-    deleteUser as deleteUserRepository
+    deleteUser as deleteUserRepository,
+    updateMe as updateMeRepository
 } from "../repositories/userRepository"
 
 export async function getUsers() {
@@ -35,6 +36,15 @@ export async function getUser(userId) {
 export async function deleteUser(userId) {
     try {
         return await deleteUserRepository(userId)
+    } catch (error) {
+        console.error(error)
+        return null
+    }
+}
+
+export async function editMe(userData) {
+    try {
+        return await updateMeRepository(userData)
     } catch (error) {
         console.error(error)
         return null
