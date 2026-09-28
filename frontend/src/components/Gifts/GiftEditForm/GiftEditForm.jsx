@@ -1,7 +1,8 @@
 import "./GiftEditForm.css"
 import { useState } from "react"
+import TagSelector from "../../Tags/TagSelector/TagSelector"
 
-function GiftEditForm({ gift, onChange, onSave, onCancel }) {
+function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) {
     const [error, setError] = useState("")
     const [isSaving, setIsSaving] = useState(false)
 
@@ -99,6 +100,14 @@ function GiftEditForm({ gift, onChange, onSave, onCancel }) {
                     }
                 />
             </label>
+
+            <TagSelector
+                eventId={gift.event_id}
+                tags={tags}
+                selectedTagIds={gift.tag_ids || []}
+                onTagsChange={onTagsChange}
+                onChange={tagIds => onChange({ ...gift, tag_ids: tagIds })}
+            />
 
             {error && <p className="gift-edit-error">{error}</p>}
 

@@ -13,6 +13,8 @@ import {
 
 import GiftEditForm from "../GiftEditForm/GiftEditForm"
 import ConfirmDeleteModal from "../../ConfirmDeleteModal/ConfirmDeleteModal"
+import TagSelector from "../../Tags/TagSelector/TagSelector"
+import { getEventTags } from "../../../application/tagApplication"
 
 function GiftList({ eventId, isOwner }) {
     const [gifts, setGifts] = useState([])
@@ -27,6 +29,8 @@ function GiftList({ eventId, isOwner }) {
     const [marketplaceUrl, setMarketplaceUrl] = useState("")
     const [editingGift, setEditingGift] = useState(null)
     const [giftToDelete, setGiftToDelete] = useState(null)
+    const [tags, setTags] = useState([])
+    const [selectedTagIds, setSelectedTagIds] = useState([])
 
     useEffect(() => {
         async function loadGifts() {
@@ -46,6 +50,15 @@ function GiftList({ eventId, isOwner }) {
         }
 
         loadGifts()
+    }, [eventId])
+
+    useEffect(() => {
+        async function loadTags() {
+            const data = await getEventTags(eventId)
+            setTags(Array.isArray(data) ? data : [])
+        }
+
+        loadTags()
     }, [eventId])
 
     async function handleSubmit(event) {
@@ -70,6 +83,7 @@ function GiftList({ eventId, isOwner }) {
             description: description.trim() || undefined,
             picture_url: imageUrl.trim() || undefined,
             marketplace_url: marketplaceUrl.trim() || undefined,
+            tag_ids: selectedTagIds,
             status: "available"
         })
 
@@ -78,12 +92,17 @@ function GiftList({ eventId, isOwner }) {
             return
         }
 
-        setGifts(prev => [createdGift, ...prev])
+        const selectedTags = tags.filter(tag => selectedTagIds.includes(tag.id))
+        setGifts(prev => [{
+            ...createdGift,
+            tags: createdGift.tags || selectedTags
+        }, ...prev])
         setTitle("")
         setPrice("")
         setDescription("")
         setImageUrl("")
         setMarketplaceUrl("")
+        setSelectedTagIds([])
         setIsFormOpen(false)
     }
 
@@ -99,7 +118,12 @@ function GiftList({ eventId, isOwner }) {
 
         if (result) {
             const updatedGifts = await getGiftsByEvent(eventId)
-            setGifts(Array.isArray(updatedGifts) ? updatedGifts : [])
+            setGifts(previousGifts => Array.isArray(updatedGifts)
+                ? updatedGifts.map(updatedGift => ({
+                    ...updatedGift,
+                    tags: updatedGift.tags || previousGifts.find(gift => gift.id === updatedGift.id)?.tags || []
+                }))
+                : [])
         } else {
             setError("Не удалось изменить бронь подарка")
         }
@@ -114,20 +138,50 @@ function GiftList({ eventId, isOwner }) {
     async function handleMarkBought(giftId) {
         const updated = await editGift(giftId, { status: "bought" })
         if (updated) {
-            setGifts(prev => prev.map(g => g.id === giftId ? updated : g))
+            setGifts(prev => prev.map(g => g.id === giftId
+                ? { ...updated, tags: updated.tags || g.tags || [] }
+                : g))
         }
     }
 
     async function handleEditGift(giftId, data) {
         const updated = await editGift(giftId, data)
         if (updated) {
-            setGifts(prev => prev.map(g => g.id === giftId ? updated : g))
+            const selectedTags = tags.filter(tag => data.tag_ids.includes(tag.id))
+            setGifts(prev => prev.map(g => g.id === giftId
+                ? { ...updated, tags: updated.tags || selectedTags }
+                : g))
             setEditingGift(null)
             return true
         }
 
         return false
     }
+
+    function openEditForm(gift) {
+        setEditingGift({
+            ...gift,
+            tag_ids: gift.tags?.map(tag => tag.id) || []
+        })
+    }
+
+    const allTags = [...tags]
+    gifts.forEach(gift => {
+        gift.tags?.forEach(tag => {
+            if (!allTags.some(existingTag => existingTag.id === tag.id)) {
+                allTags.push(tag)
+            }
+        })
+    })
+
+    const giftGroups = allTags
+        .map(tag => ({
+            tag,
+            gifts: gifts.filter(gift => gift.tags?.some(giftTag => giftTag.id === tag.id))
+        }))
+        .filter(group => group.gifts.length > 0)
+
+    const untaggedGifts = gifts.filter(gift => !gift.tags?.length)
 
     return (
         <div className="gift-list">
@@ -194,6 +248,14 @@ function GiftList({ eventId, isOwner }) {
                         />
                     </label>
 
+                    <TagSelector
+                        eventId={eventId}
+                        tags={tags}
+                        selectedTagIds={selectedTagIds}
+                        onTagsChange={setTags}
+                        onChange={setSelectedTagIds}
+                    />
+
                     {formError && <p className="gift-form-error">{formError}</p>}
 
                     <div className="gift-modal-actions">
@@ -218,17 +280,48 @@ function GiftList({ eventId, isOwner }) {
             )}
 
             {!isLoading && !error && gifts.length > 0 && (
-                <div className="gift-grid">
-                    {gifts.map(gift => (
-                        <GiftCard
-                            key={gift.id}
-                            gift={gift}
-                            onToggleStatus={handleToggleStatus}
-                            onDelete={isOwner ? (giftId) => setGiftToDelete(gifts.find(gift => gift.id === giftId)) : undefined}
-                            onMarkBought={isOwner ? handleMarkBought : undefined}
-                            onEdit={isOwner ? setEditingGift : undefined}
-                        />
+                <div className="gift-groups">
+                    {giftGroups.map(group => (
+                        <section className="gift-group" key={group.tag.id}>
+                            <div className="gift-group-heading">
+                                <h3>{group.tag.name}</h3>
+                                <span>{group.gifts.length}</span>
+                            </div>
+                            <div className="gift-grid">
+                                {group.gifts.map(gift => (
+                                    <GiftCard
+                                        key={`${group.tag.id}-${gift.id}`}
+                                        gift={gift}
+                                        onToggleStatus={handleToggleStatus}
+                                        onDelete={isOwner ? (giftId) => setGiftToDelete(gifts.find(item => item.id === giftId)) : undefined}
+                                        onMarkBought={isOwner ? handleMarkBought : undefined}
+                                        onEdit={isOwner ? openEditForm : undefined}
+                                    />
+                                ))}
+                            </div>
+                        </section>
                     ))}
+
+                    {untaggedGifts.length > 0 && (
+                        <section className="gift-group">
+                            <div className="gift-group-heading">
+                                <h3>Без тегов</h3>
+                                <span>{untaggedGifts.length}</span>
+                            </div>
+                            <div className="gift-grid">
+                                {untaggedGifts.map(gift => (
+                                    <GiftCard
+                                        key={gift.id}
+                                        gift={gift}
+                                        onToggleStatus={handleToggleStatus}
+                                        onDelete={isOwner ? (giftId) => setGiftToDelete(gifts.find(item => item.id === giftId)) : undefined}
+                                        onMarkBought={isOwner ? handleMarkBought : undefined}
+                                        onEdit={isOwner ? openEditForm : undefined}
+                                    />
+                                ))}
+                            </div>
+                        </section>
+                    )}
                 </div>
             )}
 
@@ -239,6 +332,8 @@ function GiftList({ eventId, isOwner }) {
                     <div className="gift-edit-dialog">
                         <GiftEditForm
                             gift={editingGift}
+                            tags={tags}
+                            onTagsChange={setTags}
                             onChange={setEditingGift}
                             onSave={() =>
                                 handleEditGift(editingGift.id, {
@@ -246,7 +341,8 @@ function GiftList({ eventId, isOwner }) {
                                     price: Number(editingGift.price),
                                     description: editingGift.description?.trim() || null,
                                     picture_url: editingGift.picture_url?.trim() || null,
-                                    marketplace_url: editingGift.marketplace_url?.trim() || null
+                                    marketplace_url: editingGift.marketplace_url?.trim() || null,
+                                    tag_ids: editingGift.tag_ids || []
                                 })
                             }
                             onCancel={() => setEditingGift(null)}
