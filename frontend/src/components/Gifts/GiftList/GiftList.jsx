@@ -13,6 +13,9 @@ import {
 
 import GiftEditForm from "../GiftEditForm/GiftEditForm"
 import ConfirmDeleteModal from "../../ConfirmDeleteModal/ConfirmDeleteModal"
+import { uploadImageFile } from "../../../application/imageApplication"
+
+const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"])
 
 function GiftList({ eventId, isOwner }) {
     const [gifts, setGifts] = useState([])
@@ -22,11 +25,19 @@ function GiftList({ eventId, isOwner }) {
     const [title, setTitle] = useState("")
     const [price, setPrice] = useState("")
     const [description, setDescription] = useState("")
-    const [imageUrl, setImageUrl] = useState("")
+    const [imageFile, setImageFile] = useState(null)
+    const [imagePreview, setImagePreview] = useState("")
     const [formError, setFormError] = useState(null)
     const [marketplaceUrl, setMarketplaceUrl] = useState("")
     const [editingGift, setEditingGift] = useState(null)
     const [giftToDelete, setGiftToDelete] = useState(null)
+    const [isSubmitting, setIsSubmitting] = useState(false)
+
+    useEffect(() => {
+        return () => {
+            if (imagePreview) URL.revokeObjectURL(imagePreview)
+        }
+    }, [imagePreview])
 
     useEffect(() => {
         async function loadGifts() {
@@ -63,28 +74,43 @@ function GiftList({ eventId, isOwner }) {
             return
         }
 
-        const createdGift = await createGift({
-            event_id: Number(eventId),
-            title: title.trim(),
-            price: parsedPrice,
-            description: description.trim() || undefined,
-            picture_url: imageUrl.trim() || undefined,
-            marketplace_url: marketplaceUrl.trim() || undefined,
-            status: "available"
-        })
+        setIsSubmitting(true)
+        try {
+            let imageId
+            if (imageFile) {
+                const uploadedImage = await uploadImageFile(imageFile)
+                if (!uploadedImage?.id) {
+                    setFormError("Не удалось загрузить изображение")
+                    return
+                }
+                imageId = uploadedImage.id
+            }
 
-        if (!createdGift) {
-            setFormError("Не удалось создать подарок")
-            return
+            const createdGift = await createGift({
+                event_id: Number(eventId),
+                title: title.trim(),
+                price: parsedPrice,
+                description: description.trim() || undefined,
+                marketplace_url: marketplaceUrl.trim() || undefined,
+                image_id: imageId,
+                status: "available"
+            })
+
+            if (!createdGift) {
+                setFormError("Не удалось создать подарок")
+                return
+            }
+
+            setGifts(prev => [createdGift, ...prev])
+            setTitle("")
+            setPrice("")
+            setDescription("")
+            setImageFile(null)
+            setMarketplaceUrl("")
+            setIsFormOpen(false)
+        } finally {
+            setIsSubmitting(false)
         }
-
-        setGifts(prev => [createdGift, ...prev])
-        setTitle("")
-        setPrice("")
-        setDescription("")
-        setImageUrl("")
-        setMarketplaceUrl("")
-        setIsFormOpen(false)
     }
 
     async function handleToggleStatus(gift) {
@@ -177,13 +203,24 @@ function GiftList({ eventId, isOwner }) {
                     </label>
 
                     <label>
-                        Ссылка на изображение
+                        Изображение подарка
                         <input
-                            value={imageUrl}
-                            onChange={e => setImageUrl(e.target.value)}
-                            placeholder="https://..."
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/gif"
+                            onChange={(event) => {
+                                const file = event.target.files?.[0] || null
+                                if (file && !ALLOWED_IMAGE_TYPES.has(file.type)) {
+                                    setFormError("Выберите изображение в формате JPEG, PNG, WebP или GIF")
+                                    event.target.value = ""
+                                    return
+                                }
+                                setFormError(null)
+                                setImageFile(file)
+                                setImagePreview(file ? URL.createObjectURL(file) : "")
+                            }}
                         />
                     </label>
+                    {imagePreview && <img className="gift-image-preview" src={imagePreview} alt="Предпросмотр подарка" />}
 
                     <label>
                         Ссылка на маркетплейс
@@ -197,10 +234,16 @@ function GiftList({ eventId, isOwner }) {
                     {formError && <p className="gift-form-error">{formError}</p>}
 
                     <div className="gift-modal-actions">
-                        <button type="button" className="gift-secondary-button" onClick={() => setIsFormOpen(false)}>
+                        <button type="button" className="gift-secondary-button" onClick={() => {
+                            setImageFile(null)
+                            setFormError(null)
+                            setIsFormOpen(false)
+                        }} disabled={isSubmitting}>
                             Отмена
                         </button>
-                        <button type="submit" className="add-gift-button">Добавить</button>
+                        <button type="submit" className="add-gift-button" disabled={isSubmitting}>
+                            {isSubmitting ? "Загрузка..." : "Добавить"}
+                        </button>
                     </div>
                 </form>
             )}
@@ -240,13 +283,14 @@ function GiftList({ eventId, isOwner }) {
                         <GiftEditForm
                             gift={editingGift}
                             onChange={setEditingGift}
-                            onSave={() =>
+                            onSave={(imageId) =>
                                 handleEditGift(editingGift.id, {
                                     title: editingGift.title.trim(),
                                     price: Number(editingGift.price),
                                     description: editingGift.description?.trim() || null,
                                     picture_url: editingGift.picture_url?.trim() || null,
-                                    marketplace_url: editingGift.marketplace_url?.trim() || null
+                                    marketplace_url: editingGift.marketplace_url?.trim() || null,
+                                    ...(imageId ? { image_id: imageId, picture_url: null } : {})
                                 })
                             }
                             onCancel={() => setEditingGift(null)}
