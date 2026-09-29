@@ -1,4 +1,5 @@
 import "./EventCard.css"
+import { resolveImageUrl } from "../../../application/imageApplication"
 
 function formatEventDate(value) {
     if (!value) return "Дата не указана"
@@ -23,7 +24,11 @@ function EventCard({ event, gifts, onOpenEvent }) {
                 {gifts.length === 0 && <p className="empty-gifts">Пока нет подарков для этого события.</p>}
                 {gifts.map((gift) => (
                     <div className="event-gift-row" key={gift.id}>
-                        <div className="event-gift-picture">{gift.picture_url ? <img src={gift.picture_url} alt="" /> : "🎁"}</div>
+                        <div className="event-gift-picture">
+                            {resolveImageUrl(gift.image_id, gift.picture_url || gift.image_url)
+                                ? <img src={resolveImageUrl(gift.image_id, gift.picture_url || gift.image_url)} alt="" />
+                                : "🎁"}
+                        </div>
                         <div className="event-gift-info"><strong>{gift.title}</strong><span>{gift.description || "Описание подарка не указано"}</span></div>
                         <div className="event-gift-right"><strong>{gift.price} ₽</strong><span className={`gift-badge ${gift.status}`}>{gift.status}</span></div>
                     </div>

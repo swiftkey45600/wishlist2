@@ -13,6 +13,7 @@ import {
     unreserveGift
 } from "../../application/giftApplication"
 import GiftEditForm from "../../components/Gifts/GiftEditForm/GiftEditForm"
+import { resolveImageUrl } from "../../application/imageApplication"
 
 function getStatusClass(status) {
     return status === "reserved" ? "reserved" : status === "bought" ? "bought" : "available"
@@ -179,7 +180,7 @@ function PresentsPage() {
                                     <div className="presents-gift-top">
                                         <img
                                             className="presents-pic"
-                                            src={gift.picture_url || "https://via.placeholder.com/220x220?text=Gift"}
+                                            src={resolveImageUrl(gift.image_id, gift.picture_url || gift.image_url) || "https://via.placeholder.com/220x220?text=Gift"}
                                             alt={gift.title}
                                         />
                                         <div>
@@ -259,12 +260,13 @@ function PresentsPage() {
                                 <GiftEditForm
                                     gift={editingGift}
                                     onChange={setEditingGift}
-                                    onSave={() => handleEdit(editingGift.id, {
+                                    onSave={(imageId) => handleEdit(editingGift.id, {
                                         title: editingGift.title.trim(),
                                         price: Number(editingGift.price),
                                         description: editingGift.description?.trim() || null,
                                         picture_url: editingGift.picture_url?.trim() || null,
-                                        marketplace_url: editingGift.marketplace_url?.trim() || null
+                                        marketplace_url: editingGift.marketplace_url?.trim() || null,
+                                        ...(imageId ? { image_id: imageId, picture_url: null } : {})
                                     })}
                                     onCancel={() => setEditingGift(null)}
                                 />
