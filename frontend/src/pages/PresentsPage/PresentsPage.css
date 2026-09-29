@@ -172,6 +172,12 @@
     object-fit: cover;
 }
 
+.presents-pic-fallback {
+    display: grid;
+    place-items: center;
+    font-size: 48px;
+}
+
 .presents-gift-top h3 {
     margin: 2px 0 7px;
     font-size: 17px;

@@ -80,6 +80,13 @@
     object-fit: cover;
 }
 
+.event-gift-picture-fallback {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 100%;
+}
+
 .event-gift-info {
     display: grid;
     gap: 4px;
