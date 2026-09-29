@@ -7,10 +7,12 @@ from app.repositories import GiftRepository
 
 class EventService:
     def __init__(
-        self, event_repository: EventRepository, #gift_repository: GiftRepository
+        self,
+        event_repository: EventRepository,
+        gift_repository: GiftRepository | None = None,
     ):
         self.event_repository = event_repository
-        #self.gift_repository = gift_repository
+        self.gift_repository = gift_repository
 
     def create_event(
         self,
@@ -52,3 +54,62 @@ class EventService:
 
     def update_event(self, event_id: int, event: Event) -> Event | None:
         return self.event_repository.update_event(event_id, event)
+
+    def get_price_statistics(self, event_id: int) -> dict:
+        if self.gift_repository is None:
+            raise RuntimeError("Gift repository is required for price statistics")
+
+        gifts = self.gift_repository.get_gifts_by_event(event_id)
+        ranges = [
+            {
+                "key": "under_1000",
+                "label": "До 1 000 ₽",
+                "min_price": 0,
+                "max_price": 1000,
+                "count": 0,
+            },
+            {
+                "key": "from_1001_to_3000",
+                "label": "1 001–3 000 ₽",
+                "min_price": 1001,
+                "max_price": 3000,
+                "count": 0,
+            },
+            {
+                "key": "from_3001_to_5000",
+                "label": "3 001–5 000 ₽",
+                "min_price": 3001,
+                "max_price": 5000,
+                "count": 0,
+            },
+            {
+                "key": "over_5000",
+                "label": "Более 5 000 ₽",
+                "min_price": 5001,
+                "max_price": None,
+                "count": 0,
+            },
+        ]
+
+        for gift in gifts:
+            if gift.price is None or gift.price < 0:
+                continue
+            for price_range in ranges:
+                upper_bound = price_range["max_price"]
+                if gift.price >= price_range["min_price"] and (
+                    upper_bound is None or gift.price <= upper_bound
+                ):
+                    price_range["count"] += 1
+                    break
+
+        recommendations = [
+            f"Мало подарков в диапазоне «{price_range['label']}»"
+            for price_range in ranges
+            if price_range["count"] < 2
+        ]
+
+        return {
+            "total_gifts": sum(price_range["count"] for price_range in ranges),
+            "price_ranges": ranges,
+            "recommendations": recommendations,
+        }
