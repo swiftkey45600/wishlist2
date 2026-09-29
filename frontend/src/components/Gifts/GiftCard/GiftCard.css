@@ -32,6 +32,22 @@
     font-size: 13px;
 }
 
+.gift-tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin: 0 0 9px;
+}
+
+.gift-tag {
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: var(--primary-color-soft);
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: 700;
+}
+
 .gift-card-info strong {
     font-weight: 800;
 }

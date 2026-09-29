@@ -115,6 +115,36 @@
     gap: 12px;
 }
 
+.gift-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.gift-group-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.gift-group-heading h3 {
+    margin: 0;
+    font-size: 15px;
+}
+
+.gift-group-heading span {
+    display: grid;
+    min-width: 22px;
+    height: 22px;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--primary-color-soft);
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: 700;
+}
+
 .gift-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 3px; }
 .gift-secondary-button, .gift-danger-button { padding: 10px 15px; border-radius: 10px; font-weight: 700; cursor: pointer; }
 .gift-secondary-button { border: 1px solid var(--line); background: #fff; color: #555b68; }

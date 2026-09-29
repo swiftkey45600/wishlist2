@@ -1,10 +1,11 @@
 import "./GiftEditForm.css"
 import { useEffect, useState } from "react"
 import { getImage, resolveImageUrl, uploadImageFile } from "../../../application/imageApplication"
+import TagSelector from "../../Tags/TagSelector/TagSelector"
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"])
 
-function GiftEditForm({ gift, onChange, onSave, onCancel }) {
+function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) {
     const [error, setError] = useState("")
     const [isSaving, setIsSaving] = useState(false)
     const [imageFile, setImageFile] = useState(null)
@@ -147,6 +148,14 @@ function GiftEditForm({ gift, onChange, onSave, onCancel }) {
                     }
                 />
             </label>
+
+            <TagSelector
+                eventId={gift.event_id}
+                tags={tags}
+                selectedTagIds={gift.tag_ids || []}
+                onTagsChange={onTagsChange}
+                onChange={tagIds => onChange({ ...gift, tag_ids: tagIds })}
+            />
 
             {error && <p className="gift-edit-error">{error}</p>}
 

@@ -15,6 +15,13 @@ function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit }) {
                 <div className="gift-card-info">
                     <h3>{gift.title}</h3>
                     <p className="gift-description">{gift.description || "Описание подарка пока не добавлено."}</p>
+                    {gift.tags?.length > 0 && (
+                        <div className="gift-tag-list">
+                            {gift.tags.map(tag => (
+                                <span className="gift-tag" key={tag.id}>{tag.name}</span>
+                            ))}
+                        </div>
+                    )}
                     <strong>{gift.price} ₽</strong>
                 </div>
                 <div className="gift-card-right">
