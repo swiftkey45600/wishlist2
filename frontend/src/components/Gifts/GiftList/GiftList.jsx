@@ -16,6 +16,8 @@ import ConfirmDeleteModal from "../../ConfirmDeleteModal/ConfirmDeleteModal"
 import TagSelector from "../../Tags/TagSelector/TagSelector"
 import { getEventTags } from "../../../application/tagApplication"
 import { uploadImageFile } from "../../../application/imageApplication"
+import GiftFilters from "../GiftFilters/GiftFilters"
+import { useGiftFilters } from "../GiftFilters/useGiftFilters"
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"])
 
@@ -201,21 +203,21 @@ function GiftList({ eventId, isOwner }) {
         })
     })
 
-    const giftGroups = allTags
+    const { filters, filteredGifts, updateFilter } = useGiftFilters(gifts)
+    const filteredGiftGroups = allTags
         .map(tag => ({
             tag,
-            gifts: gifts.filter(gift => gift.tags?.some(giftTag => giftTag.id === tag.id))
+            gifts: filteredGifts.filter(gift => gift.tags?.some(giftTag => giftTag.id === tag.id))
         }))
         .filter(group => group.gifts.length > 0)
-
-    const untaggedGifts = gifts.filter(gift => !gift.tags?.length)
+    const filteredUntaggedGifts = filteredGifts.filter(gift => !gift.tags?.length)
 
     return (
         <div className="gift-list">
             <div className="gift-section-heading">
                 <div>
                     <h2>Подарки события</h2>
-                    <span>{gifts.length} подарка</span>
+                    <span>{filteredGifts.length} из {gifts.length}</span>
                 </div>
                 {isOwner && <button
                     className="add-gift-button"
@@ -224,6 +226,12 @@ function GiftList({ eventId, isOwner }) {
                     {isFormOpen ? "Отмена" : "+ Добавить подарок"}
                 </button>}
             </div>
+
+            <GiftFilters
+                tags={allTags}
+                filters={filters}
+                onFilterChange={updateFilter}
+            />
 
             {isOwner && isFormOpen && (
                 <form className="gift-create-form gift-modal-form" onSubmit={handleSubmit}>
@@ -323,9 +331,13 @@ function GiftList({ eventId, isOwner }) {
                 <p className="gift-list-status">Подарки не найдены.</p>
             )}
 
-            {!isLoading && !error && gifts.length > 0 && (
+            {!isLoading && !error && gifts.length > 0 && filteredGifts.length === 0 && (
+                <p className="gift-list-status">Подарки по заданным фильтрам не найдены.</p>
+            )}
+
+            {!isLoading && !error && filteredGifts.length > 0 && (
                 <div className="gift-groups">
-                    {giftGroups.map(group => (
+                    {filteredGiftGroups.map(group => (
                         <section className="gift-group" key={group.tag.id}>
                             <div className="gift-group-heading">
                                 <h3>{group.tag.name}</h3>
@@ -346,14 +358,14 @@ function GiftList({ eventId, isOwner }) {
                         </section>
                     ))}
 
-                    {untaggedGifts.length > 0 && (
+                    {filteredUntaggedGifts.length > 0 && (
                         <section className="gift-group">
                             <div className="gift-group-heading">
                                 <h3>Без тегов</h3>
-                                <span>{untaggedGifts.length}</span>
+                                <span>{filteredUntaggedGifts.length}</span>
                             </div>
                             <div className="gift-grid">
-                                {untaggedGifts.map(gift => (
+                                {filteredUntaggedGifts.map(gift => (
                                     <GiftCard
                                         key={gift.id}
                                         gift={gift}
