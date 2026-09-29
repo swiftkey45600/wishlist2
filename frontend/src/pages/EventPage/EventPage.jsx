@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import "./EventPage.css"
-import "../../Styles/common.css"
+import "../../styles/common.css"
 
 import { useNavigate, useParams } from "react-router-dom"
 import { deleteEvent, editEvent, getEvent } from "../../application/eventApplication"

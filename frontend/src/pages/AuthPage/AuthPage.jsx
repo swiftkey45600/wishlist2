@@ -8,6 +8,14 @@ import {
 
 import "./AuthPage.css"
 
+const MIN_LOGIN_LENGTH = 3
+const MIN_PASSWORD_LENGTH = 8
+
+function isRepeatedCharacter(value) {
+    const characters = Array.from(value)
+    return characters.length > 0 && characters.every((character) => character === characters[0])
+}
+
 function AuthPage() {
     const [isLogin, setIsLogin] = useState(true)
     const [name, setName] = useState("")
@@ -29,6 +37,21 @@ function AuthPage() {
         }
 
         if (!isLogin) {
+            if (Array.from(loginValue.trim()).length < MIN_LOGIN_LENGTH) {
+                setError(`Логин должен содержать не менее ${MIN_LOGIN_LENGTH} символов`)
+                return
+            }
+
+            if (Array.from(password).length < MIN_PASSWORD_LENGTH) {
+                setError(`Пароль должен содержать не менее ${MIN_PASSWORD_LENGTH} символов`)
+                return
+            }
+
+            if (isRepeatedCharacter(password)) {
+                setError("Пароль не может состоять из одинаковых символов")
+                return
+            }
+
             if (!name.trim()) {
                 setError("Введите имя")
                 return
@@ -44,8 +67,8 @@ function AuthPage() {
 
         try {
             const response = isLogin
-                ? await login({ login: loginValue, password })
-                : await register({ name, login: loginValue, password })
+                ? await login({ login: loginValue.trim(), password })
+                : await register({ name, login: loginValue.trim(), password })
 
             if (!response?.access_token) {
                 setError("Не удалось подтвердить авторизацию")
@@ -56,7 +79,15 @@ function AuthPage() {
             localStorage.setItem("user", JSON.stringify(response.user))
             navigate("/", { replace: true })
         } catch (submitError) {
-            const message = submitError?.response?.data?.detail || submitError?.message || "Ошибка авторизации"
+            const detail = submitError?.response?.data?.detail
+            const messages = {
+                "Login already exists": "Этот логин уже занят. Попробуйте другой.",
+                "No user with this login": "Пользователь с таким логином не найден.",
+                "Invalid password": "Неверный пароль. Проверьте введенные данные."
+            }
+            const message = typeof detail === "string"
+                ? messages[detail] || detail
+                : "Не удалось выполнить авторизацию. Проверьте подключение и попробуйте снова."
             setError(message)
         } finally {
             setIsSubmitting(false)

@@ -26,5 +26,6 @@ class UserLoginRequest:
 class UserUpdateRequest:
     name: str | None = None
     login: str | None = None
+    password: str | None = None
     birthday: str | None = None
     gender: str | None = None
