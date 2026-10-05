@@ -1,8 +1,29 @@
 from app.models.gift import Gift
+from app.models.tag import Tag
 from app.database import get_connection
 
 class GiftRepository:
-    def _row_to_gift(self, row) -> Gift:
+    def _get_gift_tags(self, connection, gift_id: int) -> list[Tag]:
+        rows = connection.execute(
+            """
+            SELECT tags.*
+            FROM tags
+            JOIN gift_tags ON gift_tags.tag_id = tags.id
+            WHERE gift_tags.gift_id = ?
+            ORDER BY tags.id
+            """,
+            (gift_id,),
+        ).fetchall()
+        return [Tag(**dict(row)) for row in rows]
+
+    def _replace_gift_tags(self, connection, gift_id: int, tag_ids: list[int]) -> None:
+        connection.execute("DELETE FROM gift_tags WHERE gift_id = ?", (gift_id,))
+        connection.executemany(
+            "INSERT INTO gift_tags (gift_id, tag_id) VALUES (?, ?)",
+            [(gift_id, tag_id) for tag_id in dict.fromkeys(tag_ids)],
+        )
+
+    def _row_to_gift(self, row, connection) -> Gift:
         return Gift(
             id=row["id"],
             event_id=row["event_id"],
@@ -15,9 +36,10 @@ class GiftRepository:
             category_id=row["category_id"],
             image_id=row["image_id"],
             reservation_id=row["reservation_id"] if "reservation_id" in row.keys() else None,
+            tags=self._get_gift_tags(connection, row["id"]),
         )
 
-    def create_gift(self, gift: Gift) -> Gift:
+    def create_gift(self, gift: Gift, tag_ids: list[int] | None = None) -> Gift:
         with get_connection() as connection:
             cursor = connection.execute(
                 """
@@ -47,8 +69,10 @@ class GiftRepository:
                 ),
             )
 
-            connection.commit()
             gift.id = cursor.lastrowid
+            self._replace_gift_tags(connection, gift.id, tag_ids or [])
+            gift.tags = self._get_gift_tags(connection, gift.id)
+            connection.commit()
 
             return gift
 
@@ -78,7 +102,7 @@ class GiftRepository:
             if row is None:
                 return None
 
-            return self._row_to_gift(row)
+            return self._row_to_gift(row, connection)
 
     def get_gifts_by_event(self, event_id: int) -> list[Gift]:
         with get_connection() as connection:
@@ -103,7 +127,7 @@ class GiftRepository:
                 (event_id,),
             ).fetchall()
 
-            return [self._row_to_gift(row) for row in rows]
+            return [self._row_to_gift(row, connection) for row in rows]
 
     def update_gift_status(self, gift_id: int, status: str) -> Gift | None:
         with get_connection() as connection:
@@ -124,17 +148,23 @@ class GiftRepository:
         if not data:
             return self.get_gift_by_id(gift_id)
 
-        set_clause = ", ".join(f"{field} = ?" for field in data)
+        data = data.copy()
+        tag_ids = data.pop("tag_ids", None)
 
         with get_connection() as connection:
-            connection.execute(
-                f"""
-                UPDATE gifts
-                SET {set_clause}
-                WHERE id = ?
-                """,
-                (*data.values(), gift_id),
-            )
+            if data:
+                set_clause = ", ".join(f"{field} = ?" for field in data)
+                connection.execute(
+                    f"""
+                    UPDATE gifts
+                    SET {set_clause}
+                    WHERE id = ?
+                    """,
+                    (*data.values(), gift_id),
+                )
+
+            if tag_ids is not None:
+                self._replace_gift_tags(connection, gift_id, tag_ids)
 
             connection.commit()
 

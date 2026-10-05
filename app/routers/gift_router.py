@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 
-from app.models.gift import Gift
+from app.models.gift import Gift, GiftCreateRequest
 from app.models.user import User
 from app.repositories.contribution_repository import ContributionRepository
 from app.repositories.gift_repository import GiftRepository
@@ -36,13 +36,13 @@ gift_service = GiftService(
 
 
 @router.post("/gifts/", response_model=Gift)
-def create_gift(gift: Gift, current_user: User = Depends(get_current_user)):
+def create_gift(gift: GiftCreateRequest, current_user: User = Depends(get_current_user)):
     event = event_repo.get_event_by_id(gift.event_id)
     if event is None:
         raise HTTPException(status_code=404, detail="Event not found")
     if event.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Only the event owner can create gifts")
-    return gift_service.create_gift(gift)
+    return gift_service.create_gift(gift, gift.tag_ids)
 
 
 @router.get("/gifts/{gift_id}", response_model=Gift)
@@ -65,6 +65,7 @@ class GiftUpdateRequest(BaseModel):
     image_id: Optional[int] = None
     status: Optional[str] = None
     is_reserved: Optional[bool] = None
+    tag_ids: list[int] = Field(default_factory=list)
 
 
 @router.patch("/gifts/{gift_id}/status", response_model=Gift)
