@@ -1,6 +1,7 @@
 import "./GiftEditForm.css"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { getImage, resolveImageUrl, uploadImageFile } from "../../../application/imageApplication"
+import { parseMarketplaceProduct } from "../../../application/marketplaceApplication"
 import TagSelector from "../../Tags/TagSelector/TagSelector"
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"])
@@ -8,7 +9,9 @@ const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "i
 function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) {
     const [error, setError] = useState("")
     const [isSaving, setIsSaving] = useState(false)
+    const [isParsingMarketplace, setIsParsingMarketplace] = useState(false)
     const [imageFile, setImageFile] = useState(null)
+    const imageInputRef = useRef(null)
     const [imagePreview, setImagePreview] = useState(
         resolveImageUrl(gift.image_id, gift.picture_url || gift.image_url)
     )
@@ -33,6 +36,38 @@ function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) 
         }
     }, [imageFile, gift.image_id])
 
+    async function handleMarketplaceAutofill() {
+        const url = gift.marketplace_url?.trim()
+        if (!url) {
+            setError("Вставьте ссылку на товар")
+            return
+        }
+
+        setError("")
+        setIsParsingMarketplace(true)
+        try {
+            const { product, error: parseError } = await parseMarketplaceProduct(url)
+            if (!product) {
+                setError(parseError)
+                return
+            }
+
+            setImageFile(null)
+            if (imageInputRef.current) imageInputRef.current.value = ""
+            setImagePreview(resolveImageUrl(product.image_id, product.picture_url))
+            onChange({
+                ...gift,
+                title: product.title || gift.title,
+                price: product.price ?? gift.price,
+                image_id: product.image_id,
+                picture_url: product.image_id ? null : resolveImageUrl(null, product.picture_url),
+                marketplace_url: product.marketplace_url || url
+            })
+        } finally {
+            setIsParsingMarketplace(false)
+        }
+    }
+
     async function handleSubmit(event) {
         event.preventDefault()
 
@@ -50,7 +85,7 @@ function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) 
         setError("")
         setIsSaving(true)
         try {
-            let imageId
+            let imageId = gift.image_id
             if (imageFile) {
                 const uploadedImage = await uploadImageFile(imageFile)
                 if (!uploadedImage?.id) {
@@ -115,13 +150,16 @@ function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) 
             </label>
 
             <label>
-                Изображение подарка
+                Загрузить изображение файлом
                 <input
+                    ref={imageInputRef}
+                    disabled={isSaving || isParsingMarketplace}
                     type="file"
                     accept="image/jpeg,image/png,image/webp,image/gif"
                     onChange={(event) => {
                         const file = event.target.files?.[0] || null
-                        if (file && !ALLOWED_IMAGE_TYPES.has(file.type)) {
+                        if (!file) return
+                        if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
                             setError("Выберите изображение в формате JPEG, PNG, WebP или GIF")
                             event.target.value = ""
                             return
@@ -134,36 +172,63 @@ function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) 
                     }}
                 />
             </label>
-            {imagePreview && <img className="gift-image-preview" src={imagePreview} alt="Предпросмотр подарка" />}
-
             <label>
-                Ссылка на маркетплейс
+                Или указать ссылку на изображение
                 <input
-                    value={gift.marketplace_url || ""}
-                    onChange={e =>
-                        onChange({
-                            ...gift,
-                            marketplace_url: e.target.value
-                        })
-                    }
+                    type="url"
+                    pattern="https?://.+"
+                    placeholder="https://example.com/photo.jpg"
+                    value={imageFile || gift.image_id ? "" : gift.picture_url || ""}
+                    disabled={isSaving || isParsingMarketplace}
+                    onChange={event => {
+                        const url = event.target.value
+                        setImageFile(null)
+                        if (imageInputRef.current) imageInputRef.current.value = ""
+                        setError("")
+                        setImagePreview(/^https?:\/\//i.test(url.trim()) ? url.trim() : "")
+                        onChange({ ...gift, image_id: null, image_url: null, picture_url: url })
+                    }}
                 />
             </label>
+            {imagePreview && <img className="gift-image-preview" src={imagePreview} alt="Предпросмотр подарка" />}
 
-            <TagSelector
+            <div className="marketplace-autofill">
+                <label>
+                    Ссылка на маркетплейс
+                    <input
+                        value={gift.marketplace_url || ""}
+                        onChange={e =>
+                            onChange({
+                                ...gift,
+                                marketplace_url: e.target.value
+                            })
+                        }
+                    />
+                </label>
+                <button
+                    type="button"
+                    onClick={handleMarketplaceAutofill}
+                    disabled={isParsingMarketplace || isSaving}
+                >
+                    {isParsingMarketplace ? "Заполняем..." : "Заполнить по ссылке"}
+                </button>
+            </div>
+
+            {tags && <TagSelector
                 eventId={gift.event_id}
                 tags={tags}
                 selectedTagIds={gift.tag_ids || []}
                 onTagsChange={onTagsChange}
                 onChange={tagIds => onChange({ ...gift, tag_ids: tagIds })}
-            />
+            />}
 
             {error && <p className="gift-edit-error">{error}</p>}
 
             <div className="gift-edit-actions">
-                <button type="button" onClick={onCancel}>
+                <button type="button" onClick={onCancel} disabled={isSaving || isParsingMarketplace}>
                     Отмена
                 </button>
-                <button type="submit" disabled={isSaving}>
+                <button type="submit" disabled={isSaving || isParsingMarketplace}>
                     {isSaving ? "Сохранение..." : "Сохранить"}
                 </button>
             </div>

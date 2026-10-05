@@ -80,6 +80,7 @@ class MarketplaceService:
             return deepcopy(cached[1])
 
         html, final_url = self._download_page(normalized_url)
+        self._reject_challenge_page(final_url)
         product = self._parse_html(html, final_url)
         product["marketplace_url"] = final_url
 
@@ -120,6 +121,16 @@ class MarketplaceService:
                 final_url = self._validate_url(response.geturl())
                 charset = response.headers.get_content_charset() or "utf-8"
         except HTTPError as error:
+            if error.code == 401:
+                raise MarketplaceParseError(
+                    "Сайт требует авторизацию для просмотра товара. "
+                    "Попробуйте другую ссылку или заполните данные вручную"
+                ) from error
+            if error.code in {307, 403, 429, 498}:
+                raise MarketplaceParseError(
+                    "Сайт заблокировал автоматическое чтение карточки. "
+                    "Заполните данные товара вручную"
+                ) from error
             raise MarketplaceParseError(
                 f"Маркетплейс вернул ошибку HTTP {error.code}"
             ) from error
@@ -305,6 +316,15 @@ class MarketplaceService:
                     if title.lower().endswith(suffix.lower()):
                         title = title[: -len(suffix)].strip()
         return title
+
+    @staticmethod
+    def _reject_challenge_page(url: str) -> None:
+        parsed = urlparse(url)
+        hostname = (parsed.hostname or "").lower()
+        if hostname.endswith("market.yandex.ru") and parsed.path.startswith("/showcaptcha"):
+            raise MarketplaceParseError(
+                "Яндекс Маркет открыл CAPTCHA вместо товара. Вставьте прямую ссылку на карточку товара"
+            )
 
     @staticmethod
     def _validate_url(url: str) -> str:
