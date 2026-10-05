@@ -266,7 +266,8 @@ function PresentsPage() {
                                         description: editingGift.description?.trim() || null,
                                         picture_url: editingGift.picture_url?.trim() || null,
                                         marketplace_url: editingGift.marketplace_url?.trim() || null,
-                                        ...(imageId ? { image_id: imageId, picture_url: null } : {})
+                                        image_id: imageId ?? null,
+                                        ...(imageId ? { picture_url: null } : {})
                                     })}
                                     onCancel={() => setEditingGift(null)}
                                 />

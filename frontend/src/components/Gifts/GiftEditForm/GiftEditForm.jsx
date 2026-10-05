@@ -1,5 +1,5 @@
 import "./GiftEditForm.css"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { getImage, resolveImageUrl, uploadImageFile } from "../../../application/imageApplication"
 import { parseMarketplaceProduct } from "../../../application/marketplaceApplication"
 import TagSelector from "../../Tags/TagSelector/TagSelector"
@@ -11,6 +11,7 @@ function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) 
     const [isSaving, setIsSaving] = useState(false)
     const [isParsingMarketplace, setIsParsingMarketplace] = useState(false)
     const [imageFile, setImageFile] = useState(null)
+    const imageInputRef = useRef(null)
     const [imagePreview, setImagePreview] = useState(
         resolveImageUrl(gift.image_id, gift.picture_url || gift.image_url)
     )
@@ -52,13 +53,14 @@ function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) 
             }
 
             setImageFile(null)
+            if (imageInputRef.current) imageInputRef.current.value = ""
             setImagePreview(resolveImageUrl(product.image_id, product.picture_url))
             onChange({
                 ...gift,
                 title: product.title || gift.title,
                 price: product.price ?? gift.price,
                 image_id: product.image_id,
-                picture_url: product.picture_url,
+                picture_url: product.image_id ? null : resolveImageUrl(null, product.picture_url),
                 marketplace_url: product.marketplace_url || url
             })
         } finally {
@@ -148,13 +150,16 @@ function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) 
             </label>
 
             <label>
-                Изображение подарка
+                Загрузить изображение файлом
                 <input
+                    ref={imageInputRef}
+                    disabled={isSaving || isParsingMarketplace}
                     type="file"
                     accept="image/jpeg,image/png,image/webp,image/gif"
                     onChange={(event) => {
                         const file = event.target.files?.[0] || null
-                        if (file && !ALLOWED_IMAGE_TYPES.has(file.type)) {
+                        if (!file) return
+                        if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
                             setError("Выберите изображение в формате JPEG, PNG, WebP или GIF")
                             event.target.value = ""
                             return
@@ -164,6 +169,24 @@ function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) 
                         setImagePreview(file
                             ? URL.createObjectURL(file)
                             : resolveImageUrl(gift.image_id, gift.picture_url || gift.image_url))
+                    }}
+                />
+            </label>
+            <label>
+                Или указать ссылку на изображение
+                <input
+                    type="url"
+                    pattern="https?://.+"
+                    placeholder="https://example.com/photo.jpg"
+                    value={imageFile || gift.image_id ? "" : gift.picture_url || ""}
+                    disabled={isSaving || isParsingMarketplace}
+                    onChange={event => {
+                        const url = event.target.value
+                        setImageFile(null)
+                        if (imageInputRef.current) imageInputRef.current.value = ""
+                        setError("")
+                        setImagePreview(/^https?:\/\//i.test(url.trim()) ? url.trim() : "")
+                        onChange({ ...gift, image_id: null, image_url: null, picture_url: url })
                     }}
                 />
             </label>
@@ -191,13 +214,13 @@ function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) 
                 </button>
             </div>
 
-            <TagSelector
+            {tags && <TagSelector
                 eventId={gift.event_id}
                 tags={tags}
                 selectedTagIds={gift.tag_ids || []}
                 onTagsChange={onTagsChange}
                 onChange={tagIds => onChange({ ...gift, tag_ids: tagIds })}
-            />
+            />}
 
             {error && <p className="gift-edit-error">{error}</p>}
 

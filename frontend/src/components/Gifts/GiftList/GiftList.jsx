@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import "./GiftList.css"
 
 import GiftCard from "../GiftCard/GiftCard"
@@ -31,6 +31,8 @@ function GiftList({ eventId, isOwner }) {
     const [imageFile, setImageFile] = useState(null)
     const [imagePreview, setImagePreview] = useState("")
     const [parsedImageId, setParsedImageId] = useState(null)
+    const [pictureUrl, setPictureUrl] = useState("")
+    const imageInputRef = useRef(null)
     const [formError, setFormError] = useState(null)
     const [marketplaceUrl, setMarketplaceUrl] = useState("")
     const [editingGift, setEditingGift] = useState(null)
@@ -95,6 +97,8 @@ function GiftList({ eventId, isOwner }) {
             if (product.price != null) setPrice(String(product.price))
             setMarketplaceUrl(product.marketplace_url || url)
             setImageFile(null)
+            if (imageInputRef.current) imageInputRef.current.value = ""
+            setPictureUrl(product.image_id ? "" : resolveImageUrl(null, product.picture_url))
             setParsedImageId(product.image_id || null)
             setImagePreview(resolveImageUrl(product.image_id, product.picture_url))
         } finally {
@@ -136,6 +140,7 @@ function GiftList({ eventId, isOwner }) {
                 description: description.trim() || undefined,
                 marketplace_url: marketplaceUrl.trim() || undefined,
                 image_id: imageId,
+                picture_url: imageId ? null : pictureUrl.trim() || null,
                 tag_ids: selectedTagIds,
                 status: "available"
             })
@@ -156,6 +161,7 @@ function GiftList({ eventId, isOwner }) {
             setImageFile(null)
             setImagePreview("")
             setParsedImageId(null)
+            setPictureUrl("")
             setMarketplaceUrl("")
             setSelectedTagIds([])
             setIsFormOpen(false)
@@ -289,21 +295,44 @@ function GiftList({ eventId, isOwner }) {
                     </label>
 
                     <label>
-                        Изображение подарка
+                        Загрузить изображение файлом
                         <input
+                            ref={imageInputRef}
+                            disabled={isSubmitting || isParsingMarketplace}
                             type="file"
                             accept="image/jpeg,image/png,image/webp,image/gif"
                             onChange={(event) => {
                                 const file = event.target.files?.[0] || null
-                                if (file && !ALLOWED_IMAGE_TYPES.has(file.type)) {
+                                if (!file) return
+                                if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
                                     setFormError("Выберите изображение в формате JPEG, PNG, WebP или GIF")
                                     event.target.value = ""
                                     return
                                 }
                                 setFormError(null)
                                 setImageFile(file)
+                                setPictureUrl("")
                                 setParsedImageId(null)
                                 setImagePreview(file ? URL.createObjectURL(file) : "")
+                            }}
+                        />
+                    </label>
+                    <label>
+                        Или указать ссылку на изображение
+                        <input
+                            type="url"
+                            pattern="https?://.+"
+                            placeholder="https://example.com/photo.jpg"
+                            value={pictureUrl}
+                            disabled={isSubmitting || isParsingMarketplace}
+                            onChange={event => {
+                                const url = event.target.value
+                                setPictureUrl(url)
+                                setImageFile(null)
+                                setParsedImageId(null)
+                                if (imageInputRef.current) imageInputRef.current.value = ""
+                                setFormError(null)
+                                setImagePreview(/^https?:\/\//i.test(url.trim()) ? url.trim() : "")
                             }}
                         />
                     </label>
@@ -343,6 +372,7 @@ function GiftList({ eventId, isOwner }) {
                             setImageFile(null)
                             setImagePreview("")
                             setParsedImageId(null)
+                            setPictureUrl("")
                             setFormError(null)
                             setIsFormOpen(false)
                         }} disabled={isSubmitting || isParsingMarketplace}>
@@ -431,7 +461,8 @@ function GiftList({ eventId, isOwner }) {
                                     picture_url: editingGift.picture_url?.trim() || null,
                                     marketplace_url: editingGift.marketplace_url?.trim() || null,
                                     tag_ids: editingGift.tag_ids || [],
-                                    ...(imageId ? { image_id: imageId, picture_url: null } : {})
+                                    image_id: imageId ?? null,
+                                    ...(imageId ? { picture_url: null } : {})
                                 })
                             }
                             onCancel={() => setEditingGift(null)}
