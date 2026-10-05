@@ -11,6 +11,7 @@ import EventDetailsCard from "../../components/Events/EventDetailsCard/EventDeta
 import GiftList from "../../components/Gifts/GiftList/GiftList"
 import ConfirmDeleteModal from "../../components/ConfirmDeleteModal/ConfirmDeleteModal"
 import EditEventForm from "../../components/Events/EditEventForm/EditEventForm"
+import GiftPriceWidget from "../../components/Gifts/GiftPriceWidget/GiftPriceWidget"
 
 function EventPage() {
 	const navigate = useNavigate()
@@ -20,6 +21,7 @@ function EventPage() {
     const [showToast, setShowToast] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+    const [statisticsRefreshKey, setStatisticsRefreshKey] = useState(0)
     const user = JSON.parse(localStorage.getItem("user") || "null")
     const isOwner = user?.id === event?.owner_id
 
@@ -122,7 +124,14 @@ function EventPage() {
                                     onEdit={isOwner ? () => setIsEditModalOpen(true) : undefined}
                                     onDelete={isOwner ? () => setIsDeleteModalOpen(true) : undefined}
                                 />
-                                <GiftList eventId={id} isOwner={isOwner} />
+                                {isOwner && (
+                                    <GiftPriceWidget eventId={id} refreshKey={statisticsRefreshKey} />
+                                )}
+                                <GiftList
+                                    eventId={id}
+                                    isOwner={isOwner}
+                                    onGiftDataChange={() => setStatisticsRefreshKey((key) => key + 1)}
+                                />
                                 {isEditModalOpen && (
                                     <div className="event-edit-modal" onClick={(modalEvent) => {
                                         if (modalEvent.target === modalEvent.currentTarget) setIsEditModalOpen(false)

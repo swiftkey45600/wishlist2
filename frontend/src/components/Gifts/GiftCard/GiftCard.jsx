@@ -1,16 +1,14 @@
 import "./GiftCard.css"
-import { resolveImageUrl } from "../../../application/imageApplication"
+import GiftImage from "../GiftImage/GiftImage"
 
 function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit }) {
-    const imageUrl = resolveImageUrl(gift.image_id, gift.picture_url || gift.image_url)
-
     return (
         <div className="gift-card">
             <div className="gift-card-main">
-                <img
+                <GiftImage
+                    gift={gift}
                     className="gift-image"
-                    src={imageUrl || "https://via.placeholder.com/120x120?text=Gift"}
-                    alt={gift.title}
+                    fallbackClassName="gift-image gift-image-fallback"
                 />
                 <div className="gift-card-info">
                     <h3>{gift.title}</h3>
