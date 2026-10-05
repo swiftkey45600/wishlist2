@@ -1,11 +1,14 @@
 .gift-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
     padding: 20px;
     border: 0;
     background: var(--card);
 }
 
 .gift-edit-form h3 {
-    margin: 0 0 18px;
+    margin: 0 0 4px;
 
     font-size: 20px;
 }
@@ -14,8 +17,6 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-
-    margin-bottom: 14px;
 
     color: #555a67;
     font-size: 13px;
@@ -46,6 +47,17 @@
     resize: vertical;
 }
 
+.gift-image-preview {
+    display: block;
+    width: min(180px, 100%);
+    height: 150px;
+    margin-bottom: 14px;
+    object-fit: contain;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: #fff;
+}
+
 .gift-edit-form input:focus,
 .gift-edit-form textarea:focus {
     outline: none;
@@ -64,7 +76,7 @@
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    margin-top: 18px;
+    margin-top: 4px;
 }
 
 .gift-edit-actions button {

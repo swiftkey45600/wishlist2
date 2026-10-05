@@ -1,8 +1,13 @@
 import {
     createImage as createImageRepository,
     getImage as getImageRepository,
-    deleteImage as deleteImageRepository
+    deleteImage as deleteImageRepository,
+    resolveImageUrl as resolveImageUrlRepository
 } from "../repositories/imageRepository"
+
+export function resolveImageUrl(imageId, imageUrl) {
+    return resolveImageUrlRepository(imageId, imageUrl)
+}
 
 export async function createImage(imageData) {
     try {
@@ -11,6 +16,12 @@ export async function createImage(imageData) {
         console.error(error)
         return null
     }
+}
+
+export async function uploadImageFile(file) {
+    const imageData = new FormData()
+    imageData.append("file", file)
+    return await createImage(imageData)
 }
 
 export async function getImage(imageId) {

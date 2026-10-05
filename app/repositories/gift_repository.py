@@ -128,15 +128,15 @@ class GiftRepository:
 
         with get_connection() as connection:
             connection.execute(
-            f"""
-            UPDATE gifts
-            SET {set_clause}
-            WHERE id = ?
-            """,
-            (*data.values(), gift_id),
-        )
+                f"""
+                UPDATE gifts
+                SET {set_clause}
+                WHERE id = ?
+                """,
+                (*data.values(), gift_id),
+            )
 
-        connection.commit()
+            connection.commit()
 
         return self.get_gift_by_id(gift_id)
 
