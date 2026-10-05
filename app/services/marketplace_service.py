@@ -121,6 +121,11 @@ class MarketplaceService:
                 final_url = self._validate_url(response.geturl())
                 charset = response.headers.get_content_charset() or "utf-8"
         except HTTPError as error:
+            if error.code == 401:
+                raise MarketplaceParseError(
+                    "Сайт требует авторизацию для просмотра товара. "
+                    "Попробуйте другую ссылку или заполните данные вручную"
+                ) from error
             if error.code in {307, 403, 429, 498}:
                 raise MarketplaceParseError(
                     "Сайт заблокировал автоматическое чтение карточки. "
