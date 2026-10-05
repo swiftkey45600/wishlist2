@@ -121,11 +121,9 @@ class MarketplaceService:
                 final_url = self._validate_url(response.geturl())
                 charset = response.headers.get_content_charset() or "utf-8"
         except HTTPError as error:
-            hostname = (urlparse(url).hostname or "").lower()
-            protected_marketplaces = ("ozon.ru", "wildberries.ru", "market.yandex.ru")
-            if error.code in {307, 403, 429, 498} and hostname.endswith(protected_marketplaces):
+            if error.code in {307, 403, 429, 498}:
                 raise MarketplaceParseError(
-                    "Маркетплейс заблокировал автоматическое чтение карточки. "
+                    "Сайт заблокировал автоматическое чтение карточки. "
                     "Заполните данные товара вручную"
                 ) from error
             raise MarketplaceParseError(
