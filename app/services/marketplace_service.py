@@ -80,6 +80,7 @@ class MarketplaceService:
             return deepcopy(cached[1])
 
         html, final_url = self._download_page(normalized_url)
+        self._reject_challenge_page(final_url)
         product = self._parse_html(html, final_url)
         product["marketplace_url"] = final_url
 
@@ -305,6 +306,15 @@ class MarketplaceService:
                     if title.lower().endswith(suffix.lower()):
                         title = title[: -len(suffix)].strip()
         return title
+
+    @staticmethod
+    def _reject_challenge_page(url: str) -> None:
+        parsed = urlparse(url)
+        hostname = (parsed.hostname or "").lower()
+        if hostname.endswith("market.yandex.ru") and parsed.path.startswith("/showcaptcha"):
+            raise MarketplaceParseError(
+                "Яндекс Маркет открыл CAPTCHA вместо товара. Вставьте прямую ссылку на карточку товара"
+            )
 
     @staticmethod
     def _validate_url(url: str) -> str:
