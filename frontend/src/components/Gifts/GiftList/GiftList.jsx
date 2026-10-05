@@ -15,7 +15,8 @@ import GiftEditForm from "../GiftEditForm/GiftEditForm"
 import ConfirmDeleteModal from "../../ConfirmDeleteModal/ConfirmDeleteModal"
 import TagSelector from "../../Tags/TagSelector/TagSelector"
 import { getEventTags } from "../../../application/tagApplication"
-import { uploadImageFile } from "../../../application/imageApplication"
+import { resolveImageUrl, uploadImageFile } from "../../../application/imageApplication"
+import { parseMarketplaceProduct } from "../../../application/marketplaceApplication"
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"])
 
@@ -29,6 +30,7 @@ function GiftList({ eventId, isOwner }) {
     const [description, setDescription] = useState("")
     const [imageFile, setImageFile] = useState(null)
     const [imagePreview, setImagePreview] = useState("")
+    const [parsedImageId, setParsedImageId] = useState(null)
     const [formError, setFormError] = useState(null)
     const [marketplaceUrl, setMarketplaceUrl] = useState("")
     const [editingGift, setEditingGift] = useState(null)
@@ -36,6 +38,7 @@ function GiftList({ eventId, isOwner }) {
     const [tags, setTags] = useState([])
     const [selectedTagIds, setSelectedTagIds] = useState([])
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isParsingMarketplace, setIsParsingMarketplace] = useState(false)
 
     useEffect(() => {
         return () => {
@@ -72,6 +75,33 @@ function GiftList({ eventId, isOwner }) {
         loadTags()
     }, [eventId])
 
+    async function handleMarketplaceAutofill() {
+        const url = marketplaceUrl.trim()
+        if (!url) {
+            setFormError("Вставьте ссылку на товар")
+            return
+        }
+
+        setFormError(null)
+        setIsParsingMarketplace(true)
+        try {
+            const { product, error: parseError } = await parseMarketplaceProduct(url)
+            if (!product) {
+                setFormError(parseError)
+                return
+            }
+
+            setTitle(product.title || "")
+            if (product.price != null) setPrice(String(product.price))
+            setMarketplaceUrl(product.marketplace_url || url)
+            setImageFile(null)
+            setParsedImageId(product.image_id || null)
+            setImagePreview(resolveImageUrl(product.image_id, product.picture_url))
+        } finally {
+            setIsParsingMarketplace(false)
+        }
+    }
+
     async function handleSubmit(event) {
         event.preventDefault()
         setFormError(null)
@@ -89,7 +119,7 @@ function GiftList({ eventId, isOwner }) {
 
         setIsSubmitting(true)
         try {
-            let imageId
+            let imageId = parsedImageId
             if (imageFile) {
                 const uploadedImage = await uploadImageFile(imageFile)
                 if (!uploadedImage?.id) {
@@ -125,6 +155,7 @@ function GiftList({ eventId, isOwner }) {
             setDescription("")
             setImageFile(null)
             setImagePreview("")
+            setParsedImageId(null)
             setMarketplaceUrl("")
             setSelectedTagIds([])
             setIsFormOpen(false)
@@ -271,20 +302,31 @@ function GiftList({ eventId, isOwner }) {
                                 }
                                 setFormError(null)
                                 setImageFile(file)
+                                setParsedImageId(null)
                                 setImagePreview(file ? URL.createObjectURL(file) : "")
                             }}
                         />
                     </label>
                     {imagePreview && <img className="gift-image-preview" src={imagePreview} alt="Предпросмотр подарка" />}
 
-                    <label>
-                        Ссылка на маркетплейс
-                        <input
-                            value={marketplaceUrl}
-                            onChange={e => setMarketplaceUrl(e.target.value)}
-                            placeholder="https://..."
-                        />
-                    </label>
+                    <div className="marketplace-autofill">
+                        <label>
+                            Ссылка на маркетплейс
+                            <input
+                                value={marketplaceUrl}
+                                onChange={e => setMarketplaceUrl(e.target.value)}
+                                placeholder="https://..."
+                            />
+                        </label>
+                        <button
+                            type="button"
+                            className="gift-secondary-button"
+                            onClick={handleMarketplaceAutofill}
+                            disabled={isParsingMarketplace || isSubmitting}
+                        >
+                            {isParsingMarketplace ? "Заполняем..." : "Заполнить по ссылке"}
+                        </button>
+                    </div>
 
                     <TagSelector
                         eventId={eventId}
@@ -299,12 +341,14 @@ function GiftList({ eventId, isOwner }) {
                     <div className="gift-modal-actions">
                         <button type="button" className="gift-secondary-button" onClick={() => {
                             setImageFile(null)
+                            setImagePreview("")
+                            setParsedImageId(null)
                             setFormError(null)
                             setIsFormOpen(false)
-                        }} disabled={isSubmitting}>
+                        }} disabled={isSubmitting || isParsingMarketplace}>
                             Отмена
                         </button>
-                        <button type="submit" className="add-gift-button" disabled={isSubmitting}>
+                        <button type="submit" className="add-gift-button" disabled={isSubmitting || isParsingMarketplace}>
                             {isSubmitting ? "Загрузка..." : "Добавить"}
                         </button>
                     </div>

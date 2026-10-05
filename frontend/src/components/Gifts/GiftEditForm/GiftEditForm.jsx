@@ -1,6 +1,7 @@
 import "./GiftEditForm.css"
 import { useEffect, useState } from "react"
 import { getImage, resolveImageUrl, uploadImageFile } from "../../../application/imageApplication"
+import { parseMarketplaceProduct } from "../../../application/marketplaceApplication"
 import TagSelector from "../../Tags/TagSelector/TagSelector"
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"])
@@ -8,6 +9,7 @@ const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "i
 function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) {
     const [error, setError] = useState("")
     const [isSaving, setIsSaving] = useState(false)
+    const [isParsingMarketplace, setIsParsingMarketplace] = useState(false)
     const [imageFile, setImageFile] = useState(null)
     const [imagePreview, setImagePreview] = useState(
         resolveImageUrl(gift.image_id, gift.picture_url || gift.image_url)
@@ -33,6 +35,37 @@ function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) 
         }
     }, [imageFile, gift.image_id])
 
+    async function handleMarketplaceAutofill() {
+        const url = gift.marketplace_url?.trim()
+        if (!url) {
+            setError("Вставьте ссылку на товар")
+            return
+        }
+
+        setError("")
+        setIsParsingMarketplace(true)
+        try {
+            const { product, error: parseError } = await parseMarketplaceProduct(url)
+            if (!product) {
+                setError(parseError)
+                return
+            }
+
+            setImageFile(null)
+            setImagePreview(resolveImageUrl(product.image_id, product.picture_url))
+            onChange({
+                ...gift,
+                title: product.title || gift.title,
+                price: product.price ?? gift.price,
+                image_id: product.image_id,
+                picture_url: product.picture_url,
+                marketplace_url: product.marketplace_url || url
+            })
+        } finally {
+            setIsParsingMarketplace(false)
+        }
+    }
+
     async function handleSubmit(event) {
         event.preventDefault()
 
@@ -50,7 +83,7 @@ function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) 
         setError("")
         setIsSaving(true)
         try {
-            let imageId
+            let imageId = gift.image_id
             if (imageFile) {
                 const uploadedImage = await uploadImageFile(imageFile)
                 if (!uploadedImage?.id) {
@@ -136,18 +169,27 @@ function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) 
             </label>
             {imagePreview && <img className="gift-image-preview" src={imagePreview} alt="Предпросмотр подарка" />}
 
-            <label>
-                Ссылка на маркетплейс
-                <input
-                    value={gift.marketplace_url || ""}
-                    onChange={e =>
-                        onChange({
-                            ...gift,
-                            marketplace_url: e.target.value
-                        })
-                    }
-                />
-            </label>
+            <div className="marketplace-autofill">
+                <label>
+                    Ссылка на маркетплейс
+                    <input
+                        value={gift.marketplace_url || ""}
+                        onChange={e =>
+                            onChange({
+                                ...gift,
+                                marketplace_url: e.target.value
+                            })
+                        }
+                    />
+                </label>
+                <button
+                    type="button"
+                    onClick={handleMarketplaceAutofill}
+                    disabled={isParsingMarketplace || isSaving}
+                >
+                    {isParsingMarketplace ? "Заполняем..." : "Заполнить по ссылке"}
+                </button>
+            </div>
 
             <TagSelector
                 eventId={gift.event_id}
@@ -160,10 +202,10 @@ function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) 
             {error && <p className="gift-edit-error">{error}</p>}
 
             <div className="gift-edit-actions">
-                <button type="button" onClick={onCancel}>
+                <button type="button" onClick={onCancel} disabled={isSaving || isParsingMarketplace}>
                     Отмена
                 </button>
-                <button type="submit" disabled={isSaving}>
+                <button type="submit" disabled={isSaving || isParsingMarketplace}>
                     {isSaving ? "Сохранение..." : "Сохранить"}
                 </button>
             </div>
