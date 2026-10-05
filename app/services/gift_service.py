@@ -2,7 +2,7 @@ from typing import List
 
 from fastapi import HTTPException
 
-from app.models.gift import Gift
+from app.models.gift import Gift, GiftFilters
 from app.repositories.contribution_repository import ContributionRepository
 from app.repositories.gift_repository import GiftRepository
 from app.repositories.image_repository import ImageRepository
@@ -71,8 +71,8 @@ class GiftService:
             raise HTTPException(status_code=404, detail="Gift not found")
         return self._prepare_gift_response(gift)
 
-    def get_gifts_by_event(self, event_id: int) -> List[Gift]:
-        gifts = self.gift_repository.get_gifts_by_event(event_id)
+    def get_gifts_by_event(self, event_id: int, filters: GiftFilters | None = None) -> List[Gift]:
+        gifts = self.gift_repository.get_gifts_by_event(event_id, filters)
         return [self._prepare_gift_response(gift) for gift in gifts]
 
     def update_gift_status(self, gift_id: int, status: str) -> Gift:
