@@ -121,13 +121,13 @@ class GiftRepository:
         return self.get_gift_by_id(gift_id)
 
     def update_gift(self, gift_id: int, data: dict) -> Gift | None:
-    if not data:
-        return self.get_gift_by_id(gift_id)
+        if not data:
+            return self.get_gift_by_id(gift_id)
 
-    set_clause = ", ".join(f"{field} = ?" for field in data)
+        set_clause = ", ".join(f"{field} = ?" for field in data)
 
-    with get_connection() as connection:
-        connection.execute(
+        with get_connection() as connection:
+            connection.execute(
             f"""
             UPDATE gifts
             SET {set_clause}
@@ -138,7 +138,7 @@ class GiftRepository:
 
         connection.commit()
 
-    return self.get_gift_by_id(gift_id)
+        return self.get_gift_by_id(gift_id)
 
     def delete_gift(self, gift_id: int) -> bool:
         with get_connection() as connection:

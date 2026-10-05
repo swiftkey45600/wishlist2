@@ -6,13 +6,13 @@ import shutil
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
+from app.config import UPLOAD_DIR
 from app.models.image import Image
 from app.repositories.image_repository import ImageRepository
 
 router = APIRouter(tags=["Images"])
 image_repository = ImageRepository()
 
-UPLOAD_DIR = Path("uploads/images")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
