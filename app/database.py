@@ -1,8 +1,9 @@
 from pathlib import Path
 import sqlite3
 
+from app.config import DATABASE_PATH
+
 BASE_DIR = Path(__file__).resolve().parent
-DATABASE_PATH = BASE_DIR.parent / "wishlist.db"
 SCHEMA_PATH = BASE_DIR / "schema.sql"
 
 
@@ -14,6 +15,7 @@ def get_connection() -> sqlite3.Connection:
 
 
 def init_db() -> None:
+    DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
     with get_connection() as connection:
         schema = SCHEMA_PATH.read_text(encoding="utf-8")
         connection.executescript(schema)

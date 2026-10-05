@@ -1,0 +1,149 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wishlist-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to server
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Download repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Check backend
+        env:
+          JWT_SECRET_KEY: ci-only-test-key-not-for-production
+          DATABASE_PATH: /tmp/wishlist-deploy-check/wishlist.db
+          UPLOAD_DIR: /tmp/wishlist-deploy-check/uploads
+          CORS_ORIGINS: https://swishlist.duckdns.org
+        run: |
+          set -euo pipefail
+          python -m pip install -r requirements.txt
+          python -m compileall -q app
+
+          python - <<'PY'
+          from app.database import init_db
+          from app.main import app
+
+          init_db()
+          assert app is not None
+          print("Backend check passed")
+          PY
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          VITE_API_URL: /api
+        run: |
+          set -euo pipefail
+          npm ci
+          npm run build
+
+      - name: Package release
+        run: |
+          set -euo pipefail
+
+          staging="$RUNNER_TEMP/wishlist-package"
+          mkdir -p "$staging/frontend"
+
+          cp -a app "$staging/app"
+          cp requirements.txt "$staging/"
+          cp -a frontend/dist/. "$staging/frontend/"
+
+          tar \
+            --exclude='__pycache__' \
+            --exclude='*.pyc' \
+            -czf "$RUNNER_TEMP/wishlist-release.tar.gz" \
+            -C "$staging" app requirements.txt frontend
+
+      - name: Upload and activate release
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.WISHLIST_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.WISHLIST_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+
+          ssh_dir="$RUNNER_TEMP/wishlist-ssh"
+          install -d -m 700 "$ssh_dir"
+
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$ssh_dir/key"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$ssh_dir/known_hosts"
+          chmod 600 "$ssh_dir/key" "$ssh_dir/known_hosts"
+
+          release_id="${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          server="wishlist-deploy@37.77.106.85"
+
+          ssh_options=(
+            -i "$ssh_dir/key"
+            -o IdentitiesOnly=yes
+            -o BatchMode=yes
+            -o StrictHostKeyChecking=yes
+            -o "UserKnownHostsFile=$ssh_dir/known_hosts"
+            -o ConnectTimeout=15
+          )
+
+          scp "${ssh_options[@]}" \
+            "$RUNNER_TEMP/wishlist-release.tar.gz" \
+            "$server:/home/wishlist-deploy/incoming/$release_id.tar.gz"
+
+          ssh "${ssh_options[@]}" "$server" \
+            "bash -s -- $release_id" <<'REMOTE'
+          set -euo pipefail
+
+          release_id="$1"
+          if [[ ! "$release_id" =~ ^[0-9]+-[0-9]+$ ]]; then
+            echo "Invalid release ID"
+            exit 1
+          fi
+
+          archive="/home/wishlist-deploy/incoming/$release_id.tar.gz"
+          release="/opt/wishlist/releases/$release_id"
+
+          # Не перезаписываем существующий релиз.
+          mkdir "$release"
+
+          tar --no-same-owner -xzf "$archive" -C "$release"
+
+          python3 -m venv "$release/.venv"
+          "$release/.venv/bin/python" -m pip install \
+            -r "$release/requirements.txt"
+
+          "$release/.venv/bin/python" -m pip check
+
+          # Backend и nginx должны читать файлы релиза.
+          chmod -R a+rX "$release"
+
+          sudo -n /usr/local/sbin/wishlist-activate "$release_id"
+
+          curl --fail --silent --show-error --max-time 15 \
+            https://swishlist.duckdns.org/api/
+
+          curl --fail --silent --show-error --max-time 15 \
+            -o /dev/null https://swishlist.duckdns.org/
+
+          echo
+          echo "Deployment completed: $release_id"
+          REMOTE

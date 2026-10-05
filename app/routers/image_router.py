@@ -5,6 +5,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 
+from app.config import UPLOAD_DIR
 from app.models.image import Image
 from app.models.user import User
 from app.repositories.image_repository import ImageRepository
@@ -13,7 +14,6 @@ from app.utils.jwt import get_current_user
 router = APIRouter(tags=["Images"])
 image_repository = ImageRepository()
 
-UPLOAD_DIR = Path("uploads/images")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}

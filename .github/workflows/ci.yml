@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      JWT_SECRET_KEY: ci-only-test-key-not-for-production
+      DATABASE_PATH: /tmp/wishlist-ci/wishlist.db
+      UPLOAD_DIR: /tmp/wishlist-ci/uploads
+      CORS_ORIGINS: http://localhost:5173
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Check Python syntax
+        run: python -m compileall -q app
+
+      - name: Check database and application import
+        run: |
+          python - <<'PY'
+          from app.database import init_db
+          from app.main import app
+
+          init_db()
+          assert app is not None
+          print("Database initialized; application imported successfully")
+          PY
+
+  frontend:
+    name: Frontend build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    env:
+      VITE_API_URL: /api
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
