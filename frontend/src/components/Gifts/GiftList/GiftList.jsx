@@ -21,7 +21,7 @@ import { useGiftFilters } from "../GiftFilters/useGiftFilters"
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"])
 
-function GiftList({ eventId, isOwner }) {
+function GiftList({ eventId, isOwner, onGiftDataChange }) {
     const [gifts, setGifts] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(null)
@@ -130,6 +130,7 @@ function GiftList({ eventId, isOwner }) {
             setMarketplaceUrl("")
             setSelectedTagIds([])
             setIsFormOpen(false)
+            onGiftDataChange?.()
         } finally {
             setIsSubmitting(false)
         }
@@ -162,6 +163,7 @@ function GiftList({ eventId, isOwner }) {
         await deleteGift(giftToDelete.id)
         setGifts(prev => prev.filter(gift => gift.id !== giftToDelete.id))
         setGiftToDelete(null)
+        onGiftDataChange?.()
     }
 
     async function handleMarkBought(giftId) {
@@ -181,6 +183,7 @@ function GiftList({ eventId, isOwner }) {
                 ? { ...updated, tags: updated.tags || selectedTags }
                 : g))
             setEditingGift(null)
+            onGiftDataChange?.()
             return true
         }
 
