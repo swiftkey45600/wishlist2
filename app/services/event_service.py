@@ -69,23 +69,23 @@ class EventService:
                 "count": 0,
             },
             {
-                "key": "from_1001_to_3000",
-                "label": "1 001–3 000 ₽",
-                "min_price": 1001,
+                "key": "from_1000_to_3000",
+                "label": "1 000–3 000 ₽",
+                "min_price": 1000,
                 "max_price": 3000,
                 "count": 0,
             },
             {
-                "key": "from_3001_to_5000",
-                "label": "3 001–5 000 ₽",
-                "min_price": 3001,
+                "key": "from_3000_to_5000",
+                "label": "3 000–5 000 ₽",
+                "min_price": 3000,
                 "max_price": 5000,
                 "count": 0,
             },
             {
-                "key": "over_5000",
-                "label": "Более 5 000 ₽",
-                "min_price": 5001,
+                "key": "from_5000",
+                "label": "От 5 000 ₽",
+                "min_price": 5000,
                 "max_price": None,
                 "count": 0,
             },
@@ -97,19 +97,12 @@ class EventService:
             for price_range in ranges:
                 upper_bound = price_range["max_price"]
                 if gift.price >= price_range["min_price"] and (
-                    upper_bound is None or gift.price <= upper_bound
+                    upper_bound is None or gift.price < upper_bound
                 ):
                     price_range["count"] += 1
                     break
 
-        recommendations = [
-            f"Мало подарков в диапазоне «{price_range['label']}»"
-            for price_range in ranges
-            if price_range["count"] < 2
-        ]
-
         return {
             "total_gifts": sum(price_range["count"] for price_range in ranges),
             "price_ranges": ranges,
-            "recommendations": recommendations,
         }
