@@ -9,6 +9,11 @@ import Sidebar from "../../components/Sidebar/Sidebar"
 import EventDetailsCard from "../../components/Events/EventDetailsCard/EventDetailsCard"
 import GiftCard from "../../components/Gifts/GiftCard/GiftCard"
 import { editGift } from "../../application/giftApplication"
+import GuestReservationModal from "../../components/Gifts/GuestReservationModal/GuestReservationModal"
+import {
+    getGuestReservationGifts,
+    useGuestReservationMocks
+} from "../../application/guestReservationApplication"
 
 function PublicEventPage() {
     const navigate = useNavigate()
@@ -16,13 +21,17 @@ function PublicEventPage() {
     const [data, setData] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
     const [reservationError, setReservationError] = useState(null)
+    const [selectedGift, setSelectedGift] = useState(null)
 
     const user = JSON.parse(localStorage.getItem("user") || "null")
-    const isOwner = user?.id === data?.event?.owner_id
+    const isAuthenticated = Boolean(localStorage.getItem("accessToken"))
+    const isOwner = isAuthenticated && user?.id === data?.event?.owner_id
 
     async function handleToggleStatus(gift) {
-        if (!localStorage.getItem("accessToken")) {
-            navigate("/auth")
+        if (gift.status === "bought") return
+        if (!isAuthenticated) {
+            setReservationError(null)
+            setSelectedGift({ gift, token })
             return
         }
 
@@ -43,21 +52,24 @@ function PublicEventPage() {
     }
 
     useEffect(() => {
+        let cancelled = false
         async function loadPublicEvent() {
             setIsLoading(true)
 
             try {
                 const response = await api.get(`/events/public/${token}`)
-                setData(response.data)
+                const gifts = await getGuestReservationGifts(token, response.data.gifts || [])
+                if (!cancelled) setData({ ...response.data, gifts })
             } catch (error) {
                 console.error("Не удалось загрузить публичное событие", error)
-                setData(null)
+                if (!cancelled) setData(null)
             } finally {
-                setIsLoading(false)
+                if (!cancelled) setIsLoading(false)
             }
         }
 
         loadPublicEvent()
+        return () => { cancelled = true }
     }, [token])
 
     return (
@@ -72,9 +84,9 @@ function PublicEventPage() {
                     <span className="event-page-note">
                         {isOwner
                             ? "Это ваше событие"
-                            : user
+                            : isAuthenticated
                                 ? "Вы можете забронировать подарок"
-                                : "Войдите, чтобы забронировать подарок"}
+                                : "Откройте подарок, чтобы выбрать способ бронирования"}
                     </span>
                 </div>
 
@@ -89,6 +101,9 @@ function PublicEventPage() {
                 {!isLoading && data && (
                     <>
                         <EventDetailsCard event={data.event} />
+                        {useGuestReservationMocks && <p className="guest-reservation-demo" role="status">
+                            Демо гостевой брони: изменения видны только здесь и сбросятся после обновления страницы.
+                        </p>}
 
                         <div className="gift-list">
                             <div className="gift-list-header">
@@ -109,7 +124,7 @@ function PublicEventPage() {
                                         <GiftCard
                                             key={gift.id}
                                             gift={gift}
-                                            onToggleStatus={!isOwner ? handleToggleStatus : undefined}
+                                            onToggleStatus={!isOwner && gift.status !== "bought" ? handleToggleStatus : undefined}
                                         />
                                     ))}
                                 </div>
@@ -118,6 +133,19 @@ function PublicEventPage() {
                     </>
                 )}
             </div>
+            {selectedGift?.token === token && !isLoading && <GuestReservationModal
+                key={`${token}:${selectedGift.gift.id}`}
+                token={token}
+                gift={selectedGift.gift}
+                onCancel={() => setSelectedGift(null)}
+                onSuccess={updatedGift => {
+                    setData(previous => ({
+                        ...previous,
+                        gifts: previous.gifts.map(gift => gift.id === updatedGift.id ? updatedGift : gift)
+                    }))
+                    setSelectedGift(null)
+                }}
+            />}
         </div>
     )
 }
