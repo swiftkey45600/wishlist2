@@ -36,6 +36,22 @@ CREATE TABLE IF NOT EXISTS gifts (
     FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE SET NULL
 );
 
+CREATE TABLE IF NOT EXISTS tags (
+    id INTEGER PRIMARY KEY,
+    event_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    UNIQUE (event_id, name),
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS gift_tags (
+    gift_id INTEGER NOT NULL,
+    tag_id INTEGER NOT NULL,
+    PRIMARY KEY (gift_id, tag_id),
+    FOREIGN KEY (gift_id) REFERENCES gifts(id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS reservations (
     id INTEGER PRIMARY KEY,
     gift_id INTEGER NOT NULL UNIQUE,
