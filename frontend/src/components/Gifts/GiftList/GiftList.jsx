@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import "./GiftList.css"
 
 import GiftCard from "../GiftCard/GiftCard"
+import GiftRecommendations from "../GiftRecommendations/GiftRecommendations"
 import {
   getGiftsByEvent,
   createGift,
@@ -368,6 +369,13 @@ function GiftList({ eventId, isOwner }) {
                     )}
                 </div>
             )}
+
+            {isOwner && !isLoading && !error && <GiftRecommendations
+                key={eventId}
+                eventId={eventId}
+                gifts={gifts}
+                onAdd={gift => setGifts(previous => [gift, ...previous])}
+            />}
 
             {editingGift && (
                 <div className="gift-edit-modal" onClick={(event) => {

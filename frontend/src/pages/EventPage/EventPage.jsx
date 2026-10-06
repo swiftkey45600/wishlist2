@@ -122,7 +122,7 @@ function EventPage() {
                                     onEdit={isOwner ? () => setIsEditModalOpen(true) : undefined}
                                     onDelete={isOwner ? () => setIsDeleteModalOpen(true) : undefined}
                                 />
-                                <GiftList eventId={id} isOwner={isOwner} />
+                                <GiftList key={id} eventId={id} isOwner={isOwner} />
                                 {isEditModalOpen && (
                                     <div className="event-edit-modal" onClick={(modalEvent) => {
                                         if (modalEvent.target === modalEvent.currentTarget) setIsEditModalOpen(false)
