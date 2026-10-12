@@ -1,7 +1,10 @@
 import "./GiftCard.css"
 import GiftImage from "../GiftImage/GiftImage"
+import { getGiftStatusLabel } from "../giftStatus"
 
-function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit }) {
+function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit, hideReservationDetails = false }) {
+    const hideStatus = hideReservationDetails && ["reserved", "bought"].includes(gift.status)
+
     return (
         <div className="gift-card">
             <div className="gift-card-main">
@@ -23,7 +26,9 @@ function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit }) {
                     <strong>{gift.price} ₽</strong>
                 </div>
                 <div className="gift-card-right">
-                    <span className={`gift-status ${gift.status}`}>{gift.status}</span>
+                    {!hideStatus && (
+                        <span className={`gift-status ${gift.status}`}>{getGiftStatusLabel(gift.status)}</span>
+                    )}
                     {onToggleStatus && (
                         <button
                             className="gift-secondary-button"

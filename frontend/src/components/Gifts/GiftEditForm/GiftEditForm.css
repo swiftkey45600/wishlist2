@@ -4,6 +4,7 @@
     gap: 14px;
     padding: 20px;
     border: 0;
+    border-radius: inherit;
     background: var(--card);
 }
 

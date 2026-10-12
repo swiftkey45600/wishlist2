@@ -1,5 +1,6 @@
 import "./EventCard.css"
 import GiftImage from "../../Gifts/GiftImage/GiftImage"
+import { getGiftStatusLabel } from "../../Gifts/giftStatus"
 
 function formatEventDate(value) {
     if (!value) return "Дата не указана"
@@ -28,7 +29,7 @@ function EventCard({ event, gifts, onOpenEvent }) {
                             <GiftImage gift={gift} fallbackClassName="event-gift-picture-fallback" />
                         </div>
                         <div className="event-gift-info"><strong>{gift.title}</strong><span>{gift.description || "Описание подарка не указано"}</span></div>
-                        <div className="event-gift-right"><strong>{gift.price} ₽</strong><span className={`gift-badge ${gift.status}`}>{gift.status}</span></div>
+                        <div className="event-gift-right"><strong>{gift.price} ₽</strong><span className={`gift-badge ${gift.status}`}>{getGiftStatusLabel(gift.status)}</span></div>
                     </div>
                 ))}
             </div>

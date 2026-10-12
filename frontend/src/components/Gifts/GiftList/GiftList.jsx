@@ -38,6 +38,8 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
     const [tags, setTags] = useState([])
     const [selectedTagIds, setSelectedTagIds] = useState([])
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [showReservations, setShowReservations] = useState(false)
+    const [isReservationConfirmationOpen, setIsReservationConfirmationOpen] = useState(false)
 
     useEffect(() => {
         return () => {
@@ -222,12 +224,30 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                     <h2>Подарки события</h2>
                     <span>{filteredGifts.length} из {gifts.length}</span>
                 </div>
-                {isOwner && <button
-                    className="add-gift-button"
-                    onClick={() => setIsFormOpen(prev => !prev)}
-                >
-                    {isFormOpen ? "Отмена" : "+ Добавить подарок"}
-                </button>}
+                <div className="gift-section-actions">
+                    {isOwner && (
+                        <button
+                            className="gift-reservations-toggle"
+                            type="button"
+                            aria-pressed={showReservations}
+                            onClick={() => {
+                                if (showReservations) {
+                                    setShowReservations(false)
+                                } else {
+                                    setIsReservationConfirmationOpen(true)
+                                }
+                            }}
+                        >
+                            {showReservations ? "Скрыть брони" : "Показать брони"}
+                        </button>
+                    )}
+                    {isOwner && <button
+                        className="add-gift-button"
+                        onClick={() => setIsFormOpen(prev => !prev)}
+                    >
+                        {isFormOpen ? "Отмена" : "+ Добавить подарок"}
+                    </button>}
+                </div>
             </div>
 
             <GiftFilters
@@ -351,9 +371,12 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                                     <GiftCard
                                         key={`${group.tag.id}-${gift.id}`}
                                         gift={gift}
-                                        onToggleStatus={handleToggleStatus}
+                                        onToggleStatus={!isOwner || showReservations || gift.status === "available"
+                                            ? handleToggleStatus
+                                            : undefined}
                                         onDelete={isOwner ? (giftId) => setGiftToDelete(gifts.find(item => item.id === giftId)) : undefined}
-                                        onMarkBought={isOwner ? handleMarkBought : undefined}
+                                        onMarkBought={isOwner && showReservations ? handleMarkBought : undefined}
+                                        hideReservationDetails={isOwner && !showReservations}
                                         onEdit={isOwner ? openEditForm : undefined}
                                     />
                                 ))}
@@ -372,9 +395,12 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                                     <GiftCard
                                         key={gift.id}
                                         gift={gift}
-                                        onToggleStatus={handleToggleStatus}
+                                        onToggleStatus={!isOwner || showReservations || gift.status === "available"
+                                            ? handleToggleStatus
+                                            : undefined}
                                         onDelete={isOwner ? (giftId) => setGiftToDelete(gifts.find(item => item.id === giftId)) : undefined}
-                                        onMarkBought={isOwner ? handleMarkBought : undefined}
+                                        onMarkBought={isOwner && showReservations ? handleMarkBought : undefined}
+                                        hideReservationDetails={isOwner && !showReservations}
                                         onEdit={isOwner ? openEditForm : undefined}
                                     />
                                 ))}
@@ -417,6 +443,46 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                     onConfirm={handleDeleteGift}
                     onCancel={() => setGiftToDelete(null)}
                 />
+            )}
+
+            {isReservationConfirmationOpen && (
+                <div
+                    className="reservation-confirm-overlay"
+                    onClick={(event) => {
+                        if (event.target === event.currentTarget) {
+                            setIsReservationConfirmationOpen(false)
+                        }
+                    }}
+                >
+                    <div
+                        className="reservation-confirm-modal"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="reservation-confirm-title"
+                    >
+                        <h2 id="reservation-confirm-title">Показать брони?</h2>
+                        <p>Вы уверены, что хотите увидеть, какие подарки уже забронированы или куплены?</p>
+                        <div className="reservation-confirm-actions">
+                            <button
+                                className="reservation-confirm-cancel"
+                                type="button"
+                                onClick={() => setIsReservationConfirmationOpen(false)}
+                            >
+                                Не показывать
+                            </button>
+                            <button
+                                className="reservation-confirm-submit"
+                                type="button"
+                                onClick={() => {
+                                    setShowReservations(true)
+                                    setIsReservationConfirmationOpen(false)
+                                }}
+                            >
+                                Показать
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     )
