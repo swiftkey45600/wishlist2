@@ -35,6 +35,6 @@ def parse_marketplace_product(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return marketplace_service.parse_product(data.url)
+        return marketplace_service.parse_product(data.url, owner_id=current_user.id)
     except MarketplaceParseError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error

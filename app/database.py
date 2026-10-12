@@ -1,8 +1,9 @@
 from pathlib import Path
 import sqlite3
 
+from app.config import DATABASE_PATH
+
 BASE_DIR = Path(__file__).resolve().parent
-DATABASE_PATH = BASE_DIR.parent / "wishlist.db"
 SCHEMA_PATH = BASE_DIR / "schema.sql"
 
 
@@ -14,6 +15,7 @@ def get_connection() -> sqlite3.Connection:
 
 
 def init_db() -> None:
+    DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
     with get_connection() as connection:
         schema = SCHEMA_PATH.read_text(encoding="utf-8")
         connection.executescript(schema)
@@ -30,5 +32,11 @@ def _column_exists(connection: sqlite3.Connection, table_name: str, column_name:
 
 
 def _run_migrations(connection: sqlite3.Connection) -> None:
+    if not _column_exists(connection, "reservations", "secret_word_hash"):
+        connection.execute("ALTER TABLE reservations ADD COLUMN secret_word_hash TEXT")
     if not _column_exists(connection, "gifts", "image_id"):
         connection.execute("ALTER TABLE gifts ADD COLUMN image_id INTEGER")
+    if not _column_exists(connection, "images", "owner_id"):
+        # Existing images intentionally remain ownerless. They must not be
+        # assigned to whichever user happens to run the migration.
+        connection.execute("ALTER TABLE images ADD COLUMN owner_id INTEGER")

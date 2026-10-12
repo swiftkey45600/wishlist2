@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.config import CORS_ORIGINS
 from app.database import init_db
 from app.models.user import UserRegisterRequest
 from app.routers import user_routers
@@ -11,6 +12,7 @@ from app.routers import reservation_router
 from app.routers import gift_router
 from app.routers import image_router
 from app.routers import marketplace_router
+from app.routers import tag_router
 
 
 app = FastAPI()
@@ -23,10 +25,7 @@ def on_startup():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -36,9 +35,11 @@ app.include_router(user_routers.router)
 app.include_router(auth_router.router)
 app.include_router(event_router.router)
 app.include_router(reservation_router.router)
+app.include_router(reservation_router.guest_router)
 app.include_router(gift_router.router)
 app.include_router(image_router.router)
 app.include_router(marketplace_router.router)
+app.include_router(tag_router.router)
 
 
 @app.get("/")

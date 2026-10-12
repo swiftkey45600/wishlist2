@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Annotated, Literal
+from pydantic import BaseModel, Field, model_validator
 from app.models.marketplace import Marketplace
+from app.models.tag import Tag
 
 @dataclass
 class Gift:
@@ -20,16 +22,24 @@ class Gift:
     reservation_id: int | None = None
     marketplace_links: list[Marketplace] = field(default_factory=list)
     contribution_total: int = 0
+    tags: list[Tag] = field(default_factory=list)
 
 @dataclass
-class GiftCreateRequest:
-    event_id: int
-    title: str
-    price: int
+class GiftCreateRequest(Gift):
+    tag_ids: list[int] = field(default_factory=list)
 
-    description: Optional[str] = None
-    picture_url: Optional[str] = None
-    marketplace_url: Optional[str] = None
-    category_id: Optional[int] = None
 
-    image_id: Optional[int] = None
+class GiftFilters(BaseModel):
+    min_price: int | None = Field(default=None, ge=0)
+    max_price: int | None = Field(default=None, ge=0)
+    tags: list[Annotated[int, Field(gt=0)]] = Field(default_factory=list)
+    q: str | None = None
+    status: Literal["available", "reserved", "bought"] | None = None
+    sort_by: Literal["id", "price", "title"] = "id"
+    sort_order: Literal["asc", "desc"] = "asc"
+
+    @model_validator(mode="after")
+    def validate_price_range(self):
+        if self.min_price is not None and self.max_price is not None and self.min_price > self.max_price:
+            raise ValueError("min_price must not exceed max_price")
+        return self

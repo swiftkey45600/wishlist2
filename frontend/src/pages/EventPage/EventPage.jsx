@@ -128,6 +128,7 @@ function EventPage() {
                                     <GiftPriceWidget eventId={id} refreshKey={statisticsRefreshKey} />
                                 )}
                                 <GiftList
+                                    key={id}
                                     eventId={id}
                                     isOwner={isOwner}
                                     onGiftDataChange={() => setStatisticsRefreshKey((key) => key + 1)}
