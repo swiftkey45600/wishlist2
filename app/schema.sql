@@ -57,6 +57,7 @@ CREATE TABLE IF NOT EXISTS reservations (
     gift_id INTEGER NOT NULL UNIQUE,
     reserver_name TEXT,
     reserver_id INTEGER,
+    secret_word_hash TEXT,
     is_anonymous INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (gift_id) REFERENCES gifts(id) ON DELETE CASCADE,
     FOREIGN KEY (reserver_id) REFERENCES users(id) ON DELETE SET NULL
@@ -67,6 +68,12 @@ CREATE TABLE IF NOT EXISTS images (
     image_path TEXT NOT NULL,
     image_type TEXT,
     hash TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS guest_reservation_rate_limits (
+    key TEXT PRIMARY KEY,
+    attempts INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS marketplaces (
