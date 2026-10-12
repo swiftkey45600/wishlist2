@@ -13,7 +13,7 @@ import {
     unreserveGift
 } from "../../application/giftApplication"
 import GiftEditForm from "../../components/Gifts/GiftEditForm/GiftEditForm"
-import { resolveImageUrl } from "../../application/imageApplication"
+import GiftImage from "../../components/Gifts/GiftImage/GiftImage"
 
 function getStatusClass(status) {
     return status === "reserved" ? "reserved" : status === "bought" ? "bought" : "available"
@@ -178,10 +178,10 @@ function PresentsPage() {
                                     onClick={() => navigate(`/events/${gift.event.id}`)}
                                 >
                                     <div className="presents-gift-top">
-                                        <img
+                                        <GiftImage
+                                            gift={gift}
                                             className="presents-pic"
-                                            src={resolveImageUrl(gift.image_id, gift.picture_url || gift.image_url) || "https://via.placeholder.com/220x220?text=Gift"}
-                                            alt={gift.title}
+                                            fallbackClassName="presents-pic presents-pic-fallback"
                                         />
                                         <div>
                                             <h3>{gift.title}</h3>

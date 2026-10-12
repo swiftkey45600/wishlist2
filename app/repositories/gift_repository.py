@@ -1,8 +1,29 @@
-from app.models.gift import Gift
+from app.models.gift import Gift, GiftFilters
+from app.models.tag import Tag
 from app.database import get_connection
 
 class GiftRepository:
-    def _row_to_gift(self, row) -> Gift:
+    def _get_gift_tags(self, connection, gift_id: int) -> list[Tag]:
+        rows = connection.execute(
+            """
+            SELECT tags.*
+            FROM tags
+            JOIN gift_tags ON gift_tags.tag_id = tags.id
+            WHERE gift_tags.gift_id = ?
+            ORDER BY tags.id
+            """,
+            (gift_id,),
+        ).fetchall()
+        return [Tag(**dict(row)) for row in rows]
+
+    def _replace_gift_tags(self, connection, gift_id: int, tag_ids: list[int]) -> None:
+        connection.execute("DELETE FROM gift_tags WHERE gift_id = ?", (gift_id,))
+        connection.executemany(
+            "INSERT INTO gift_tags (gift_id, tag_id) VALUES (?, ?)",
+            [(gift_id, tag_id) for tag_id in dict.fromkeys(tag_ids)],
+        )
+
+    def _row_to_gift(self, row, connection) -> Gift:
         return Gift(
             id=row["id"],
             event_id=row["event_id"],
@@ -15,9 +36,10 @@ class GiftRepository:
             category_id=row["category_id"],
             image_id=row["image_id"],
             reservation_id=row["reservation_id"] if "reservation_id" in row.keys() else None,
+            tags=self._get_gift_tags(connection, row["id"]),
         )
 
-    def create_gift(self, gift: Gift) -> Gift:
+    def create_gift(self, gift: Gift, tag_ids: list[int] | None = None) -> Gift:
         with get_connection() as connection:
             cursor = connection.execute(
                 """
@@ -47,8 +69,10 @@ class GiftRepository:
                 ),
             )
 
-            connection.commit()
             gift.id = cursor.lastrowid
+            self._replace_gift_tags(connection, gift.id, tag_ids or [])
+            gift.tags = self._get_gift_tags(connection, gift.id)
+            connection.commit()
 
             return gift
 
@@ -78,12 +102,57 @@ class GiftRepository:
             if row is None:
                 return None
 
-            return self._row_to_gift(row)
+            return self._row_to_gift(row, connection)
 
-    def get_gifts_by_event(self, event_id: int) -> list[Gift]:
-        with get_connection() as connection:
-            rows = connection.execute(
+    def get_gifts_by_event(self, event_id: int, filters: GiftFilters | None = None) -> list[Gift]:
+        filters = filters or GiftFilters()
+        conditions = ["gifts.event_id = ?"]
+        parameters = [event_id]
+
+        if filters.min_price is not None:
+            conditions.append("gifts.price >= ?")
+            parameters.append(filters.min_price)
+        if filters.max_price is not None:
+            conditions.append("gifts.price <= ?")
+            parameters.append(filters.max_price)
+        if filters.status is not None:
+            conditions.append("gifts.status = ?")
+            parameters.append(filters.status)
+        if filters.q is not None and filters.q.strip():
+            conditions.append("instr(casefold(gifts.title), ?) > 0")
+            parameters.append(filters.q.strip().casefold())
+        if filters.tags:
+            tag_ids = list(dict.fromkeys(filters.tags))
+            placeholders = ", ".join("?" for _ in tag_ids)
+            conditions.append(
+                f"""
+                EXISTS (
+                    SELECT 1
+                    FROM gift_tags
+                    JOIN tags ON tags.id = gift_tags.tag_id
+                    WHERE gift_tags.gift_id = gifts.id
+                      AND tags.event_id = gifts.event_id
+                      AND gift_tags.tag_id IN ({placeholders})
+                )
                 """
+            )
+            parameters.extend(tag_ids)
+
+        sort_columns = {
+            "id": "gifts.id",
+            "price": "gifts.price",
+            "title": "casefold(gifts.title)",
+        }
+        sort_column = sort_columns[filters.sort_by]
+        sort_direction = {"asc": "ASC", "desc": "DESC"}[filters.sort_order]
+        order_by = f"{sort_column} {sort_direction}, gifts.id ASC"
+        if filters.sort_by == "price":
+            order_by = f"gifts.price IS NULL, {order_by}"
+
+        with get_connection() as connection:
+            connection.create_function("casefold", 1, lambda value: value.casefold() if value is not None else None)
+            rows = connection.execute(
+                f"""
                 SELECT
                     gifts.id,
                     gifts.event_id,
@@ -98,12 +167,13 @@ class GiftRepository:
                     reservations.id AS reservation_id
                 FROM gifts
                 LEFT JOIN reservations ON reservations.gift_id = gifts.id
-                WHERE gifts.event_id = ?
+                WHERE {" AND ".join(conditions)}
+                ORDER BY {order_by}
                 """,
-                (event_id,),
+                parameters,
             ).fetchall()
 
-            return [self._row_to_gift(row) for row in rows]
+            return [self._row_to_gift(row, connection) for row in rows]
 
     def update_gift_status(self, gift_id: int, status: str) -> Gift | None:
         with get_connection() as connection:
@@ -124,17 +194,23 @@ class GiftRepository:
         if not data:
             return self.get_gift_by_id(gift_id)
 
-        set_clause = ", ".join(f"{field} = ?" for field in data)
+        data = data.copy()
+        tag_ids = data.pop("tag_ids", None)
 
         with get_connection() as connection:
-            connection.execute(
-                f"""
-                UPDATE gifts
-                SET {set_clause}
-                WHERE id = ?
-                """,
-                (*data.values(), gift_id),
-            )
+            if data:
+                set_clause = ", ".join(f"{field} = ?" for field in data)
+                connection.execute(
+                    f"""
+                    UPDATE gifts
+                    SET {set_clause}
+                    WHERE id = ?
+                    """,
+                    (*data.values(), gift_id),
+                )
+
+            if tag_ids is not None:
+                self._replace_gift_tags(connection, gift_id, tag_ids)
 
             connection.commit()
 

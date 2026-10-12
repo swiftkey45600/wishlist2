@@ -9,6 +9,8 @@ import Sidebar from "../../components/Sidebar/Sidebar"
 import EventDetailsCard from "../../components/Events/EventDetailsCard/EventDetailsCard"
 import GiftCard from "../../components/Gifts/GiftCard/GiftCard"
 import { editGift } from "../../application/giftApplication"
+import GiftFilters from "../../components/Gifts/GiftFilters/GiftFilters"
+import { useGiftFilters } from "../../components/Gifts/GiftFilters/useGiftFilters"
 
 function PublicEventPage() {
     const navigate = useNavigate()
@@ -19,6 +21,14 @@ function PublicEventPage() {
 
     const user = JSON.parse(localStorage.getItem("user") || "null")
     const isOwner = user?.id === data?.event?.owner_id
+    const gifts = data?.gifts || []
+    const tags = []
+    gifts.forEach((gift) => {
+        gift.tags?.forEach((tag) => {
+            if (!tags.some((existingTag) => existingTag.id === tag.id)) tags.push(tag)
+        })
+    })
+    const { filters, filteredGifts, updateFilter } = useGiftFilters(gifts)
 
     async function handleToggleStatus(gift) {
         if (!localStorage.getItem("accessToken")) {
@@ -92,20 +102,30 @@ function PublicEventPage() {
 
                         <div className="gift-list">
                             <div className="gift-list-header">
-                                <h2>Подарки • {data.gifts?.length ?? 0}</h2>
+                                <h2>Подарки • {filteredGifts.length} из {gifts.length}</h2>
                             </div>
 
-                            {!data.gifts?.length && (
+                            <GiftFilters
+                                tags={tags}
+                                filters={filters}
+                                onFilterChange={updateFilter}
+                            />
+
+                            {!gifts.length && (
                                 <p className="gift-list-status">Пока нет подарков для этого события.</p>
+                            )}
+
+                            {gifts.length > 0 && filteredGifts.length === 0 && (
+                                <p className="gift-list-status">Подарки по заданным фильтрам не найдены.</p>
                             )}
 
                             {reservationError && (
                                 <p className="gift-list-status error">{reservationError}</p>
                             )}
 
-                            {data.gifts?.length > 0 && (
+                            {filteredGifts.length > 0 && (
                                 <div className="gift-grid">
-                                    {data.gifts.map((gift) => (
+                                    {filteredGifts.map((gift) => (
                                         <GiftCard
                                             key={gift.id}
                                             gift={gift}
