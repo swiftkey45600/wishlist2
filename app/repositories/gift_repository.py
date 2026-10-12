@@ -1,4 +1,4 @@
-from app.models.gift import Gift
+from app.models.gift import Gift, GiftFilters
 from app.database import get_connection
 
 class GiftRepository:
@@ -80,10 +80,55 @@ class GiftRepository:
 
             return self._row_to_gift(row)
 
-    def get_gifts_by_event(self, event_id: int) -> list[Gift]:
-        with get_connection() as connection:
-            rows = connection.execute(
+    def get_gifts_by_event(self, event_id: int, filters: GiftFilters | None = None) -> list[Gift]:
+        filters = filters or GiftFilters()
+        conditions = ["gifts.event_id = ?"]
+        parameters = [event_id]
+
+        if filters.min_price is not None:
+            conditions.append("gifts.price >= ?")
+            parameters.append(filters.min_price)
+        if filters.max_price is not None:
+            conditions.append("gifts.price <= ?")
+            parameters.append(filters.max_price)
+        if filters.status is not None:
+            conditions.append("gifts.status = ?")
+            parameters.append(filters.status)
+        if filters.q is not None and filters.q.strip():
+            conditions.append("instr(casefold(gifts.title), ?) > 0")
+            parameters.append(filters.q.strip().casefold())
+        if filters.tags:
+            tag_ids = list(dict.fromkeys(filters.tags))
+            placeholders = ", ".join("?" for _ in tag_ids)
+            conditions.append(
+                f"""
+                EXISTS (
+                    SELECT 1
+                    FROM gift_tags
+                    JOIN tags ON tags.id = gift_tags.tag_id
+                    WHERE gift_tags.gift_id = gifts.id
+                      AND tags.event_id = gifts.event_id
+                      AND gift_tags.tag_id IN ({placeholders})
+                )
                 """
+            )
+            parameters.extend(tag_ids)
+
+        sort_columns = {
+            "id": "gifts.id",
+            "price": "gifts.price",
+            "title": "casefold(gifts.title)",
+        }
+        sort_column = sort_columns[filters.sort_by]
+        sort_direction = {"asc": "ASC", "desc": "DESC"}[filters.sort_order]
+        order_by = f"{sort_column} {sort_direction}, gifts.id ASC"
+        if filters.sort_by == "price":
+            order_by = f"gifts.price IS NULL, {order_by}"
+
+        with get_connection() as connection:
+            connection.create_function("casefold", 1, lambda value: value.casefold() if value is not None else None)
+            rows = connection.execute(
+                f"""
                 SELECT
                     gifts.id,
                     gifts.event_id,
@@ -98,9 +143,10 @@ class GiftRepository:
                     reservations.id AS reservation_id
                 FROM gifts
                 LEFT JOIN reservations ON reservations.gift_id = gifts.id
-                WHERE gifts.event_id = ?
+                WHERE {" AND ".join(conditions)}
+                ORDER BY {order_by}
                 """,
-                (event_id,),
+                parameters,
             ).fetchall()
 
             return [self._row_to_gift(row) for row in rows]

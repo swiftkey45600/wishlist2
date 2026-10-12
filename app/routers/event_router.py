@@ -1,6 +1,9 @@
-from fastapi import APIRouter, HTTPException, Depends
+from typing import Annotated
+
+from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel
 from app.models.event import EventCreateRequest, EventUpdateRequest
+from app.models.gift import GiftFilters
 from app.models.user import User
 from app.services.event_service import EventService
 from app.repositories.event_repository import EventRepository
@@ -31,12 +34,12 @@ async def get_user_events(owner_id: int, current_user: User = Depends(get_curren
 
 
 @router.get("/public/{public_token}")
-async def get_public_event(public_token: str):
+async def get_public_event(public_token: str, filters: Annotated[GiftFilters, Query()]):
     event = event_service.get_event_by_token(public_token)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    gifts = gift_repository.get_gifts_by_event(event.id)
+    gifts = gift_repository.get_gifts_by_event(event.id, filters)
     return {"event": event, "gifts": gifts}
 
 

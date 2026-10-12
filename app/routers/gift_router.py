@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import Annotated, List, Optional
 
-from app.models.gift import Gift
+from app.models.gift import Gift, GiftFilters
 from app.models.user import User
 from app.repositories.contribution_repository import ContributionRepository
 from app.repositories.gift_repository import GiftRepository
@@ -51,8 +51,8 @@ def get_gift(gift_id: int):
 
 
 @router.get("/events/{event_id}/gifts", response_model=List[Gift])
-def get_gifts_by_event(event_id: int):
-    return gift_service.get_gifts_by_event(event_id)
+def get_gifts_by_event(event_id: int, filters: Annotated[GiftFilters, Query()]):
+    return gift_service.get_gifts_by_event(event_id, filters)
 
 
 class GiftUpdateRequest(BaseModel):
