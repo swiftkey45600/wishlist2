@@ -36,3 +36,7 @@ def _run_migrations(connection: sqlite3.Connection) -> None:
         connection.execute("ALTER TABLE reservations ADD COLUMN secret_word_hash TEXT")
     if not _column_exists(connection, "gifts", "image_id"):
         connection.execute("ALTER TABLE gifts ADD COLUMN image_id INTEGER")
+    if not _column_exists(connection, "images", "owner_id"):
+        # Existing images intentionally remain ownerless. They must not be
+        # assigned to whichever user happens to run the migration.
+        connection.execute("ALTER TABLE images ADD COLUMN owner_id INTEGER")
