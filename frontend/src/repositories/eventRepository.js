@@ -29,6 +29,12 @@ export async function fetchEvent(eventId) {
     return response.data.event
 }
 
+export async function fetchEventStatistics(eventId) {
+    const response = await api.get(`/events/${eventId}/statistics`)
+
+    return response.data
+}
+
 export async function deleteEvent(eventId) {
     await api.delete(`/events/${eventId}`)
 }
