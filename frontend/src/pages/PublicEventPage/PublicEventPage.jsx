@@ -8,7 +8,7 @@ import api from "../../services/api"
 import Sidebar from "../../components/Sidebar/Sidebar"
 import EventDetailsCard from "../../components/Events/EventDetailsCard/EventDetailsCard"
 import GiftCard from "../../components/Gifts/GiftCard/GiftCard"
-import { editGift } from "../../application/giftApplication"
+import { updatePublicGiftReservation } from "../../application/giftApplication"
 import GuestReservationModal from "../../components/Gifts/GuestReservationModal/GuestReservationModal"
 import {
     getGuestReservationGifts,
@@ -46,9 +46,7 @@ function PublicEventPage() {
         }
 
         setReservationError(null)
-        const updatedGift = await editGift(gift.id, {
-            is_reserved: gift.status === "available"
-        })
+        const updatedGift = await updatePublicGiftReservation(token, gift.id, gift.status === "available")
 
         if (!updatedGift) {
             setReservationError("Не удалось изменить бронь. Возможно, подарок уже заняли.")

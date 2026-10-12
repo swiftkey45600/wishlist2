@@ -4,6 +4,7 @@ import {
   createGift as createGiftRepository,
   deleteGift as deleteGiftRepository,
   updateGift as updateGiftRepository,
+  updatePublicGiftReservation as updatePublicGiftReservationRepository,
   reserveGift as reserveGiftRepository,
   unreserveGift as unreserveGiftRepository
 } from "../repositories/giftRepository"
@@ -47,6 +48,15 @@ export async function editGift(giftId, data) {
 export async function reserveGift(giftId, isAnonymous = false) {
   try {
     return await reserveGiftRepository(giftId, isAnonymous)
+  } catch (error) {
+    console.error(error)
+    return null
+  }
+}
+
+export async function updatePublicGiftReservation(token, giftId, isReserved) {
+  try {
+    return await updatePublicGiftReservationRepository(token, giftId, isReserved)
   } catch (error) {
     console.error(error)
     return null

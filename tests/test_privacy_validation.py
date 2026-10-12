@@ -141,6 +141,65 @@ class PrivacyValidationTests(unittest.TestCase):
         self.assertEqual(status, 200)
         self.assertEqual(payload["user"]["id"], 1)
 
+    def test_registered_guest_can_reserve_and_cancel_with_public_token(self):
+        tag = TagRepository().create_tag(Tag(event_id=self.event.id, name="Books"))
+        self.gifts.update_gift(self.gift.id, {"tag_ids": [tag.id]})
+        path = f'/events/public/public-token/gifts/{self.gift.id}/reservation'
+        status, gift = self.request("PATCH", path, {"is_reserved": True}, token=self.guest_token)
+        self.assertEqual(status, 200)
+        self.assertEqual(gift["id"], self.gift.id)
+        self.assertEqual(gift["status"], "reserved")
+        self.assertIsNotNone(gift["reservation_id"])
+        self.assertEqual(gift["tags"][0]["id"], tag.id)
+        with get_connection() as connection:
+            reservation = connection.execute("SELECT * FROM reservations WHERE gift_id = ?", (self.gift.id,)).fetchone()
+            self.assertEqual(reservation["reserver_id"], 2)
+        status, gift = self.request("PATCH", path, {"is_reserved": False}, token=self.guest_token)
+        self.assertEqual(status, 200)
+        self.assertEqual(gift["status"], "available")
+        self.assertIsNone(gift["reservation_id"])
+        self.assertEqual(self.request("GET", f'/gifts/{self.gift.id}', token=self.guest_token)[0], 403)
+
+    def test_public_reservation_rejects_wrong_token_and_gift(self):
+        for token, gift_id in [('invalid-token', self.gift.id), ('other-token', self.gift.id), ('public-token', 999)]:
+            path = f'/events/public/{token}/gifts/{gift_id}/reservation'
+            for is_reserved in [True, False]:
+                status, payload = self.request("PATCH", path, {"is_reserved": is_reserved}, token=self.guest_token)
+                self.assertEqual(status, 404)
+                self.assertNotIn("Private gift", json.dumps(payload))
+        self.assertEqual(self.gifts.get_gift_by_id(self.gift.id).status, "available")
+
+    def test_public_reservation_requires_jwt_and_rejects_owner(self):
+        path = f'/events/public/public-token/gifts/{self.gift.id}/reservation'
+        self.assertIn(self.request("PATCH", path, {"is_reserved": True})[0], (401, 403))
+        self.assertEqual(self.request("PATCH", path, {"is_reserved": True}, token=self.owner_token)[0], 403)
+        self.assertEqual(self.gifts.get_gift_by_id(self.gift.id).status, "available")
+
+    def test_public_reservation_cannot_edit_gift_fields(self):
+        path = f'/events/public/public-token/gifts/{self.gift.id}/reservation'
+        for data in [{}, {"is_reserved": None}, {"is_reserved": True, "title": "Changed"}, {"is_reserved": True, "price": 1}]:
+            self.assertEqual(self.request("PATCH", path, data, token=self.guest_token)[0], 422)
+        gift = self.gifts.get_gift_by_id(self.gift.id)
+        self.assertEqual(gift.title, "Private gift")
+        self.assertEqual(gift.price, 100)
+        self.assertEqual(gift.status, "available")
+
+    def test_public_reservation_only_reserver_can_cancel(self):
+        path = f'/events/public/public-token/gifts/{self.gift.id}/reservation'
+        self.assertEqual(self.request("PATCH", path, {"is_reserved": True}, token=self.guest_token)[0], 200)
+        self.assertEqual(self.request("PATCH", path, {"is_reserved": True}, token=self.guest_token)[0], 409)
+        with get_connection() as connection:
+            connection.execute("INSERT INTO users (id, name, login, password_hash) VALUES (3, 'Other guest', 'other-guest', 'unused')")
+        token = create_access_token({"sub": "other-guest"})
+        self.assertEqual(self.request("PATCH", path, {"is_reserved": False}, token=token)[0], 403)
+        self.assertEqual(self.gifts.get_gift_by_id(self.gift.id).status, "reserved")
+
+    def test_public_reservation_cannot_cancel_secret_word_reservation(self):
+        path = f'/events/public/public-token/gifts/{self.gift.id}/reservation'
+        self.assertEqual(self.request("POST", path, {"name": "Guest", "secret_word": "snowflake"})[0], 200)
+        self.assertEqual(self.request("PATCH", path, {"is_reserved": False}, token=self.guest_token)[0], 403)
+        self.assertEqual(self.gifts.get_gift_by_id(self.gift.id).status, "reserved")
+
     def test_gift_create_rejects_nonpositive_price_and_empty_title(self):
         for field, values in [("price", [0, -1, None]), ("title", ["", " \t\n", None])]:
             for value in values:

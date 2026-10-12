@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field, StringConstraints, field_validator
 from typing import Annotated, List, Optional
 
 from app.models.gift import Gift, GiftCreateRequest, GiftFilters
+from app.models.reservation import PublicGiftReservationRequest
 from app.models.user import User
 from app.repositories.contribution_repository import ContributionRepository
 from app.repositories.gift_repository import GiftRepository
@@ -106,6 +107,16 @@ def update_gift(
     current_user: User = Depends(get_current_user),
 ):
     return gift_service.update_gift(gift_id, data.model_dump(exclude_unset=True), current_user)
+
+
+@router.patch("/events/public/{public_token}/gifts/{gift_id}/reservation", response_model=Gift)
+def update_public_gift_reservation(
+    public_token: str,
+    gift_id: int,
+    data: PublicGiftReservationRequest,
+    current_user: User = Depends(get_current_user),
+):
+    return gift_service.update_public_gift_reservation(public_token, gift_id, data.is_reserved, current_user)
 
 
 @router.delete("/gifts/{gift_id}")
