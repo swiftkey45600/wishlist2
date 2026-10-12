@@ -1,8 +1,5 @@
-.gift-filters {
+.gift-filter-panel {
     display: grid;
-    grid-template-columns: minmax(180px, 1.5fr) repeat(2, minmax(140px, 1fr));
-    align-items: end;
-    gap: 12px;
     margin: 14px 0;
     padding: 14px;
     border: 1px solid var(--line);
@@ -10,10 +7,28 @@
     background: #fff;
 }
 
+.gift-filters {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: end;
+    gap: 12px;
+}
+
+.gift-filter-search {
+    margin-bottom: 14px;
+}
+
 .gift-filter-field {
     display: grid;
     gap: 6px;
     min-width: 0;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.gift-filter-field > span,
+.gift-price-filter legend {
     color: var(--muted);
     font-size: 12px;
     font-weight: 650;
@@ -34,23 +49,30 @@
     font-size: 14px;
 }
 
+.gift-price-filter {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: end;
+    gap: 8px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.gift-price-filter legend {
+    margin-bottom: 6px;
+    padding: 0;
+}
+
 @media (max-width: 760px) {
     .gift-filters {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-
-    .gift-filter-search {
-        grid-column: 1 / -1;
-    }
-
 }
 
 @media (max-width: 420px) {
     .gift-filters {
         grid-template-columns: minmax(0, 1fr);
-    }
-
-    .gift-filter-search {
-        grid-column: auto;
     }
 }

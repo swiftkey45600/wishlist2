@@ -14,6 +14,7 @@ import {
 } from "../../application/giftApplication"
 import GiftEditForm from "../../components/Gifts/GiftEditForm/GiftEditForm"
 import GiftImage from "../../components/Gifts/GiftImage/GiftImage"
+import { getGiftStatusLabel } from "../../components/Gifts/giftStatus"
 
 function getStatusClass(status) {
     return status === "reserved" ? "reserved" : status === "bought" ? "bought" : "available"
@@ -200,7 +201,7 @@ function PresentsPage() {
                                             <strong className="presents-price">{gift.price} ₽</strong>
                                             <div className="presents-status-controls">
                                                 <span className={`presents-badge ${getStatusClass(gift.status)}`}>
-                                                    {gift.status}
+                                                    {getGiftStatusLabel(gift.status)}
                                                 </span>
                                                 <div className="presents-status-buttons">
                                                     <button className="presents-button secondary" onClick={(event) => {

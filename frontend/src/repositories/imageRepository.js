@@ -1,10 +1,23 @@
 import api from "../services/api"
 
-export function resolveImageUrl(imageId, imageUrl) {
-    const imagePath = imageId ? `/images/${imageId}` : imageUrl
-    if (!imagePath) return ""
+function getApiBaseUrl() {
+    const baseUrl = new URL(api.defaults.baseURL || "/", window.location.origin)
+    baseUrl.pathname = `${baseUrl.pathname.replace(/\/+$/, "")}/`
+    return baseUrl
+}
 
-    return new URL(imagePath, api.defaults.baseURL).toString()
+export function resolveImageUrl(imageId, imageUrl) {
+    if (imageId) {
+        return new URL(`images/${encodeURIComponent(imageId)}`, getApiBaseUrl()).toString()
+    }
+    if (!imageUrl) return ""
+
+    const apiBaseUrl = getApiBaseUrl()
+    try {
+        return new URL(imageUrl).toString()
+    } catch {
+        return new URL(imageUrl.replace(/^\/+/, ""), apiBaseUrl).toString()
+    }
 }
 
 export async function createImage(imageData) {
