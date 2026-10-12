@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Annotated, Literal
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, StringConstraints, model_validator
 from app.models.marketplace import Marketplace
 from app.models.tag import Tag
 
@@ -26,6 +26,8 @@ class Gift:
 
 @dataclass
 class GiftCreateRequest(Gift):
+    title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+    price: Annotated[int, Field(gt=0)]
     tag_ids: list[int] = field(default_factory=list)
 
 

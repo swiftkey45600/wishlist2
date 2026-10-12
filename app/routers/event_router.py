@@ -27,6 +27,8 @@ async def get_events(current_user: User = Depends(get_current_user)):
 
 @router.get("/user/{owner_id}")
 async def get_user_events(owner_id: int, current_user: User = Depends(get_current_user)):
+    if owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only view your own events")
     events = event_service.get_user_events(owner_id)
     if not events:
         raise HTTPException(status_code=404, detail="Owner has no events")
@@ -48,6 +50,8 @@ async def get_event(event_id: int, current_user: User = Depends(get_current_user
     event = event_service.get_event(event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
+    if event.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the event owner can view an event")
     return {"event": event}
 
 

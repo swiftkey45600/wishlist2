@@ -1,0 +1,207 @@
+import asyncio
+import json
+import os
+from pathlib import Path
+import tempfile
+import unittest
+from unittest.mock import patch
+from urllib.parse import urlsplit
+
+os.environ.setdefault("JWT_SECRET_KEY", "privacy-validation-test-key")
+
+from app.database import get_connection, init_db
+from app.main import app
+from app.models.event import Event
+from app.models.gift import Gift
+from app.models.tag import Tag
+from app.repositories.event_repository import EventRepository
+from app.repositories.gift_repository import GiftRepository
+from app.repositories.tag_repository import TagRepository
+from app.utils.jwt import create_access_token
+
+
+class PrivacyValidationTests(unittest.TestCase):
+    def setUp(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        database = patch("app.database.DATABASE_PATH", Path(directory.name) / "wishlist.db")
+        database.start()
+        self.addCleanup(database.stop)
+        init_db()
+        with get_connection() as connection:
+            connection.execute(
+                "INSERT INTO users (id, name, login, password_hash) VALUES (2, 'Guest', 'guest', 'unused')"
+            )
+        self.owner_token = create_access_token({"sub": "johndoe"})
+        self.guest_token = create_access_token({"sub": "guest"})
+        self.events = EventRepository()
+        self.gifts = GiftRepository()
+        self.event = self.events.create_event(Event(owner_id=1, title="Private event", public_token="public-token"))
+        self.other_event = self.events.create_event(Event(owner_id=2, title="Other event", public_token="other-token"))
+        self.gift = self.gifts.create_gift(Gift(event_id=self.event.id, title="Private gift", price=100))
+
+    def request(self, method, path, data=None, token=None):
+        body = json.dumps(data).encode() if data is not None else b""
+        headers = [(b"content-type", b"application/json")]
+        if token is not None:
+            headers.append((b"authorization", f"Bearer {token}".encode()))
+        url = urlsplit(path)
+        scope = {
+            "type": "http", "asgi": {"version": "3.0"}, "http_version": "1.1",
+            "method": method, "scheme": "http", "path": url.path,
+            "query_string": url.query.encode(), "root_path": "", "headers": headers,
+            "client": ("127.0.0.1", 12345), "server": ("testserver", 80),
+        }
+        messages = []
+
+        async def receive():
+            return {"type": "http.request", "body": body, "more_body": False}
+
+        async def send(message):
+            messages.append(message)
+
+        asyncio.run(app(scope, receive, send))
+        start = next(message for message in messages if message["type"] == "http.response.start")
+        content = b"".join(message.get("body", b"") for message in messages if message["type"] == "http.response.body")
+        return start["status"], json.loads(content)
+
+    def test_anonymous_requests_cannot_read_by_id(self):
+        for path in [f'/events/{self.event.id}', f'/gifts/{self.gift.id}', f'/events/{self.event.id}/gifts', '/events/user/1']:
+            with self.subTest(path=path):
+                status, payload = self.request("GET", path)
+                self.assertIn(status, (401, 403))
+                self.assertNotIn("Private", json.dumps(payload))
+
+    def test_other_user_cannot_read_by_id_or_owner_list(self):
+        for path in [f'/events/{self.event.id}', f'/gifts/{self.gift.id}', f'/events/{self.event.id}/gifts', '/events/user/1']:
+            with self.subTest(path=path):
+                status, payload = self.request("GET", path, token=self.guest_token)
+                self.assertEqual(status, 403)
+                self.assertNotIn("Private", json.dumps(payload))
+
+    def test_owner_can_read_event_gift_and_lists(self):
+        status, event = self.request("GET", f'/events/{self.event.id}', token=self.owner_token)
+        self.assertEqual(status, 200)
+        self.assertEqual(event["event"]["id"], self.event.id)
+        status, gift = self.request("GET", f'/gifts/{self.gift.id}', token=self.owner_token)
+        self.assertEqual(status, 200)
+        self.assertEqual(gift["id"], self.gift.id)
+        status, gifts = self.request("GET", f'/events/{self.event.id}/gifts', token=self.owner_token)
+        self.assertEqual(status, 200)
+        self.assertEqual([gift["id"] for gift in gifts], [self.gift.id])
+        for path in ['/events/', '/events/user/1']:
+            status, events = self.request("GET", path, token=self.owner_token)
+            self.assertEqual(status, 200)
+            self.assertEqual([event["id"] for event in events["events"]], [self.event.id])
+
+    def test_missing_event_gift_and_gift_list_return_not_found(self):
+        for path in ['/events/999', '/gifts/999', '/events/999/gifts']:
+            self.assertEqual(self.request("GET", path, token=self.owner_token)[0], 404)
+
+    def test_public_token_allows_anonymous_and_registered_guests(self):
+        for token in [None, self.guest_token]:
+            status, payload = self.request("GET", '/events/public/public-token', token=token)
+            self.assertEqual(status, 200)
+            self.assertEqual(payload["event"]["id"], self.event.id)
+            self.assertEqual([gift["id"] for gift in payload["gifts"]], [self.gift.id])
+        self.assertEqual(self.request("GET", '/events/public/invalid-token')[0], 404)
+        status, payload = self.request("GET", '/events/public/other-token')
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["gifts"], [])
+
+    def test_filters_and_tags_work_for_owner_and_public_token(self):
+        tag = TagRepository().create_tag(Tag(event_id=self.event.id, name="Books"))
+        self.gifts.update_gift(self.gift.id, {"tag_ids": [tag.id]})
+        self.gifts.create_gift(Gift(event_id=self.event.id, title="Other gift", price=200))
+        query = f'?min_price=50&max_price=150&tags={tag.id}&q=PRIVATE&status=available&sort_by=price&sort_order=desc'
+        status, gifts = self.request("GET", f'/events/{self.event.id}/gifts{query}', token=self.owner_token)
+        self.assertEqual(status, 200)
+        self.assertEqual([gift["id"] for gift in gifts], [self.gift.id])
+        status, payload = self.request("GET", f'/events/public/public-token{query}')
+        self.assertEqual(status, 200)
+        self.assertEqual([gift["id"] for gift in payload["gifts"]], [self.gift.id])
+        self.assertEqual(payload["gifts"][0]["tags"][0]["id"], tag.id)
+
+    def test_patch_cannot_bypass_gift_privacy(self):
+        for data in [{}, {"title": "Changed"}, {"is_reserved": True}, {"is_reserved": False}]:
+            with self.subTest(data=data):
+                status, payload = self.request("PATCH", f'/gifts/{self.gift.id}', data, token=self.guest_token)
+                self.assertEqual(status, 403)
+                self.assertNotIn("Private gift", json.dumps(payload))
+        self.assertEqual(self.gifts.get_gift_by_id(self.gift.id).title, "Private gift")
+        self.assertEqual(self.gifts.get_gift_by_id(self.gift.id).status, "available")
+        with get_connection() as connection:
+            self.assertEqual(connection.execute("SELECT COUNT(*) FROM reservations").fetchone()[0], 0)
+
+    def test_user_list_is_removed_and_own_profile_remains_available(self):
+        for token in [None, self.owner_token, self.guest_token]:
+            self.assertEqual(self.request("GET", '/users/', token=token)[0], 404)
+        self.assertNotIn('/users/', app.openapi()["paths"])
+        status, payload = self.request("GET", '/users/me', token=self.owner_token)
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["user"]["id"], 1)
+
+    def test_gift_create_rejects_nonpositive_price_and_empty_title(self):
+        for field, values in [("price", [0, -1, None]), ("title", ["", " \t\n", None])]:
+            for value in values:
+                with self.subTest(field=field, value=value):
+                    data = {"event_id": self.event.id, "title": "Gift", "price": 100, field: value}
+                    self.assertEqual(self.request("POST", '/gifts/', data, token=self.owner_token)[0], 422)
+        self.assertEqual(len(self.gifts.get_gifts_by_event(self.event.id)), 1)
+
+    def test_gift_patch_rejects_nonpositive_price_and_empty_title(self):
+        for field, values in [("price", [0, -1, None]), ("title", ["", " \t\n", None])]:
+            for value in values:
+                with self.subTest(field=field, value=value):
+                    status, _ = self.request("PATCH", f'/gifts/{self.gift.id}', {field: value}, token=self.owner_token)
+                    self.assertEqual(status, 422)
+        gift = self.gifts.get_gift_by_id(self.gift.id)
+        self.assertEqual(gift.price, 100)
+        self.assertEqual(gift.title, "Private gift")
+
+    def test_valid_gift_create_and_patch_preserve_optional_fields_and_tags(self):
+        tag = TagRepository().create_tag(Tag(event_id=self.event.id, name="Books"))
+        data = {"event_id": self.event.id, "title": "  New gift  ", "price": 1, "description": "Description", "tag_ids": [tag.id]}
+        status, gift = self.request("POST", '/gifts/', data, token=self.owner_token)
+        self.assertEqual(status, 200)
+        self.assertEqual(gift["title"], "New gift")
+        self.assertEqual(gift["price"], 1)
+        self.assertEqual(gift["description"], "Description")
+        self.assertEqual(gift["tags"][0]["id"], tag.id)
+        path = f'/gifts/{gift["id"]}'
+        status, updated = self.request("PATCH", path, {"title": "  Edited  ", "price": 2}, token=self.owner_token)
+        self.assertEqual(status, 200)
+        self.assertEqual(updated["title"], "Edited")
+        self.assertEqual(updated["price"], 2)
+        self.assertEqual(updated["tags"], gift["tags"])
+        status, updated = self.request("PATCH", path, {"description": "Updated"}, token=self.owner_token)
+        self.assertEqual(status, 200)
+        self.assertEqual(updated["title"], "Edited")
+        self.assertEqual(updated["price"], 2)
+
+    def test_event_create_and_patch_reject_empty_title(self):
+        for title in ["", " \t\n", None]:
+            with self.subTest(title=title):
+                self.assertEqual(self.request("POST", '/events/', {"title": title}, token=self.owner_token)[0], 422)
+                self.assertEqual(self.request("PATCH", f'/events/{self.event.id}', {"title": title}, token=self.owner_token)[0], 422)
+        self.assertEqual(self.events.get_event_by_id(self.event.id).title, "Private event")
+        self.assertEqual(len(self.events.get_events_by_user(1)), 1)
+
+    def test_valid_event_create_and_partial_patch(self):
+        status, payload = self.request("POST", '/events/', {"title": "  Birthday  ", "place": "Home"}, token=self.owner_token)
+        self.assertEqual(status, 200)
+        event = payload["event"]
+        self.assertEqual(event["title"], "Birthday")
+        self.assertEqual(event["place"], "Home")
+        path = f'/events/{event["id"]}'
+        status, payload = self.request("PATCH", path, {"title": "  Party  "}, token=self.owner_token)
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["event"]["title"], "Party")
+        status, payload = self.request("PATCH", path, {"place": "Garden"}, token=self.owner_token)
+        self.assertEqual(status, 200)
+        self.assertEqual(payload["event"]["title"], "Party")
+        self.assertEqual(payload["event"]["place"], "Garden")
+
+
+if __name__ == "__main__":
+    unittest.main()
