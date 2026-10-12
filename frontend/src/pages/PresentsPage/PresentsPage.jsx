@@ -13,6 +13,7 @@ import {
     unreserveGift
 } from "../../application/giftApplication"
 import GiftEditForm from "../../components/Gifts/GiftEditForm/GiftEditForm"
+import GiftImage from "../../components/Gifts/GiftImage/GiftImage"
 
 function getStatusClass(status) {
     return status === "reserved" ? "reserved" : status === "bought" ? "bought" : "available"
@@ -177,10 +178,10 @@ function PresentsPage() {
                                     onClick={() => navigate(`/events/${gift.event.id}`)}
                                 >
                                     <div className="presents-gift-top">
-                                        <img
+                                        <GiftImage
+                                            gift={gift}
                                             className="presents-pic"
-                                            src={gift.picture_url || "https://via.placeholder.com/220x220?text=Gift"}
-                                            alt={gift.title}
+                                            fallbackClassName="presents-pic presents-pic-fallback"
                                         />
                                         <div>
                                             <h3>{gift.title}</h3>
@@ -259,12 +260,13 @@ function PresentsPage() {
                                 <GiftEditForm
                                     gift={editingGift}
                                     onChange={setEditingGift}
-                                    onSave={() => handleEdit(editingGift.id, {
+                                    onSave={(imageId) => handleEdit(editingGift.id, {
                                         title: editingGift.title.trim(),
                                         price: Number(editingGift.price),
                                         description: editingGift.description?.trim() || null,
                                         picture_url: editingGift.picture_url?.trim() || null,
-                                        marketplace_url: editingGift.marketplace_url?.trim() || null
+                                        marketplace_url: editingGift.marketplace_url?.trim() || null,
+                                        ...(imageId ? { image_id: imageId, picture_url: null } : {})
                                     })}
                                     onCancel={() => setEditingGift(null)}
                                 />

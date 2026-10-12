@@ -1,9 +1,37 @@
 import "./GiftEditForm.css"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { getImage, resolveImageUrl, uploadImageFile } from "../../../application/imageApplication"
+import TagSelector from "../../Tags/TagSelector/TagSelector"
 
-function GiftEditForm({ gift, onChange, onSave, onCancel }) {
+const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"])
+
+function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) {
     const [error, setError] = useState("")
     const [isSaving, setIsSaving] = useState(false)
+    const [imageFile, setImageFile] = useState(null)
+    const [imagePreview, setImagePreview] = useState(
+        resolveImageUrl(gift.image_id, gift.picture_url || gift.image_url)
+    )
+
+    useEffect(() => {
+        if (!imagePreview.startsWith("blob:")) return
+        return () => URL.revokeObjectURL(imagePreview)
+    }, [imagePreview])
+
+    useEffect(() => {
+        if (imageFile || !gift.image_id) return
+
+        let cancelled = false
+        getImage(gift.image_id).then((imageBlob) => {
+            if (!cancelled && imageBlob) {
+                setImagePreview(URL.createObjectURL(imageBlob))
+            }
+        })
+
+        return () => {
+            cancelled = true
+        }
+    }, [imageFile, gift.image_id])
 
     async function handleSubmit(event) {
         event.preventDefault()
@@ -21,10 +49,22 @@ function GiftEditForm({ gift, onChange, onSave, onCancel }) {
 
         setError("")
         setIsSaving(true)
-        const saved = await onSave()
-        setIsSaving(false)
+        try {
+            let imageId
+            if (imageFile) {
+                const uploadedImage = await uploadImageFile(imageFile)
+                if (!uploadedImage?.id) {
+                    setError("Не удалось загрузить изображение")
+                    return
+                }
+                imageId = uploadedImage.id
+            }
 
-        if (!saved) setError("Не удалось сохранить подарок")
+            const saved = await onSave(imageId)
+            if (!saved) setError("Не удалось сохранить подарок")
+        } finally {
+            setIsSaving(false)
+        }
     }
 
     return (
@@ -75,17 +115,26 @@ function GiftEditForm({ gift, onChange, onSave, onCancel }) {
             </label>
 
             <label>
-                Ссылка на изображение
+                Изображение подарка
                 <input
-                    value={gift.picture_url || ""}
-                    onChange={e =>
-                        onChange({
-                            ...gift,
-                            picture_url: e.target.value
-                        })
-                    }
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    onChange={(event) => {
+                        const file = event.target.files?.[0] || null
+                        if (file && !ALLOWED_IMAGE_TYPES.has(file.type)) {
+                            setError("Выберите изображение в формате JPEG, PNG, WebP или GIF")
+                            event.target.value = ""
+                            return
+                        }
+                        setError("")
+                        setImageFile(file)
+                        setImagePreview(file
+                            ? URL.createObjectURL(file)
+                            : resolveImageUrl(gift.image_id, gift.picture_url || gift.image_url))
+                    }}
                 />
             </label>
+            {imagePreview && <img className="gift-image-preview" src={imagePreview} alt="Предпросмотр подарка" />}
 
             <label>
                 Ссылка на маркетплейс
@@ -99,6 +148,14 @@ function GiftEditForm({ gift, onChange, onSave, onCancel }) {
                     }
                 />
             </label>
+
+            <TagSelector
+                eventId={gift.event_id}
+                tags={tags}
+                selectedTagIds={gift.tag_ids || []}
+                onTagsChange={onTagsChange}
+                onChange={tagIds => onChange({ ...gift, tag_ids: tagIds })}
+            />
 
             {error && <p className="gift-edit-error">{error}</p>}
 

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
 import "./HomePage.css"
-import "../../Styles/common.css"
+import "../../styles/common.css"
 
 import { getEvents, createEvent } from "../../application/eventApplication"
 

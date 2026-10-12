@@ -3,6 +3,7 @@ import {
     createEvent as createEventRepository,
     fetchUserEvents as fetchUserEventsRepository,
     fetchEvent as fetchEventRepository,
+    fetchEventStatistics as fetchEventStatisticsRepository,
     deleteEvent as deleteEventRepository,
     updateEvent as updateEventRepository
 } from "../repositories/eventRepository"
@@ -37,6 +38,15 @@ export async function getUserEvents(ownerId) {
 export async function getEvent(eventId) {
     try {
         return await fetchEventRepository(eventId)
+    } catch (error) {
+        console.error(error)
+        return null
+    }
+}
+
+export async function getEventStatistics(eventId) {
+    try {
+        return await fetchEventStatisticsRepository(eventId)
     } catch (error) {
         console.error(error)
         return null

@@ -1,17 +1,25 @@
 import "./GiftCard.css"
+import GiftImage from "../GiftImage/GiftImage"
 
 function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit }) {
     return (
         <div className="gift-card">
             <div className="gift-card-main">
-                <img
+                <GiftImage
+                    gift={gift}
                     className="gift-image"
-                    src={gift.picture_url || "https://via.placeholder.com/120x120?text=Gift"}
-                    alt={gift.title}
+                    fallbackClassName="gift-image gift-image-fallback"
                 />
                 <div className="gift-card-info">
                     <h3>{gift.title}</h3>
                     <p className="gift-description">{gift.description || "Описание подарка пока не добавлено."}</p>
+                    {gift.tags?.length > 0 && (
+                        <div className="gift-tag-list">
+                            {gift.tags.map(tag => (
+                                <span className="gift-tag" key={tag.id}>{tag.name}</span>
+                            ))}
+                        </div>
+                    )}
                     <strong>{gift.price} ₽</strong>
                 </div>
                 <div className="gift-card-right">

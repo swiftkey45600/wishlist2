@@ -8,3 +8,4 @@ class Image:
     id: int | None = None
     image_type: str | None = None
     hash: str | None = None
+    image_url: str | None = None
