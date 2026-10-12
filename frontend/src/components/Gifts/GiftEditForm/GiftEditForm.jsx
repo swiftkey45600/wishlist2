@@ -59,6 +59,7 @@ function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) 
                 ...gift,
                 title: product.title || gift.title,
                 price: product.price ?? gift.price,
+                description: gift.description || product.description,
                 image_id: product.image_id,
                 picture_url: product.image_id ? null : resolveImageUrl(null, product.picture_url),
                 marketplace_url: product.marketplace_url || url

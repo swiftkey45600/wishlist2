@@ -95,6 +95,7 @@ function GiftList({ eventId, isOwner }) {
 
             setTitle(product.title || "")
             if (product.price != null) setPrice(String(product.price))
+            if (product.description && !description.trim()) setDescription(product.description)
             setMarketplaceUrl(product.marketplace_url || url)
             setImageFile(null)
             if (imageInputRef.current) imageInputRef.current.value = ""
