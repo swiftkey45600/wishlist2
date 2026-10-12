@@ -36,6 +36,9 @@ jobs:
       - name: Check Python syntax
         run: python -m compileall -q app
 
+      - name: Test guest reservations
+        run: python -m unittest discover -s tests -v
+
       - name: Check database and application import
         run: |
           python - <<'PY'

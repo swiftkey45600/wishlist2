@@ -1,9 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from app.repositories.reservation_repository import ReservationRepository
 from app.repositories.gift_repository import GiftRepository
-from app.models.reservation import ReservationCreateRequest
+from app.models.reservation import (
+    GuestReservationCancelRequest,
+    GuestReservationCreateRequest,
+    Reservation,
+    ReservationCreateRequest,
+)
 from app.services.reservation_service import ReservationService
-from app.repositories.gift_repository import GiftRepository
 from app.models.user import User
 from app.utils.jwt import get_current_user
 
@@ -12,10 +16,33 @@ router = APIRouter(
     prefix="/reservations",
     tags=["Reservations"]
 )
+guest_router = APIRouter(prefix="/events/public", tags=["Reservations"])
 
 reservation_repo = ReservationRepository()
 gift_repo = GiftRepository()
 reservation_service = ReservationService(reservation_repo, gift_repo)
+
+
+@guest_router.post("/{public_token}/gifts/{gift_id}/reservation", response_model=Reservation)
+def reserve_guest_gift(public_token: str, gift_id: int, data: GuestReservationCreateRequest, request: Request):
+    return reservation_service.reserve_guest_gift(
+        public_token,
+        gift_id,
+        data.name,
+        data.secret_word.get_secret_value(),
+        request.client.host if request.client else "unknown",
+    )
+
+
+@guest_router.delete("/{public_token}/gifts/{gift_id}/reservation")
+def unreserve_guest_gift(public_token: str, gift_id: int, data: GuestReservationCancelRequest, request: Request):
+    reservation_service.unreserve_guest_gift(
+        public_token,
+        gift_id,
+        data.secret_word.get_secret_value(),
+        request.client.host if request.client else "unknown",
+    )
+    return {"message": "Reservation cancelled"}
 
 
 @router.post("/")

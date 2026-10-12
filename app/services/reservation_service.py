@@ -1,14 +1,68 @@
+from sqlite3 import IntegrityError
+
 from fastapi import HTTPException
 
+from app.models.gift import Gift
 from app.models.reservation import Reservation
 from app.repositories.gift_repository import GiftRepository
 from app.repositories.reservation_repository import ReservationRepository
+from app.repositories.event_repository import EventRepository
+from app.utils.security import hash_password, verify_password
 
 
 class ReservationService:
-    def __init__(self, reservation_repository: ReservationRepository, gift_repository: GiftRepository):
+    def __init__(
+        self,
+        reservation_repository: ReservationRepository,
+        gift_repository: GiftRepository,
+        event_repository: EventRepository | None = None,
+    ):
         self.reservation_repository = reservation_repository
         self.gift_repository = gift_repository
+        self.event_repository = event_repository or EventRepository()
+
+    def _check_guest_rate_limit(self, client_ip: str, gift_id: int | None = None) -> None:
+        retry_after = self.reservation_repository.check_guest_rate_limit(client_ip, gift_id)
+        if retry_after is not None:
+            raise HTTPException(
+                status_code=429,
+                detail="Too many reservation attempts. Try again later",
+                headers={"Retry-After": str(retry_after)},
+            )
+
+    def _get_public_gift(self, public_token: str, gift_id: int) -> Gift:
+        event = self.event_repository.get_event_by_public_token(public_token)
+        gift = self.gift_repository.get_gift_by_id(gift_id)
+        if event is None or gift is None or gift.event_id != event.id:
+            raise HTTPException(status_code=404, detail="Gift not found")
+        return gift
+
+    def reserve_guest_gift(
+        self, public_token: str, gift_id: int, name: str, secret_word: str, client_ip: str
+    ) -> Reservation:
+        self._check_guest_rate_limit(client_ip)
+        gift = self._get_public_gift(public_token, gift_id)
+        if gift.status != "available":
+            raise HTTPException(status_code=409, detail="Gift is not available for reservation")
+        reservation = Reservation(gift_id=gift_id, is_anonymous=False, reserver_name=name)
+        try:
+            return self.reservation_repository.reserve_guest_gift(reservation, hash_password(secret_word))
+        except IntegrityError as exc:
+            raise HTTPException(status_code=409, detail="Gift is not available for reservation") from exc
+
+    def unreserve_guest_gift(self, public_token: str, gift_id: int, secret_word: str, client_ip: str) -> None:
+        self._get_public_gift(public_token, gift_id)
+        self._check_guest_rate_limit(client_ip, gift_id)
+        reservation = self.reservation_repository.get_reservation_by_gift(gift_id)
+        if reservation is None:
+            raise HTTPException(status_code=404, detail="Reservation not found")
+        secret_word_hash = self.reservation_repository.get_secret_word_hash(reservation.id)
+        if reservation.reserver_id is not None or secret_word_hash is None:
+            raise HTTPException(status_code=403, detail="This reservation cannot be cancelled with a secret word")
+        if not verify_password(secret_word, secret_word_hash):
+            raise HTTPException(status_code=403, detail="Invalid secret word")
+        if not self.reservation_repository.unreserve_guest_gift(reservation, secret_word_hash):
+            raise HTTPException(status_code=404, detail="Reservation not found")
 
     def reserve_gift(
             self,
