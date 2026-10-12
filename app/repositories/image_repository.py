@@ -11,6 +11,7 @@ class ImageRepository:
             image_path=row["image_path"],
             image_type=row["image_type"],
             hash=row["hash"],
+            owner_id=row["owner_id"] if "owner_id" in row.keys() else None,
         )
 
     def _calculate_hash(self, image_path: str) -> str:
@@ -36,14 +37,16 @@ class ImageRepository:
                 INSERT INTO images (
                     image_path,
                     image_type,
-                    hash
+                    hash,
+                    owner_id
                 )
-                VALUES (?, ?, ?)
+                VALUES (?, ?, ?, ?)
                 """,
                 (
                     image.image_path,
                     image.image_type,
                     image_hash,
+                    image.owner_id,
                 ),
             )
 
@@ -61,7 +64,8 @@ class ImageRepository:
                     id,
                     image_path,
                     image_type,
-                    hash
+                    hash,
+                    owner_id
                 FROM images
                 WHERE id = ?
                 """,
@@ -81,7 +85,8 @@ class ImageRepository:
                     id,
                     image_path,
                     image_type,
-                    hash
+                    hash,
+                    owner_id
                 FROM images
                 WHERE hash = ?
                 """,
@@ -93,14 +98,17 @@ class ImageRepository:
 
             return self._row_to_image(row)
 
-    def delete_image(self, image_id: int) -> bool:
+    def delete_image(self, image_id: int, owner_id: int | None = None) -> bool:
+        if owner_id is None:
+            return False
+
         with get_connection() as connection:
             cursor = connection.execute(
                 """
                 DELETE FROM images
-                WHERE id = ?
+                WHERE id = ? AND owner_id = ?
                 """,
-                (image_id,),
+                (image_id, owner_id),
             )
 
             connection.commit()

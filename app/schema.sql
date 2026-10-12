@@ -67,7 +67,9 @@ CREATE TABLE IF NOT EXISTS images (
     id INTEGER PRIMARY KEY,
     image_path TEXT NOT NULL,
     image_type TEXT,
-    hash TEXT NOT NULL UNIQUE
+    hash TEXT NOT NULL UNIQUE,
+    owner_id INTEGER,
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS guest_reservation_rate_limits (
@@ -86,3 +88,15 @@ CREATE TABLE IF NOT EXISTS marketplaces (
 
 INSERT OR IGNORE INTO users (id, name, login, password_hash)
 VALUES (1, 'John Doe', 'johndoe', 'hashedpassword');
+
+INSERT OR IGNORE INTO marketplaces (slug, name, base_url)
+VALUES ('ozon', 'Ozon', 'https://www.ozon.ru');
+
+INSERT OR IGNORE INTO marketplaces (slug, name, base_url)
+VALUES ('wb', 'WB', 'https://www.wildberries.ru');
+
+INSERT OR IGNORE INTO marketplaces (slug, name, base_url)
+VALUES ('yandex-market', 'Я.Маркет', 'https://market.yandex.ru');
+
+INSERT OR IGNORE INTO marketplaces (slug, name, base_url)
+VALUES ('aliexpress', 'AliExpress', 'https://aliexpress.ru');

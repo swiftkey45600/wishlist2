@@ -1,3 +1,5 @@
+import base64
+import binascii
 import hashlib
 import ipaddress
 import json
@@ -8,34 +10,40 @@ from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from html.parser import HTMLParser
 from http.cookiejar import CookieJar
-from pathlib import Path
 from urllib.error import HTTPError, URLError
-from urllib.parse import urljoin, urlparse
-from urllib.request import HTTPCookieProcessor, Request, build_opener, urlopen
+from urllib.parse import parse_qs, unquote, urljoin, urlparse
+from urllib.request import HTTPCookieProcessor, HTTPRedirectHandler, Request, build_opener
 from uuid import uuid4
 
+from app.config import UPLOAD_DIR
 from app.models.image import Image
 from app.repositories.image_repository import ImageRepository
+from app.utils.images import ImageValidationError, MAX_IMAGE_SIZE, validate_image_bytes
 
 
 MAX_PAGE_SIZE = 3 * 1024 * 1024
-MAX_IMAGE_SIZE = 5 * 1024 * 1024
 CACHE_TTL_SECONDS = 10 * 60
 REQUEST_TIMEOUT_SECONDS = 8
 WB_TIMEOUT_SECONDS = 3
-UPLOAD_DIR = Path("uploads/images")
-
-USER_AGENTS = (
-    "WhatsApp/2.23.20.0",
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/129.0 Safari/537.36",
-    "TelegramBot (like TwitterBot)",
-)
+BROWSER_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "ru-RU,ru;q=0.9,en;q=0.8",
+}
+PREVIEW_USER_AGENTS = ("WhatsApp/2.23.20.0", "TelegramBot (like TwitterBot)")
 JSON_META_PATTERN = re.compile(
     r'"(?:property|name)"\s*:\s*"((?:og|twitter|product):[a-z:_]+)"\s*,\s*"content"\s*:\s*"((?:[^"\\]|\\.)*)"',
     flags=re.IGNORECASE,
 )
-CHALLENGE_TITLE_MARKERS =("captcha", "antibot", "challenge page", "нет соединения")
+CHALLENGE_TITLE_MARKERS = (
+    "доступ ограничен", "доступ к сайту ограничен", "подтвердите, что",
+    "подтвердите что", "access denied", "just a moment", "captcha",
+    "are you a robot", "security check", "проверка безопасности",
+    "antibot", "challenge page", "нет соединения", "вы не робот",
+)
 
 # Верхняя граница vol для каждой корзины CDN Wildberries.
 WB_BASKET_LIMITS = (
@@ -48,7 +56,23 @@ WB_MAX_BASKET = 40
 
 
 class MarketplaceParseError(Exception):
+    def __init__(self, message: str, url: str | None = None):
+        super().__init__(message)
+        self.url = url
+
+
+class _UnsafeMarketplaceUrl(MarketplaceParseError):
     pass
+
+
+class _ValidatedRedirectHandler(HTTPRedirectHandler):
+    def __init__(self, validate_url):
+        self.validate_url = validate_url
+
+    def redirect_request(self, req, fp, code, msg, headers, new_url):
+        # Validate before the next request, including redirects to image URLs.
+        safe_url = self.validate_url(new_url)
+        return super().redirect_request(req, fp, code, msg, headers, safe_url)
 
 
 class _ProductMetadataParser(HTMLParser):
@@ -97,45 +121,107 @@ class MarketplaceService:
         self.image_repository = image_repository
         self._cache: dict[str, tuple[float, dict]] = {}
 
-    def parse_product(self, url: str) -> dict:
+    def parse_product(self, url: str, owner_id: int | None = None) -> dict:
         normalized_url = self._validate_url(url)
         cached = self._cache.get(normalized_url)
-        if cached and time.monotonic() - cached[0] < CACHE_TTL_SECONDS:
+        if (
+            cached
+            and time.monotonic() - cached[0] < CACHE_TTL_SECONDS
+            and self.image_repository.get_image_by_id(cached[1]["image_id"]) is not None
+        ):
             return deepcopy(cached[1])
 
-        product = self._parse_wildberries(normalized_url) or self._parse_page(normalized_url)
-        final_url = product["marketplace_url"]
+        final_url = normalized_url
+        try:
+            product = self._parse_wildberries(normalized_url)
+            if product is None:
+                product, final_url = self._parse_page(normalized_url)
+            else:
+                final_url = product["marketplace_url"]
+        except _UnsafeMarketplaceUrl:
+            raise
+        except MarketplaceParseError as error:
+            if error.url:
+                final_url = self._validate_url(error.url)
+            product = self._product_from_url(final_url) or self._product_from_url(normalized_url)
+            if product is None:
+                raise
+        product["marketplace_url"] = final_url
 
         source_image_url = product.pop("source_image_url", None)
         product["image_id"] = None
-        product["picture_url"] = source_image_url
+        product["picture_url"] = urljoin(final_url, source_image_url) if source_image_url else None
         if source_image_url:
             try:
-                image = self._download_image(urljoin(final_url, source_image_url))
+                image = self._download_image(urljoin(final_url, source_image_url), owner_id)
             except MarketplaceParseError:
                 image = None
             if image is not None:
                 product["image_id"] = image.id
                 product["picture_url"] = f"/images/{image.id}"
 
-        self._cache[normalized_url] = (time.monotonic(), deepcopy(product))
+        # Allow a retry after a temporary block or failed image download.
+        if product["image_id"] is not None:
+            self._cache[normalized_url] = (time.monotonic(), deepcopy(product))
         return product
 
-    def _parse_page(self, url: str) -> dict:
-        # Магазины отдают карточку не всем: Ozon пускает превью-бота WhatsApp,
-        # Яндекс Маркет — то браузер, то бота. Пробуем по очереди, капчу пропускаем.
+    def _parse_page(self, url: str) -> tuple[dict, str]:
+        agents = (BROWSER_HEADERS["User-Agent"],)
+        hostname = (urlparse(url).hostname or "").lower().rstrip(".")
+        if any(hostname == domain or hostname.endswith(f".{domain}") for domain in (
+            "ozon.ru", "wildberries.ru", "market.yandex.ru", "aliexpress.ru", "aliexpress.com",
+        )):
+            agents += PREVIEW_USER_AGENTS
+        request_url = url
+        best_result = None
         last_error = MarketplaceParseError("Не удалось загрузить страницу маркетплейса")
-        for user_agent in USER_AGENTS:
+        for agent in agents:
             try:
-                html, final_url = self._download_page(url, user_agent)
-                self._reject_challenge_page(html, final_url)
+                html, final_url = self._download_page(request_url, user_agent=agent)
                 product = self._parse_html(html, final_url)
+            except _UnsafeMarketplaceUrl:
+                raise
             except MarketplaceParseError as error:
                 last_error = error
+                if error.url and self._product_from_url(error.url) is not None:
+                    request_url = self._validate_url(error.url)
                 continue
-            product["marketplace_url"] = final_url
-            return product
-        raise last_error
+            if product["source_image_url"]:
+                return product, final_url
+            if best_result is None:
+                best_result = (product, final_url)
+        if best_result is not None:
+            return best_result
+        raise MarketplaceParseError(str(last_error), request_url)
+
+    @staticmethod
+    def _yandex_captcha_product_url(url: str) -> str | None:
+        parsed = urlparse(url)
+        hostname = (parsed.hostname or "").lower().rstrip(".")
+        if hostname != "market.yandex.ru" or not parsed.path.startswith("/showcaptcha"):
+            return None
+        values = parse_qs(parsed.query).get("retpath", [])
+        if not values:
+            return None
+        encoded = values[0].split(",", 1)[0]
+        try:
+            decoded = base64.b64decode(
+                encoded + "=" * (-len(encoded) % 4), altchars=b"-_", validate=True
+            ).decode("utf-8")
+            target = urlparse(decoded)
+        except (binascii.Error, UnicodeError, ValueError):
+            return None
+        if (
+            target.scheme not in {"http", "https"}
+            or (target.hostname or "").lower().rstrip(".") != "market.yandex.ru"
+            or target.username or target.password
+        ):
+            return None
+        # Sharing/tracking parameters are unnecessary when retrying the card.
+        canonical_url = target._replace(query="", fragment="").geturl()
+        if MarketplaceService._product_from_url(canonical_url) is None:
+            return None
+        return canonical_url
 
     def _parse_wildberries(self, url: str) -> dict | None:
         # Страницы WB закрыты антиботом, но карточка товара и фото лежат на открытом CDN.
@@ -212,11 +298,11 @@ class MarketplaceService:
                 return round(price / 100)
         return None
 
-    @staticmethod
-    def _download_json(url: str) -> dict:
-        request = Request(url, headers={"User-Agent": USER_AGENTS[1], "Accept": "application/json"})
+    def _download_json(self, url: str) -> dict:
+        url = self._validate_url(url)
+        request = Request(url, headers={**BROWSER_HEADERS, "Accept": "application/json"})
         try:
-            with urlopen(request, timeout=WB_TIMEOUT_SECONDS) as response:
+            with self._open_url(request, timeout=WB_TIMEOUT_SECONDS) as response:
                 value = json.loads(response.read(MAX_PAGE_SIZE))
         except (HTTPError, URLError, TimeoutError, socket.timeout, ValueError) as error:
             raise MarketplaceParseError("Не удалось загрузить данные товара") from error
@@ -224,51 +310,96 @@ class MarketplaceService:
             raise MarketplaceParseError("Не удалось загрузить данные товара")
         return value
 
-    def _download_page(self, url: str, user_agent: str) -> tuple[str, str]:
-        request = Request(
-            url,
-            headers={
-                "User-Agent": user_agent,
-                "Accept": "text/html,application/xhtml+xml",
-                "Accept-Language": "ru-RU,ru;q=0.9",
-            },
+    def _open_url(self, request: Request, timeout: float = REQUEST_TIMEOUT_SECONDS):
+        opener = build_opener(
+            _ValidatedRedirectHandler(self._validate_url),
+            HTTPCookieProcessor(CookieJar()),
         )
-        # Ozon сначала ставит cookie и редиректит на ту же страницу — без cookie будет цикл.
-        opener = build_opener(HTTPCookieProcessor(CookieJar()))
+        return opener.open(request, timeout=timeout)
+
+    def _download_page(self, url: str, user_agent: str | None = None) -> tuple[str, str]:
+        headers = {**BROWSER_HEADERS, "User-Agent": user_agent or BROWSER_HEADERS["User-Agent"]}
+        request = Request(url, headers=headers)
         try:
-            with opener.open(request, timeout=REQUEST_TIMEOUT_SECONDS) as response:
+            with self._open_url(request) as response:
+                final_url = self._validate_url(response.geturl())
                 content_type = response.headers.get_content_type()
                 if content_type not in {"text/html", "application/xhtml+xml"}:
-                    raise MarketplaceParseError("Ссылка не ведёт на HTML-страницу товара")
-                # Нужные мета-теги в начале страницы, хвост можно отрезать.
+                    raise MarketplaceParseError("Ссылка не ведёт на HTML-страницу товара", final_url)
+                # Product metadata is near the start; large page tails need not be downloaded.
                 body = response.read(MAX_PAGE_SIZE)
-                final_url = self._validate_url(response.geturl())
                 charset = response.headers.get_content_charset() or "utf-8"
         except HTTPError as error:
             if error.code == 401:
                 raise MarketplaceParseError(
                     "Сайт требует авторизацию для просмотра товара. "
-                    "Попробуйте другую ссылку или заполните данные вручную"
+                    "Попробуйте другую ссылку или заполните данные вручную",
+                    error.geturl(),
                 ) from error
             if error.code in {307, 403, 429, 498}:
                 raise MarketplaceParseError(
                     "Сайт заблокировал автоматическое чтение карточки. "
-                    "Заполните данные товара вручную"
+                    "Заполните данные товара вручную",
+                    error.geturl(),
                 ) from error
             raise MarketplaceParseError(
-                f"Маркетплейс вернул ошибку HTTP {error.code}"
+                f"Маркетплейс вернул ошибку HTTP {error.code}", error.geturl()
             ) from error
         except (URLError, TimeoutError, socket.timeout) as error:
             raise MarketplaceParseError("Не удалось загрузить страницу маркетплейса") from error
 
-        return body.decode(charset, errors="replace"), final_url
+        try:
+            return body.decode(charset, errors="replace"), final_url
+        except LookupError as error:
+            raise MarketplaceParseError("Неизвестная кодировка страницы товара", final_url) from error
+
+    @staticmethod
+    def _product_from_url(url: str) -> dict | None:
+        parsed = urlparse(url)
+        hostname = (parsed.hostname or "").lower().rstrip(".")
+        path = unquote(parsed.path)
+        patterns = (
+            ("ozon.ru", "Ozon", r"/product/(?:(?P<slug>[^/]+)-)?(?P<id>\d+)(?:/|$)"),
+            ("wildberries.ru", "Wildberries", r"/catalog/(?P<id>\d+)/detail\.aspx/?$"),
+            ("market.yandex.ru", "Яндекс Маркета", r"/(?:product--|card/)(?P<slug>[^/]+)/(?P<id>\d+)(?:/|$)"),
+            ("market.yandex.ru", "Яндекс Маркета", r"/product/(?P<id>\d+)(?:/|$)"),
+            ("aliexpress.ru", "AliExpress", r"/item/(?P<id>\d+)\.html$"),
+            ("aliexpress.com", "AliExpress", r"/item/(?P<id>\d+)\.html$"),
+        )
+        for domain, name, pattern in patterns:
+            if hostname != domain and not hostname.endswith(f".{domain}"):
+                continue
+            match = re.search(pattern, path, flags=re.IGNORECASE)
+            if not match:
+                continue
+            slug = match.groupdict().get("slug")
+            title = " ".join(slug.replace("-", " ").split()) if slug else ""
+            return {
+                "title": title or f"Товар {name} №{match.group('id')}",
+                "price": None,
+                "source_image_url": None,
+            }
+        return None
 
     def _parse_html(self, html: str, page_url: str) -> dict:
+        parsed_url = urlparse(page_url)
+        if (
+            (parsed_url.hostname or "").lower().rstrip(".") == "market.yandex.ru"
+            and parsed_url.path.startswith("/showcaptcha")
+        ):
+            raise MarketplaceParseError(
+                "Маркетплейс показал CAPTCHA вместо товара",
+                self._yandex_captcha_product_url(page_url),
+            )
         parser = _ProductMetadataParser()
         parser.feed(html)
+        page_title = " ".join(parser.title_parts).lower()
+        if any(marker in page_title for marker in CHALLENGE_TITLE_MARKERS):
+            raise MarketplaceParseError("Маркетплейс показал проверку на робота вместо товара", page_url)
+        self._reject_challenge_page(html, page_url)
         product_node = self._find_product_node(parser.json_ld_parts)
         metadata = parser.metadata
-        # Яндекс Маркет кладёт мета-теги не в HTML, а в JSON для клиентского рендера.
+        # Some stores include Open Graph tags in JSON for client rendering.
         for match in JSON_META_PATTERN.finditer(html):
             try:
                 content = json.loads(f'"{match.group(2)}"')
@@ -286,7 +417,10 @@ class MarketplaceService:
         image_url = self._first_value(
             self._json_ld_image(product_node.get("image")) if product_node else None,
             metadata.get("og:image"),
+            metadata.get("og:image:secure_url"),
+            metadata.get("og:image:url"),
             metadata.get("twitter:image"),
+            metadata.get("twitter:image:src"),
             metadata.get("image"),
         )
         price = self._extract_price(product_node, metadata, html, page_url)
@@ -296,8 +430,8 @@ class MarketplaceService:
             metadata.get("description"),
         )
 
-        if not title:
-            raise MarketplaceParseError("Не удалось определить название товара")
+        if not title or any(marker in title.lower() for marker in CHALLENGE_TITLE_MARKERS):
+            raise MarketplaceParseError("Не удалось определить название товара", page_url)
 
         return {
             "title": self._clean_title(title, page_url),
@@ -348,37 +482,34 @@ class MarketplaceService:
                     return round(parsed / divisor)
         return None
 
-    def _download_image(self, url: str) -> Image:
+    def _download_image(self, url: str, owner_id: int | None = None) -> Image:
         image_url = self._validate_url(url)
-        request = Request(image_url, headers={"User-Agent": "Wishlist2/1.0"})
+        request = Request(image_url, headers={**BROWSER_HEADERS, "Accept": "image/webp,image/*;q=0.9,*/*;q=0.8"})
         try:
-            with urlopen(request, timeout=REQUEST_TIMEOUT_SECONDS) as response:
+            with self._open_url(request) as response:
                 content_type = response.headers.get_content_type().lower()
                 if content_type not in {"image/jpeg", "image/png", "image/webp", "image/gif"}:
                     raise MarketplaceParseError("Файл товара не является изображением")
                 image_bytes = response.read(MAX_IMAGE_SIZE + 1)
-                if not image_bytes or len(image_bytes) > MAX_IMAGE_SIZE:
-                    raise MarketplaceParseError("Изображение товара пустое или слишком большое")
         except (HTTPError, URLError, TimeoutError, socket.timeout) as error:
             raise MarketplaceParseError("Не удалось скачать изображение товара") from error
+
+        try:
+            validated_image = validate_image_bytes(image_bytes, content_type)
+        except ImageValidationError as error:
+            raise MarketplaceParseError(str(error)) from error
 
         image_hash = hashlib.sha256(image_bytes).hexdigest()
         existing = self.image_repository.get_image_by_hash(image_hash)
         if existing is not None:
             return existing
 
-        extensions = {
-            "image/jpeg": ".jpg",
-            "image/png": ".png",
-            "image/webp": ".webp",
-            "image/gif": ".gif",
-        }
         UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-        image_path = UPLOAD_DIR / f"{uuid4().hex}{extensions[content_type]}"
+        image_path = UPLOAD_DIR / f"{uuid4().hex}{validated_image.extension}"
         image_path.write_bytes(image_bytes)
         try:
             return self.image_repository.create_image(
-                Image(image_path=str(image_path), image_type=content_type, hash=image_hash)
+                Image(image_path=str(image_path), image_type=content_type, hash=image_hash, owner_id=owner_id)
             )
         except ValueError:
             image_path.unlink(missing_ok=True)
@@ -481,19 +612,21 @@ class MarketplaceService:
     def _validate_url(url: str) -> str:
         parsed = urlparse(str(url).strip())
         if parsed.scheme not in {"http", "https"} or not parsed.hostname:
-            raise MarketplaceParseError("Укажите корректную http(s)-ссылку")
+            raise _UnsafeMarketplaceUrl("Укажите корректную http(s)-ссылку")
         if parsed.username or parsed.password:
-            raise MarketplaceParseError("Ссылки с логином и паролем не поддерживаются")
+            raise _UnsafeMarketplaceUrl("Ссылки с логином и паролем не поддерживаются")
 
         hostname = parsed.hostname.lower().rstrip(".")
         if hostname == "localhost" or hostname.endswith(".localhost"):
-            raise MarketplaceParseError("Локальные адреса не поддерживаются")
+            raise _UnsafeMarketplaceUrl("Локальные адреса не поддерживаются")
         try:
             addresses = {item[4][0] for item in socket.getaddrinfo(hostname, parsed.port)}
+        except ValueError as error:
+            raise _UnsafeMarketplaceUrl("Укажите корректную http(s)-ссылку") from error
         except socket.gaierror as error:
             raise MarketplaceParseError("Не удалось определить адрес сайта") from error
         for address in addresses:
             ip = ipaddress.ip_address(address)
             if not ip.is_global:
-                raise MarketplaceParseError("Локальные адреса не поддерживаются")
+                raise _UnsafeMarketplaceUrl("Локальные адреса не поддерживаются")
         return parsed.geturl()
