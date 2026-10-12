@@ -1,4 +1,8 @@
 .gift-edit-form {
+    box-sizing: border-box;
+    max-height: calc(100dvh - 40px);
+    overflow-y: auto;
+    border-radius: inherit;
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -114,4 +118,26 @@
 .gift-edit-actions button:disabled {
     cursor: wait;
     opacity: .65;
+}
+
+
+.gift-edit-form .marketplace-autofill {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 10px;
+}
+
+.gift-edit-form .marketplace-autofill label {
+    min-width: 0;
+}
+
+.gift-edit-form .marketplace-autofill button {
+    white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+    .gift-edit-form .marketplace-autofill {
+        grid-template-columns: 1fr;
+    }
 }
