@@ -1,5 +1,5 @@
 import "./EventCard.css"
-import { resolveImageUrl } from "../../../application/imageApplication"
+import GiftImage from "../../Gifts/GiftImage/GiftImage"
 
 function formatEventDate(value) {
     if (!value) return "Дата не указана"
@@ -25,9 +25,7 @@ function EventCard({ event, gifts, onOpenEvent }) {
                 {gifts.map((gift) => (
                     <div className="event-gift-row" key={gift.id}>
                         <div className="event-gift-picture">
-                            {resolveImageUrl(gift.image_id, gift.picture_url || gift.image_url)
-                                ? <img src={resolveImageUrl(gift.image_id, gift.picture_url || gift.image_url)} alt="" />
-                                : "🎁"}
+                            <GiftImage gift={gift} fallbackClassName="event-gift-picture-fallback" />
                         </div>
                         <div className="event-gift-info"><strong>{gift.title}</strong><span>{gift.description || "Описание подарка не указано"}</span></div>
                         <div className="event-gift-right"><strong>{gift.price} ₽</strong><span className={`gift-badge ${gift.status}`}>{gift.status}</span></div>
