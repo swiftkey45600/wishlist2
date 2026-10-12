@@ -8,6 +8,7 @@ from app.repositories.gift_repository import GiftRepository
 from app.repositories.image_repository import ImageRepository
 from app.repositories.marketplace_links_repository import MarketplacesLinksRepository
 from app.repositories.event_repository import EventRepository
+from app.repositories.tag_repository import TagRepository
 from app.services.reservation_service import ReservationService
 from app.models.user import User
 
@@ -21,6 +22,7 @@ class GiftService:
         contribution_repository: ContributionRepository,
         event_repository: EventRepository,
         reservation_service: ReservationService,
+        tag_repository: TagRepository | None = None,
     ):
         self.gift_repository = gift_repository
         self.image_repository = image_repository
@@ -28,6 +30,7 @@ class GiftService:
         self.contribution_repository = contribution_repository
         self.event_repository = event_repository
         self.reservation_service = reservation_service
+        self.tag_repository = tag_repository or TagRepository()
 
     def _get_image_url(self, image_id: int) -> str:
         return f"/images/{image_id}"
@@ -55,14 +58,20 @@ class GiftService:
         self._fill_marketplace_links(gift)
         return gift
 
-    def create_gift(self, gift: Gift) -> Gift:
+    def _validate_tag_ids(self, event_id: int, tag_ids: list[int]) -> None:
+        event_tag_ids = {tag.id for tag in self.tag_repository.get_tags_by_event(event_id)}
+        if set(tag_ids) - event_tag_ids:
+            raise HTTPException(status_code=400, detail="Tags must belong to the gift's event")
+
+    def create_gift(self, gift: Gift, tag_ids: list[int] | None = None) -> Gift:
         if not gift.event_id:
             raise HTTPException(status_code=400, detail="event_id is required")
 
         if gift.image_id is not None and self.image_repository.get_image_by_id(gift.image_id) is None:
             raise HTTPException(status_code=404, detail="Image not found")
 
-        created_gift = self.gift_repository.create_gift(gift)
+        self._validate_tag_ids(gift.event_id, tag_ids or [])
+        created_gift = self.gift_repository.create_gift(gift, tag_ids)
         return self._prepare_gift_response(created_gift)
 
     def get_gift_by_id(self, gift_id: int) -> Gift:
@@ -119,6 +128,9 @@ class GiftService:
 
         if data.get("status") is not None and data["status"] not in {"available", "bought"}:
             raise HTTPException(status_code=400, detail="Invalid gift status")
+
+        if "tag_ids" in data:
+            self._validate_tag_ids(gift.event_id, data["tag_ids"])
 
         if data.get("status") == "available":
             self.reservation_service.clear_reservation_for_gift(gift_id)

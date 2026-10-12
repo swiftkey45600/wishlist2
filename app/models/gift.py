@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
-from typing import Annotated, Literal, Optional
+from typing import Annotated, Literal
 from pydantic import BaseModel, Field, model_validator
 from app.models.marketplace import Marketplace
+from app.models.tag import Tag
 
 @dataclass
 class Gift:
@@ -21,19 +22,11 @@ class Gift:
     reservation_id: int | None = None
     marketplace_links: list[Marketplace] = field(default_factory=list)
     contribution_total: int = 0
+    tags: list[Tag] = field(default_factory=list)
 
 @dataclass
-class GiftCreateRequest:
-    event_id: int
-    title: str
-    price: int
-
-    description: Optional[str] = None
-    picture_url: Optional[str] = None
-    marketplace_url: Optional[str] = None
-    category_id: Optional[int] = None
-
-    image_id: Optional[int] = None
+class GiftCreateRequest(Gift):
+    tag_ids: list[int] = field(default_factory=list)
 
 
 class GiftFilters(BaseModel):
