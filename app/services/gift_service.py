@@ -104,21 +104,7 @@ class GiftService:
             raise HTTPException(status_code=404, detail="Event not found")
 
         if event.owner_id != current_user.id:
-            if set(data) - {"is_reserved"}:
-                raise HTTPException(status_code=403, detail="Only the event owner can edit a gift")
-            if "is_reserved" not in data:
-                raise HTTPException(status_code=400, detail="is_reserved is required")
-
-            if data["is_reserved"]:
-                self.reservation_service.reserve_gift(
-                    gift_id,
-                    reserver_name=current_user.name,
-                    reserver_id=current_user.id,
-                )
-            else:
-                self.reservation_service.unreserve_gift_by_user(gift_id, current_user.id)
-
-            return self.get_gift_by_id(gift_id)
+            raise HTTPException(status_code=403, detail="Only the event owner can edit a gift")
 
         if "is_reserved" in data:
             raise HTTPException(status_code=403, detail="Event owner cannot reserve their own gift")
@@ -137,6 +123,27 @@ class GiftService:
 
         updated_gift = self.gift_repository.update_gift(gift_id, data)
         return self._prepare_gift_response(updated_gift)
+
+    def update_public_gift_reservation(
+        self, public_token: str, gift_id: int, is_reserved: bool, current_user: User
+    ) -> Gift:
+        event = self.event_repository.get_event_by_public_token(public_token)
+        gift = self.gift_repository.get_gift_by_id(gift_id)
+        if event is None or gift is None or gift.event_id != event.id:
+            raise HTTPException(status_code=404, detail="Gift not found")
+        if event.owner_id == current_user.id:
+            raise HTTPException(status_code=403, detail="Event owner cannot reserve their own gift")
+
+        if is_reserved:
+            self.reservation_service.reserve_gift(
+                gift_id,
+                reserver_name=current_user.name,
+                reserver_id=current_user.id,
+            )
+        else:
+            self.reservation_service.unreserve_gift_by_user(gift_id, current_user.id)
+
+        return self.get_gift_by_id(gift_id)
 
     def delete_gift(self, gift_id: int) -> None:
         if not self.gift_repository.delete_gift(gift_id):

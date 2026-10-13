@@ -76,8 +76,13 @@ class GuestReservationTests(unittest.TestCase):
         hashed = self.repo.get_secret_word_hash(reservation["id"])
         self.assertNotEqual(hashed, "snowflake")
         self.assertTrue(verify_password("snowflake", hashed))
-        for path in [f'/reservations/{reservation["id"]}', f'/gifts/{self.gift.id}', '/events/public/test-token']:
-            status, payload, _ = self.request("GET", path=path)
+        owner_token = create_access_token({"sub": "johndoe"})
+        for path, token in [
+            (f'/reservations/{reservation["id"]}', None),
+            (f'/gifts/{self.gift.id}', owner_token),
+            ('/events/public/test-token', None),
+        ]:
+            status, payload, _ = self.request("GET", path=path, token=token)
             self.assertEqual(status, 200)
             serialized = json.dumps(payload)
             self.assertNotIn("secret_word", serialized)

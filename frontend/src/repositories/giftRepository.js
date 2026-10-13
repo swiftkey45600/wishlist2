@@ -20,6 +20,13 @@ export async function updateGift(giftId, data) {
   return response.data
 }
 
+export async function updatePublicGiftReservation(token, giftId, isReserved) {
+  const response = await api.patch(`/events/public/${token}/gifts/${giftId}/reservation`, {
+    is_reserved: isReserved
+  })
+  return response.data
+}
+
 export async function reserveGift(giftId, isAnonymous = false) {
   const response = await api.post("/reservations/", {
     gift_id: giftId,
