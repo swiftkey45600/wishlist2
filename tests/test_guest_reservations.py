@@ -22,6 +22,11 @@ from app.utils.security import verify_password
 
 class GuestReservationTests(unittest.TestCase):
     def setUp(self):
+        # Slow hosts must not accidentally expire a rate-limit window mid-test.
+        # The expiry test overrides this clock explicitly.
+        clock = patch("app.repositories.reservation_repository.time.time", return_value=1000)
+        clock.start()
+        self.addCleanup(clock.stop)
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
         database = patch("app.database.DATABASE_PATH", Path(directory.name) / "wishlist.db")
