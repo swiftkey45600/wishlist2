@@ -18,9 +18,9 @@ export async function getGift(giftId) {
   }
 }
 
-export async function getGiftsByEvent(eventId) {
+export async function getGiftsByEvent(eventId, showReservations = false) {
   try {
-    return await fetchGiftsByEvent(eventId)
+    return await fetchGiftsByEvent(eventId, showReservations)
   } catch (error) {
     console.error(error)
     return []

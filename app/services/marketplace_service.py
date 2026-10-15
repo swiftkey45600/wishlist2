@@ -3,6 +3,7 @@ import binascii
 import hashlib
 import ipaddress
 import json
+import math
 import re
 import socket
 import time
@@ -132,6 +133,7 @@ class MarketplaceService:
             return deepcopy(cached[1])
 
         final_url = normalized_url
+        warning = None
         try:
             product = self._parse_wildberries(normalized_url)
             if product is None:
@@ -146,7 +148,11 @@ class MarketplaceService:
             product = self._product_from_url(final_url) or self._product_from_url(normalized_url)
             if product is None:
                 raise
+            warning = "Магазин не отдал карточку товара. Название взято из ссылки; проверьте его и укажите цену вручную."
         product["marketplace_url"] = final_url
+        if warning is None and product.get("price") is None:
+            warning = "Магазин не отдал цену товара. Укажите её вручную."
+        product["warning"] = warning
 
         source_image_url = product.pop("source_image_url", None)
         product["image_id"] = None
@@ -227,7 +233,7 @@ class MarketplaceService:
         # Страницы WB закрыты антиботом, но карточка товара и фото лежат на открытом CDN.
         parsed = urlparse(url)
         hostname = (parsed.hostname or "").lower()
-        if not (hostname.endswith("wildberries.ru") or hostname.endswith("wb.ru")):
+        if not any(hostname == domain or hostname.endswith(f".{domain}") for domain in ("wildberries.ru", "wb.ru")):
             return None
         match = re.search(r"/catalog/(\d+)", parsed.path)
         if not match:
@@ -568,7 +574,7 @@ class MarketplaceService:
             price = float(normalized)
         except ValueError:
             return None
-        return round(price) if price >= 0 else None
+        return round(price) if math.isfinite(price) and price >= 0 else None
 
     @staticmethod
     def _clean_title(title: str, page_url: str) -> str:
@@ -610,7 +616,11 @@ class MarketplaceService:
 
     @staticmethod
     def _validate_url(url: str) -> str:
-        parsed = urlparse(str(url).strip())
+        try:
+            parsed = urlparse(str(url).strip())
+            parsed.port
+        except ValueError as error:
+            raise _UnsafeMarketplaceUrl("Укажите корректную http(s)-ссылку") from error
         if parsed.scheme not in {"http", "https"} or not parsed.hostname:
             raise _UnsafeMarketplaceUrl("Укажите корректную http(s)-ссылку")
         if parsed.username or parsed.password:

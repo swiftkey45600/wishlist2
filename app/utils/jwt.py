@@ -12,6 +12,14 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 90
 
 security = HTTPBearer()
+optional_security = HTTPBearer(auto_error=False)
+
+
+def get_optional_user(credentials: HTTPAuthorizationCredentials | None = Depends(optional_security)):
+    if credentials is None:
+        return None
+    payload = verify_token(credentials.credentials)
+    return _user_repository.get_user_by_login(payload.get("sub")) if payload else None
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()

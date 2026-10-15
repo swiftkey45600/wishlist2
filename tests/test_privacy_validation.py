@@ -5,7 +5,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 
 os.environ.setdefault("JWT_SECRET_KEY", "privacy-validation-test-key")
 
@@ -132,6 +132,86 @@ class PrivacyValidationTests(unittest.TestCase):
         self.assertEqual(self.gifts.get_gift_by_id(self.gift.id).status, "available")
         with get_connection() as connection:
             self.assertEqual(connection.execute("SELECT COUNT(*) FROM reservations").fetchone()[0], 0)
+
+    def test_description_search_and_untagged_filter(self):
+        tag = TagRepository().create_tag(Tag(event_id=self.event.id, name="Books"))
+        self.gifts.update_gift(self.gift.id, {"description": "Красная обложка"})
+        tagged = self.gifts.create_gift(Gift(event_id=self.event.id, title="Tagged", price=200), [tag.id])
+        for path, token in [(f'/events/{self.event.id}/gifts', self.owner_token), ('/events/public/public-token', None)]:
+            status, payload = self.request("GET", path + '?tags=untagged&q=' + quote('ОБЛОЖКА'), token=token)
+            self.assertEqual(status, 200)
+            gifts = payload if isinstance(payload, list) else payload['gifts']
+            self.assertEqual([gift['id'] for gift in gifts], [self.gift.id])
+            status, payload = self.request("GET", path + f'?tags=untagged&tags={tag.id}', token=token)
+            self.assertEqual(status, 200)
+            gifts = payload if isinstance(payload, list) else payload['gifts']
+            self.assertEqual({gift['id'] for gift in gifts}, {self.gift.id, tagged.id})
+
+    def test_owner_reservation_details_require_explicit_spoiler_flag(self):
+        path = f'/events/public/public-token/gifts/{self.gift.id}/reservation'
+        status, gift = self.request("PATCH", path, {"is_reserved": True}, token=self.guest_token)
+        self.assertEqual(status, 200)
+        reservation_path = f'/reservations/{gift["reservation_id"]}'
+        self.assertIn(self.request("GET", reservation_path)[0], (401, 403))
+        self.assertEqual(self.request("GET", reservation_path, token=self.owner_token)[0], 403)
+        self.assertEqual(self.request("GET", reservation_path, token=self.guest_token)[0], 200)
+        for path in [f'/gifts/{self.gift.id}', f'/events/{self.event.id}/gifts', '/events/public/public-token']:
+            for suffix, expected in [('', 'available'), ('?status=reserved', 'available'), ('?show_reservations=true', 'reserved')]:
+                status, payload = self.request("GET", path + suffix, token=self.owner_token)
+                self.assertEqual(status, 200)
+                gifts = payload if isinstance(payload, list) else payload.get('gifts', [payload])
+                self.assertEqual(len(gifts), 1)
+                self.assertEqual(gifts[0]['status'], expected)
+                if expected == 'available':
+                    self.assertIsNone(gifts[0]['reservation_id'])
+        status, payload = self.request("GET", '/events/public/public-token')
+        self.assertEqual(payload['gifts'][0]['status'], 'reserved')
+        status, gift = self.request("PATCH", f'/gifts/{self.gift.id}', {"description": "Edited"}, token=self.owner_token)
+        self.assertEqual(status, 200)
+        self.assertEqual(gift['status'], 'available')
+        self.assertIsNone(gift['reservation_id'])
+        self.assertEqual(self.gifts.get_gift_by_id(self.gift.id).status, 'reserved')
+
+    def test_recommendations_are_owner_only_and_do_not_expose_other_users(self):
+        path = f'/events/{self.event.id}/recommendations'
+        self.assertIn(self.request("GET", path)[0], (401, 403))
+        self.assertEqual(self.request("GET", path, token=self.guest_token)[0], 403)
+        self.gifts.create_gift(Gift(event_id=self.other_event.id, title="Secret other user gift", price=100))
+        status, items = self.request("GET", path, token=self.owner_token)
+        self.assertEqual((status, items), (200, []))
+        history = self.events.create_event(Event(owner_id=1, title="History", public_token="history-token"))
+        self.gifts.create_gift(Gift(event_id=history.id, title="Private gift", price=100))
+        self.gifts.create_gift(Gift(event_id=history.id, title="Candidate", price=150, status="reserved"))
+        self.gifts.create_gift(Gift(event_id=history.id, title="Candidate", price=150))
+        status, items = self.request("GET", path, token=self.owner_token)
+        self.assertEqual(status, 200)
+        self.assertEqual([item['title'] for item in items], ['Candidate'])
+        for key in ('event_id', 'owner_id', 'public_token', 'reservation_id', 'status', 'tags'):
+            self.assertNotIn(key, items[0])
+        status, gift = self.request("POST", '/gifts/', {"event_id": self.event.id, **items[0]}, token=self.owner_token)
+        self.assertEqual(status, 200)
+        self.assertEqual(gift['status'], 'available')
+        self.assertIsNone(gift['reservation_id'])
+        self.assertEqual(self.request("GET", path, token=self.owner_token)[1], [])
+
+    def test_recommendations_rank_tags_price_and_popularity_and_validate_limit(self):
+        history = self.events.create_event(Event(owner_id=1, title="History", public_token="history-token"))
+        tags = TagRepository()
+        current_tag = tags.create_tag(Tag(event_id=self.event.id, name="Books"))
+        history_tag = tags.create_tag(Tag(event_id=history.id, name="Books"))
+        self.gifts.update_gift(self.gift.id, {"tag_ids": [current_tag.id]})
+        self.gifts.create_gift(Gift(event_id=history.id, title="No matching tag", price=100))
+        self.gifts.create_gift(Gift(event_id=history.id, title="Far price", price=1000), [history_tag.id])
+        self.gifts.create_gift(Gift(event_id=history.id, title="Rare", price=110), [history_tag.id])
+        self.gifts.create_gift(Gift(event_id=history.id, title="Popular", price=110), [history_tag.id])
+        self.gifts.create_gift(Gift(event_id=history.id, title="Popular", price=110), [history_tag.id])
+        path = f'/events/{self.event.id}/recommendations'
+        status, items = self.request("GET", path, token=self.owner_token)
+        self.assertEqual(status, 200)
+        self.assertEqual([item['title'] for item in items], ['Popular', 'Rare', 'Far price', 'No matching tag'])
+        self.assertEqual(len(self.request("GET", path + '?limit=1', token=self.owner_token)[1]), 1)
+        for limit in ('0', '21', 'invalid'):
+            self.assertEqual(self.request("GET", path + '?limit=' + limit, token=self.owner_token)[0], 422)
 
     def test_user_list_is_removed_and_own_profile_remains_available(self):
         for token in [None, self.owner_token, self.guest_token]:

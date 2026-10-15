@@ -77,8 +77,8 @@ class GuestReservationTests(unittest.TestCase):
         self.assertNotEqual(hashed, "snowflake")
         self.assertTrue(verify_password("snowflake", hashed))
         owner_token = create_access_token({"sub": "johndoe"})
+        self.assertIn(self.request("GET", path=f'/reservations/{reservation["id"]}')[0], (401, 403))
         for path, token in [
-            (f'/reservations/{reservation["id"]}', None),
             (f'/gifts/{self.gift.id}', owner_token),
             ('/events/public/test-token', None),
         ]:

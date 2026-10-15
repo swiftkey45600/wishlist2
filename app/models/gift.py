@@ -34,11 +34,12 @@ class GiftCreateRequest(Gift):
 class GiftFilters(BaseModel):
     min_price: int | None = Field(default=None, ge=0)
     max_price: int | None = Field(default=None, ge=0)
-    tags: list[Annotated[int, Field(gt=0)]] = Field(default_factory=list)
+    tags: list[Annotated[int, Field(gt=0)] | Literal["untagged"]] = Field(default_factory=list)
     q: str | None = None
     status: Literal["available", "reserved", "bought"] | None = None
     sort_by: Literal["id", "price", "title"] = "id"
     sort_order: Literal["asc", "desc"] = "asc"
+    show_reservations: bool = False
 
     @model_validator(mode="after")
     def validate_price_range(self):

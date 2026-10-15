@@ -5,8 +5,8 @@ export async function fetchGift(giftId) {
   return response.data
 }
 
-export async function fetchGiftsByEvent(eventId) {
-  const response = await api.get(`/events/${eventId}/gifts`)
+export async function fetchGiftsByEvent(eventId, showReservations = false) {
+  const response = await api.get(`/events/${eventId}/gifts`, { params: { show_reservations: showReservations } })
   return response.data
 }
 

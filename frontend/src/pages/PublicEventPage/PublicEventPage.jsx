@@ -35,7 +35,7 @@ function PublicEventPage() {
             if (!tags.some((existingTag) => existingTag.id === tag.id)) tags.push(tag)
         })
     })
-    const { filters, filteredGifts, updateFilter } = useGiftFilters(gifts)
+    const { filters, filteredGifts, updateFilter } = useGiftFilters(gifts, isOwner)
 
     async function handleToggleStatus(gift) {
         if (gift.status === "bought") return
@@ -119,6 +119,7 @@ function PublicEventPage() {
                             </div>
 
                             <GiftFilters
+                                hideStatus={isOwner}
                                 tags={tags}
                                 filters={filters}
                                 onFilterChange={updateFilter}
@@ -142,6 +143,7 @@ function PublicEventPage() {
                                         <GiftCard
                                             key={gift.id}
                                             gift={gift}
+                                            hideReservationDetails={isOwner}
                                             onToggleStatus={!isOwner && gift.status !== "bought" ? handleToggleStatus : undefined}
                                         />
                                     ))}

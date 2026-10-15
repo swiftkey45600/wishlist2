@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react"
-import { Link } from "react-router-dom"
 import {
     changeGuestReservation,
     useGuestReservationMocks
@@ -59,11 +58,11 @@ function GuestReservationModal({ token, gift, onSuccess, onCancel }) {
                 </h2>
                 <p>{gift.title}</p>
 
-                {useGuestReservationMocks ? (
+                {(
                     <>
-                        <p className="guest-reservation-demo" role="note">
+                        {useGuestReservationMocks && <p className="guest-reservation-demo" role="note">
                             Демо: настоящая бронь не создаётся. Результат сбросится после обновления страницы.
-                        </p>
+                        </p>}
                         {!isCancelling && <label>
                             Ваше имя
                             <input
@@ -92,19 +91,15 @@ function GuestReservationModal({ token, gift, onSuccess, onCancel }) {
                                 : "Запомните слово: оно понадобится, чтобы отменить бронь. Не используйте пароль от аккаунта."}
                         </p>
                     </>
-                ) : (
-                    <p>Бронь без аккаунта пока недоступна. Для бронирования войдите в аккаунт.</p>
                 )}
 
                 {error && <p className="guest-reservation-error" role="alert">{error}</p>}
 
                 <div className="guest-reservation-actions">
                     <button type="button" onClick={onCancel} disabled={isSubmitting}>Закрыть</button>
-                    {useGuestReservationMocks
-                        ? <button type="submit" disabled={isSubmitting}>
+                    <button type="submit" disabled={isSubmitting}>
                             {isSubmitting ? "Сохраняем..." : isCancelling ? "Отменить бронь" : "Забронировать"}
                         </button>
-                        : <Link to="/auth">Войти</Link>}
                 </div>
             </form>
         </dialog>
