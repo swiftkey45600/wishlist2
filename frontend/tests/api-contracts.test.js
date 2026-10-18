@@ -12,14 +12,46 @@ async function loadApplication(name, api, createGift = () => {}) {
         this.setExport("createGift", createGift)
     }, { context })
     const source = await readFile(new URL(`../src/application/${name}.js`, import.meta.url), "utf8")
+    const tagRepository = new vm.SourceTextModule(
+        await readFile(new URL('../src/repositories/tagRepository.js', import.meta.url), 'utf8'), { context }
+    )
+    await tagRepository.link(() => apiModule)
     const module = new vm.SourceTextModule(source, {
         context,
         initializeImportMeta(meta) { meta.env = { DEV: false } }
     })
-    await module.link(specifier => specifier.includes("services/api") ? apiModule : giftModule)
+    await module.link(specifier => specifier.includes("services/api") ? apiModule
+        : specifier.includes("tagRepository") ? tagRepository : giftModule)
     await module.evaluate()
     return module.namespace
 }
+
+test("tags are loaded and created through the real repository without invented IDs", async () => {
+    const tag = { id: 31, event_id: 12, name: "Books" }
+    const application = await loadApplication("tagApplication", {
+        async get(path) {
+            assert.equal(path, "/events/12/tags")
+            return { data: [tag] }
+        },
+        async post(path, body) {
+            assert.equal(path, "/events/12/tags")
+            assert.equal(body.name, "Books")
+            return { data: tag }
+        }
+    })
+    assert.equal((await application.getEventTags(12))[0], tag)
+    assert.equal(await application.createTag(12, "Books"), tag)
+})
+
+test("failed tag creation never returns a fake successful tag", async () => {
+    const failure = new Error("Service unavailable")
+    const application = await loadApplication("tagApplication", {
+        async post() { throw failure },
+        async get() { throw failure }
+    })
+    await assert.rejects(application.createTag(12, "Books"), failure)
+    await assert.rejects(application.getEventTags(12), failure)
+})
 
 test("guest reservation uses real API and preserves gift fields", async () => {
     const calls = []

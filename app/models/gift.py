@@ -8,7 +8,7 @@ from app.models.tag import Tag
 class Gift:
     event_id: int
     title: str
-    price: int
+    price: int | None
     status: str = "available"
     id: int | None = None
     description: str | None = None
@@ -27,7 +27,8 @@ class Gift:
 @dataclass
 class GiftCreateRequest(Gift):
     title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
-    price: Annotated[int, Field(gt=0)]
+    price: Annotated[int, Field(gt=0, le=9223372036854775807)]
+    status: Literal["available"] = "available"
     tag_ids: list[int] = field(default_factory=list)
 
 

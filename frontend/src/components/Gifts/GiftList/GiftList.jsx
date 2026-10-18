@@ -78,12 +78,20 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
     }, [eventId, showReservations])
 
     useEffect(() => {
+        let cancelled = false
         async function loadTags() {
-            const data = await getEventTags(eventId)
-            setTags(Array.isArray(data) ? data : [])
+            setTags([])
+            setSelectedTagIds([])
+            try {
+                const data = await getEventTags(eventId)
+                if (!cancelled) setTags(Array.isArray(data) ? data : [])
+            } catch {
+                if (!cancelled) setFormError("Не удалось загрузить теги. Обновите страницу перед сохранением.")
+            }
         }
 
         loadTags()
+        return () => { cancelled = true }
     }, [eventId])
 
     async function handleMarketplaceAutofill() {

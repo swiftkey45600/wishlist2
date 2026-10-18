@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field, StringConstraints, field_validator
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Optional, Literal
 
 from app.models.gift import Gift, GiftCreateRequest, GiftFilters
 from app.models.reservation import PublicGiftReservationRequest
@@ -90,21 +90,21 @@ def get_gifts_by_event(
 
 class GiftUpdateRequest(BaseModel):
     title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)] | None = None
-    price: Optional[int] = Field(default=None, gt=0)
+    price: Optional[int] = Field(default=None, gt=0, le=9223372036854775807)
     description: Optional[str] = None
     picture_url: Optional[str] = None
     marketplace_url: Optional[str] = None
     category_id: Optional[int] = None
     image_id: Optional[int] = None
-    status: Optional[str] = None
+    status: Optional[Literal["available", "bought"]] = None
     is_reserved: Optional[bool] = None
     tag_ids: list[int] = Field(default_factory=list)
 
-    @field_validator("title", "price")
+    @field_validator("title", "price", "status")
     @classmethod
     def validate_required_fields(cls, value):
         if value is None:
-            raise ValueError("Title and price cannot be null")
+            raise ValueError("Title, price and status cannot be null")
         return value
 
 

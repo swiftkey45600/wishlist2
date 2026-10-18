@@ -12,7 +12,7 @@ from copy import deepcopy
 from html.parser import HTMLParser
 from http.cookiejar import CookieJar
 from urllib.error import HTTPError, URLError
-from urllib.parse import parse_qs, unquote, urljoin, urlparse
+from urllib.parse import parse_qs, quote, unquote, urljoin, urlparse
 from urllib.request import HTTPCookieProcessor, HTTPRedirectHandler, Request, build_opener
 from uuid import uuid4
 
@@ -160,7 +160,7 @@ class MarketplaceService:
         if source_image_url:
             try:
                 image = self._download_image(urljoin(final_url, source_image_url), owner_id)
-            except MarketplaceParseError:
+            except (MarketplaceParseError, OSError):
                 image = None
             if image is not None:
                 product["image_id"] = image.id
@@ -639,4 +639,13 @@ class MarketplaceService:
             ip = ipaddress.ip_address(address)
             if not ip.is_global:
                 raise _UnsafeMarketplaceUrl("Локальные адреса не поддерживаются")
-        return parsed.geturl()
+        ascii_hostname = hostname.encode("idna").decode("ascii")
+        netloc = f"[{ascii_hostname}]" if ":" in ascii_hostname else ascii_hostname
+        if parsed.port is not None:
+            netloc += f":{parsed.port}"
+        return parsed._replace(
+            netloc=netloc,
+            path=quote(parsed.path, safe="/%:@!$&'()*+,;=-._~"),
+            query=quote(parsed.query, safe="%=&?/:@!$'()*+,;~-._"),
+            fragment="",
+        ).geturl()
