@@ -74,8 +74,10 @@ export async function unreserveGift(reservationId) {
 
 export async function deleteGift(giftId) {
   try {
-    return await deleteGiftRepository(giftId)
+    await deleteGiftRepository(giftId)
+    return true
   } catch (error) {
     console.error(error)
+    return false
   }
 }

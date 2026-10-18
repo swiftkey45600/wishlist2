@@ -1,4 +1,6 @@
 import io
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 import os
 from pathlib import Path
 import tempfile
@@ -33,6 +35,38 @@ class DebugApiFlows(unittest.TestCase):
         response = self.client.post('/events/', json={'title': 'Birthday'})
         self.assertEqual(response.status_code, 200, response.text)
         self.event = response.json()['event']
+
+    def test_event_date_can_be_cleared_without_changing_omitted_fields(self):
+        path = f'/events/{self.event["id"]}'
+        self.assertEqual(self.client.patch(path, json={'event_date': '2027-01-01T12:00', 'place': 'Home'}).status_code, 200)
+        response = self.client.patch(path, json={'event_date': None})
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertIsNone(response.json()['event']['event_date'])
+        self.assertEqual(response.json()['event']['place'], 'Home')
+
+    def test_owner_cannot_reserve_own_gift_through_legacy_endpoint(self):
+        gift = self.client.post('/gifts/', json={'event_id': self.event['id'], 'title': 'Gift', 'price': 100}).json()
+        response = self.client.post('/reservations/', json={'gift_id': gift['id'], 'is_anonymous': False})
+        self.assertEqual(response.status_code, 403, response.text)
+        self.assertEqual(self.client.get(f'/gifts/{gift["id"]}?show_reservations=true').json()['status'], 'available')
+
+    def test_concurrent_registered_reservations_have_one_winner_without_500(self):
+        gift = self.client.post('/gifts/', json={'event_id': self.event['id'], 'title': 'Gift', 'price': 100}).json()
+        guest = self.client.post('/auth/register', json={'name': 'Guest', 'login': 'guest-user', 'password': 'GuestPass123'}).json()
+        barrier = Barrier(2)
+        def no_reservation(_gift_id):
+            barrier.wait(timeout=10)
+            return None
+        def reserve(_):
+            return self.client.post('/reservations/', json={'gift_id': gift['id'], 'is_anonymous': False},
+                headers={'Authorization': 'Bearer ' + guest['access_token']}).status_code
+        with patch('app.routers.reservation_router.reservation_service.reservation_repository.get_reservation_by_gift', side_effect=no_reservation):
+            with ThreadPoolExecutor(max_workers=2) as executor:
+                statuses = list(executor.map(reserve, range(2)))
+        self.assertEqual(sorted(statuses), [200, 409])
+        with get_connection() as connection:
+            self.assertEqual(connection.execute('SELECT count(*) FROM reservations WHERE gift_id=?', (gift['id'],)).fetchone()[0], 1)
+            self.assertEqual(connection.execute('SELECT status FROM gifts WHERE id=?', (gift['id'],)).fetchone()[0], 'reserved')
 
     def test_tagged_gift_create_edit_reload_delete(self):
         response = self.client.post(f'/events/{self.event["id"]}/tags', json={'name': 'Книги'})

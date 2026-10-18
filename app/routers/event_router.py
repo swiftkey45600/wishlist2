@@ -104,10 +104,8 @@ async def update_event(
     if event.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Forbidden: you can only edit your own events")
 
-    for field_name in ("title", "description", "event_date", "place"):
-        value = getattr(event_request, field_name)
-        if value is not None:
-            setattr(event, field_name, value)
+    for field_name, value in event_request.model_dump(exclude_unset=True).items():
+        setattr(event, field_name, value)
 
     return {"event": event_service.update_event(event_id, event)}
 

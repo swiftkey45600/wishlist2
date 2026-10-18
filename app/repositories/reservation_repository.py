@@ -87,6 +87,13 @@ class ReservationRepository:
 
     def reserve_gift(self, reservation: Reservation) -> Reservation:
         with get_connection() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            changed = connection.execute(
+                "UPDATE gifts SET status = 'reserved' WHERE id = ? AND status = 'available'",
+                (reservation.gift_id,),
+            )
+            if not changed.rowcount:
+                raise IntegrityError("Gift is not available for reservation")
             cursor = connection.execute(
                 """
                 INSERT INTO reservations (

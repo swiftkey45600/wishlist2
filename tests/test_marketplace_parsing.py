@@ -34,7 +34,29 @@ class MarketplaceParsingTests(unittest.TestCase):
         original = 'https://market.yandex.ru/product--kniga/123?tracking=1'
         encoded = base64.urlsafe_b64encode(original.encode()).decode().rstrip('=')
         captcha = 'https://market.yandex.ru/showcaptcha?retpath=' + quote(encoded)
-        self.assertEqual(self.service._yandex_captcha_product_url(captcha), original.split('?')[0])
+        self.assertEqual(self.service._yandex_captcha_product_url(captcha), original)
+
+    def test_yandex_captcha_retry_preserves_offer_and_ad_parameters(self):
+        original = ('https://market.yandex.ru/card/komplekt-makhrovykh-polotenets-pragma-munso-50kh90-70kh140-sm-rozovyy-popurri/'
+                    '103807794161?do-waremd5=8g-m83U8k7DA77LVauRCGg&sponsored=1&cpc=signature%2C&nid=77620846&ogV=364')
+        encoded = base64.urlsafe_b64encode(original.encode()).decode().rstrip('=')
+        captcha = 'https://market.yandex.ru/showcaptcha?retpath=' + quote(encoded)
+        requests = []
+        def download(url, user_agent=None):
+            requests.append(url)
+            if len(requests) == 1:
+                return '<title>Вы не робот?</title>', captcha
+            self.assertEqual(url, original)
+            return ('<meta property="og:title" content="Комплект махровых полотенец Pragma Munso">'
+                    '<meta property="og:image" content="https://cdn.example/towels.jpg">'
+                    '<meta itemprop="price" content="2302">'), original
+        with patch.object(self.service, '_download_page', side_effect=download), patch.object(
+            self.service, '_validate_url', side_effect=lambda value: value
+        ):
+            product, final_url = self.service._parse_page(original)
+        self.assertEqual(final_url, original)
+        self.assertEqual(product['price'], 2302)
+        self.assertEqual(len(requests), 2)
 
     def test_wildberries_uses_card_cdn(self):
         with patch.object(self.service, '_find_wildberries_card', return_value=(

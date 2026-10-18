@@ -16,15 +16,41 @@ async function loadApplication(name, api, createGift = () => {}) {
         await readFile(new URL('../src/repositories/tagRepository.js', import.meta.url), 'utf8'), { context }
     )
     await tagRepository.link(() => apiModule)
+    const repositoryName = name === "giftApplication" ? "giftRepository"
+        : name === "eventApplication" ? "eventRepository" : null
+    const repository = repositoryName ? new vm.SourceTextModule(
+        await readFile(new URL(`../src/repositories/${repositoryName}.js`, import.meta.url), 'utf8'), { context }
+    ) : null
+    if (repository) await repository.link(() => apiModule)
     const module = new vm.SourceTextModule(source, {
         context,
         initializeImportMeta(meta) { meta.env = { DEV: false } }
     })
     await module.link(specifier => specifier.includes("services/api") ? apiModule
+        : repository ? repository
         : specifier.includes("tagRepository") ? tagRepository : giftModule)
     await module.evaluate()
     return module.namespace
 }
+
+test("delete reports API failures instead of pretending an object was removed", async () => {
+    for (const [applicationName, method, expectedPath] of [
+        ["giftApplication", "deleteGift", "/gifts/7"],
+        ["eventApplication", "deleteEvent", "/events/7"]
+    ]) {
+        const application = await loadApplication(applicationName, {
+            async delete(path) {
+                assert.equal(path, expectedPath)
+                throw new Error("Server rejected deletion")
+            }
+        })
+        assert.equal(await application[method](7), false)
+        const success = await loadApplication(applicationName, {
+            async delete() { return { data: { deleted: true } } }
+        })
+        assert.equal(await success[method](7), true)
+    }
+})
 
 test("tags are loaded and created through the real repository without invented IDs", async () => {
     const tag = { id: 31, event_id: 12, name: "Books" }

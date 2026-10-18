@@ -216,10 +216,11 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
     }
 
     async function handleDeleteGift() {
-        await deleteGift(giftToDelete.id)
+        if (!await deleteGift(giftToDelete.id)) return false
         setGifts(prev => prev.filter(gift => gift.id !== giftToDelete.id))
         setGiftToDelete(null)
         onGiftDataChange?.()
+        return true
     }
 
     async function handleMarkBought(giftId) {

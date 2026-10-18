@@ -223,8 +223,9 @@ class MarketplaceService:
             or target.username or target.password
         ):
             return None
-        # Sharing/tracking parameters are unnecessary when retrying the card.
-        canonical_url = target._replace(query="", fragment="").geturl()
+        # Offer parameters (including signed advertising links) can determine
+        # whether Market serves the actual card. Keep retpath intact on retry.
+        canonical_url = target._replace(fragment="").geturl()
         if MarketplaceService._product_from_url(canonical_url) is None:
             return None
         return canonical_url

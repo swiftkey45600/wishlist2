@@ -131,7 +131,9 @@ class GuestReservationTests(unittest.TestCase):
         self.assertEqual(self.request("DELETE", data={"secret_word": "Снежинка"})[0], 200)
 
     def test_registered_reservation_cannot_be_cancelled_by_word(self):
-        token = create_access_token({"sub": "johndoe"})
+        with get_connection() as connection:
+            connection.execute("INSERT INTO users(name, login, password_hash) VALUES ('Guest', 'registered-guest', 'unused')")
+        token = create_access_token({"sub": "registered-guest"})
         status, reservation, _ = self.request(
             "POST", path="/reservations/", data={"gift_id": self.gift.id, "is_anonymous": False}, token=token
         )
