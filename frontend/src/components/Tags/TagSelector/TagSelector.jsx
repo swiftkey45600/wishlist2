@@ -30,17 +30,18 @@ function TagSelector({ eventId, tags, selectedTagIds, onTagsChange, onChange }) 
 
         setError("")
         setIsCreating(true)
-        const createdTag = await createTag(eventId, name)
-        setIsCreating(false)
-
-        if (!createdTag) {
-            setError("Не удалось создать тег")
-            return
+        try {
+            const createdTag = await createTag(eventId, name)
+            onTagsChange([...tags, createdTag])
+            onChange([...selectedTagIds, createdTag.id])
+            setNewTagName("")
+        } catch (requestError) {
+            const detail = requestError.response?.data?.detail
+            setError(requestError.response?.status === 409 ? "Такой тег уже существует" :
+                typeof detail === "string" ? detail : "Не удалось сохранить тег. Попробуйте ещё раз.")
+        } finally {
+            setIsCreating(false)
         }
-
-        onTagsChange([...tags, createdTag])
-        onChange([...selectedTagIds, createdTag.id])
-        setNewTagName("")
     }
 
     function handleKeyDown(event) {

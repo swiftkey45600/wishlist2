@@ -1,4 +1,7 @@
 from dataclasses import dataclass
+from typing import Annotated
+
+from pydantic import BaseModel, StringConstraints, field_validator
 
 
 @dataclass
@@ -13,18 +16,23 @@ class Event:
     public_token: str | None = None
 
 
-@dataclass
-class EventCreateRequest:
-    title: str
+class EventCreateRequest(BaseModel):
+    title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
     
     description: str | None = None
     event_date: str | None = None
     place: str | None = None
 
 
-@dataclass
-class EventUpdateRequest:
-    title: str | None = None
+class EventUpdateRequest(BaseModel):
+    title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)] | None = None
     description: str | None = None
     event_date: str | None = None
     place: str | None = None
+
+    @field_validator("title")
+    @classmethod
+    def validate_title(cls, value: str | None) -> str:
+        if value is None:
+            raise ValueError("Title cannot be null")
+        return value

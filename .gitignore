@@ -22,6 +22,7 @@ node_modules
 
 # картинки, загруженные через POST /images
 uploads/
+.test-tmp/
 
 # Публичные настройки адреса API для frontend
 !frontend/.env.development

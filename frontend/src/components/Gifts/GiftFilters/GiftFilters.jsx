@@ -6,7 +6,7 @@ const statusOptions = [
     ["bought", "Купленные"],
 ]
 
-function GiftFilters({ tags, filters, onFilterChange }) {
+function GiftFilters({ tags, filters, onFilterChange, hideStatus = false }) {
     return (
         <div className="gift-filter-panel">
             <label className="gift-filter-field gift-filter-search">
@@ -20,7 +20,7 @@ function GiftFilters({ tags, filters, onFilterChange }) {
             </label>
 
             <div className="gift-filters" aria-label="Фильтры подарков">
-                <label className="gift-filter-field">
+                {!hideStatus && <label className="gift-filter-field">
                     <span>Статус</span>
                     <select
                         value={filters.status}
@@ -31,7 +31,7 @@ function GiftFilters({ tags, filters, onFilterChange }) {
                             <option key={value} value={value}>{label}</option>
                         ))}
                     </select>
-                </label>
+                </label>}
 
                 <label className="gift-filter-field">
                     <span>Тег</span>

@@ -61,32 +61,44 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
     }, [imagePreview])
 
     useEffect(() => {
+        let cancelled = false
         async function loadGifts() {
             setIsLoading(true)
             setError(null)
 
             try {
-                const data = await getGiftsByEvent(eventId)
-                setGifts(Array.isArray(data) ? applySavedGiftPriorities(data) : [])
+                const data = await getGiftsByEvent(eventId, showReservations)
+                if (!cancelled) setGifts(Array.isArray(data) ? data : [])
             } catch (loadError) {
                 console.error(loadError)
-                setError("Не удалось загрузить подарки")
-                setGifts([])
+                if (!cancelled) {
+                    setError("Не удалось загрузить подарки")
+                    setGifts([])
+                }
             } finally {
-                setIsLoading(false)
+                if (!cancelled) setIsLoading(false)
             }
         }
 
         loadGifts()
-    }, [eventId])
+        return () => { cancelled = true }
+    }, [eventId, showReservations])
 
     useEffect(() => {
+        let cancelled = false
         async function loadTags() {
-            const data = await getEventTags(eventId)
-            setTags(Array.isArray(data) ? data : [])
+            setTags([])
+            setSelectedTagIds([])
+            try {
+                const data = await getEventTags(eventId)
+                if (!cancelled) setTags(Array.isArray(data) ? data : [])
+            } catch {
+                if (!cancelled) setFormError("Не удалось загрузить теги. Обновите страницу перед сохранением.")
+            }
         }
 
         loadTags()
+        return () => { cancelled = true }
     }, [eventId])
 
     async function handleMarketplaceAutofill() {
@@ -106,7 +118,8 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
             }
 
             setTitle(product.title || "")
-            if (product.price != null) setPrice(String(product.price))
+            setPrice(product.price != null ? String(product.price) : "")
+            if (product.warning) setFormError(product.warning)
             if (product.description && !description.trim()) setDescription(product.description)
             setMarketplaceUrl(product.marketplace_url || url)
             setImageFile(null)
@@ -190,7 +203,9 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
 
     async function handleToggleStatus(gift) {
         let result
-        if (gift.status === "available") {
+        if (isOwner) {
+            result = await editGift(gift.id, { status: "available" })
+        } else if (gift.status === "available") {
             result = await reserveGift(gift.id)
         } else if (gift.status === "bought") {
             result = await editGift(gift.id, { status: "available" })
@@ -199,7 +214,7 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
         }
 
         if (result) {
-            const updatedGifts = await getGiftsByEvent(eventId)
+            const updatedGifts = await getGiftsByEvent(eventId, showReservations)
             setGifts(previousGifts => Array.isArray(updatedGifts)
                 ? applySavedGiftPriorities(updatedGifts).map(updatedGift => {
                     const previousGift = previousGifts.find(gift => gift.id === updatedGift.id)
@@ -216,19 +231,17 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
     }
 
     async function handleDeleteGift() {
-        await deleteGift(giftToDelete.id)
-        removeSavedGiftPriority(giftToDelete.id)
+        if (!await deleteGift(giftToDelete.id)) return false
         setGifts(prev => prev.filter(gift => gift.id !== giftToDelete.id))
         setGiftToDelete(null)
         onGiftDataChange?.()
+        return true
     }
 
     async function handleMarkBought(giftId) {
         const updated = await editGift(giftId, { status: "bought" })
         if (updated) {
-            setGifts(prev => prev.map(g => g.id === giftId
-                ? { ...updated, priority: updated.priority || g.priority || "normal", tags: updated.tags || g.tags || [] }
-                : g))
+            setGifts(await getGiftsByEvent(eventId, showReservations))
         }
     }
 
@@ -244,6 +257,7 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                     tags: updated.tags || selectedTags
                 }
                 : g))
+            if (showReservations) setGifts(await getGiftsByEvent(eventId, true))
             setEditingGift(null)
             onGiftDataChange?.()
             return true
@@ -268,8 +282,7 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
         })
     })
 
-    const { filters, filteredGifts, updateFilter } = useGiftFilters(gifts)
-    const isPrioritySort = filters.sortBy === "priority"
+    const { filters, filteredGifts, updateFilter } = useGiftFilters(gifts, isOwner && !showReservations)
     const filteredGiftGroups = allTags
         .map(tag => ({
             tag,
@@ -312,6 +325,7 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
             </div>
 
             <GiftFilters
+                hideStatus={isOwner && !showReservations}
                 tags={allTags}
                 filters={filters}
                 onFilterChange={updateFilter}
@@ -498,7 +512,7 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                                     <GiftCard
                                         key={`${group.tag.id}-${gift.id}`}
                                         gift={gift}
-                                        onToggleStatus={!isOwner || showReservations || gift.status === "available"
+                                        onToggleStatus={!isOwner || (showReservations && gift.status !== "available")
                                             ? handleToggleStatus
                                             : undefined}
                                         onDelete={isOwner ? (giftId) => setGiftToDelete(gifts.find(item => item.id === giftId)) : undefined}
@@ -522,7 +536,7 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                                     <GiftCard
                                         key={gift.id}
                                         gift={gift}
-                                        onToggleStatus={!isOwner || showReservations || gift.status === "available"
+                                        onToggleStatus={!isOwner || (showReservations && gift.status !== "available")
                                             ? handleToggleStatus
                                             : undefined}
                                         onDelete={isOwner ? (giftId) => setGiftToDelete(gifts.find(item => item.id === giftId)) : undefined}

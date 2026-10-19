@@ -7,11 +7,11 @@ function getNonNegativeNumber(value) {
     return Number.isFinite(number) && number >= 0 ? number : null
 }
 
-export function useGiftFilters(gifts) {
+export function useGiftFilters(gifts, hideStatus = false) {
     const [searchParams, setSearchParams] = useSearchParams()
     const filters = {
         search: searchParams.get("q") || searchParams.get("giftSearch") || "",
-        status: searchParams.get("status") || searchParams.get("giftStatus") || "",
+        status: hideStatus ? "" : searchParams.get("status") || searchParams.get("giftStatus") || "",
         tagIds: searchParams.getAll("tags").length
             ? searchParams.getAll("tags").slice(0, 1)
             : searchParams.get("giftTag")

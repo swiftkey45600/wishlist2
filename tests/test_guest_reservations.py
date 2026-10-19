@@ -22,6 +22,11 @@ from app.utils.security import verify_password
 
 class GuestReservationTests(unittest.TestCase):
     def setUp(self):
+        # Slow hosts must not accidentally expire a rate-limit window mid-test.
+        # The expiry test overrides this clock explicitly.
+        clock = patch("app.repositories.reservation_repository.time.time", return_value=1000)
+        clock.start()
+        self.addCleanup(clock.stop)
         directory = tempfile.TemporaryDirectory()
         self.addCleanup(directory.cleanup)
         database = patch("app.database.DATABASE_PATH", Path(directory.name) / "wishlist.db")
@@ -76,8 +81,13 @@ class GuestReservationTests(unittest.TestCase):
         hashed = self.repo.get_secret_word_hash(reservation["id"])
         self.assertNotEqual(hashed, "snowflake")
         self.assertTrue(verify_password("snowflake", hashed))
-        for path in [f'/reservations/{reservation["id"]}', f'/gifts/{self.gift.id}', '/events/public/test-token']:
-            status, payload, _ = self.request("GET", path=path)
+        owner_token = create_access_token({"sub": "johndoe"})
+        self.assertIn(self.request("GET", path=f'/reservations/{reservation["id"]}')[0], (401, 403))
+        for path, token in [
+            (f'/gifts/{self.gift.id}', owner_token),
+            ('/events/public/test-token', None),
+        ]:
+            status, payload, _ = self.request("GET", path=path, token=token)
             self.assertEqual(status, 200)
             serialized = json.dumps(payload)
             self.assertNotIn("secret_word", serialized)
@@ -121,7 +131,9 @@ class GuestReservationTests(unittest.TestCase):
         self.assertEqual(self.request("DELETE", data={"secret_word": "Снежинка"})[0], 200)
 
     def test_registered_reservation_cannot_be_cancelled_by_word(self):
-        token = create_access_token({"sub": "johndoe"})
+        with get_connection() as connection:
+            connection.execute("INSERT INTO users(name, login, password_hash) VALUES ('Guest', 'registered-guest', 'unused')")
+        token = create_access_token({"sub": "registered-guest"})
         status, reservation, _ = self.request(
             "POST", path="/reservations/", data={"gift_id": self.gift.id, "is_anonymous": False}, token=token
         )

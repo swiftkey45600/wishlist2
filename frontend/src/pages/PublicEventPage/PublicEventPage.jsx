@@ -8,7 +8,7 @@ import api from "../../services/api"
 import Sidebar from "../../components/Sidebar/Sidebar"
 import EventDetailsCard from "../../components/Events/EventDetailsCard/EventDetailsCard"
 import GiftCard from "../../components/Gifts/GiftCard/GiftCard"
-import { editGift } from "../../application/giftApplication"
+import { updatePublicGiftReservation } from "../../application/giftApplication"
 import GuestReservationModal from "../../components/Gifts/GuestReservationModal/GuestReservationModal"
 import {
     getGuestReservationGifts,
@@ -36,7 +36,7 @@ function PublicEventPage() {
             if (!tags.some((existingTag) => existingTag.id === tag.id)) tags.push(tag)
         })
     })
-    const { filters, filteredGifts, updateFilter } = useGiftFilters(gifts)
+    const { filters, filteredGifts, updateFilter } = useGiftFilters(gifts, isOwner)
 
     async function handleToggleStatus(gift) {
         if (gift.status === "bought") return
@@ -47,9 +47,7 @@ function PublicEventPage() {
         }
 
         setReservationError(null)
-        const updatedGift = await editGift(gift.id, {
-            is_reserved: gift.status === "available"
-        })
+        const updatedGift = await updatePublicGiftReservation(token, gift.id, gift.status === "available")
 
         if (!updatedGift) {
             setReservationError("Не удалось изменить бронь. Возможно, подарок уже заняли.")
@@ -134,6 +132,7 @@ function PublicEventPage() {
                             </div>
 
                             <GiftFilters
+                                hideStatus={isOwner}
                                 tags={tags}
                                 filters={filters}
                                 onFilterChange={updateFilter}
@@ -157,6 +156,7 @@ function PublicEventPage() {
                                         <GiftCard
                                             key={gift.id}
                                             gift={gift}
+                                            hideReservationDetails={isOwner}
                                             onToggleStatus={!isOwner && gift.status !== "bought" ? handleToggleStatus : undefined}
                                         />
                                     ))}

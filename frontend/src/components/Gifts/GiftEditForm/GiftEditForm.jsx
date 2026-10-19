@@ -54,6 +54,7 @@ function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) 
             }
 
             setImageFile(null)
+            if (product.warning) setError(product.warning)
             if (imageInputRef.current) imageInputRef.current.value = ""
             setImagePreview(resolveImageUrl(product.image_id, product.picture_url))
             onChange({

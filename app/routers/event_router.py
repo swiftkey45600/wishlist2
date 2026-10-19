@@ -8,7 +8,8 @@ from app.models.user import User
 from app.services.event_service import EventService
 from app.repositories.event_repository import EventRepository
 from app.repositories.gift_repository import GiftRepository
-from app.utils.jwt import get_current_user
+from app.utils.jwt import get_current_user, get_optional_user
+from app.services.gift_privacy import owner_gift_response, owner_gift_filters
 
 router = APIRouter(
     prefix="/events",
@@ -27,6 +28,8 @@ async def get_events(current_user: User = Depends(get_current_user)):
 
 @router.get("/user/{owner_id}")
 async def get_user_events(owner_id: int, current_user: User = Depends(get_current_user)):
+    if owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only view your own events")
     events = event_service.get_user_events(owner_id)
     if not events:
         raise HTTPException(status_code=404, detail="Owner has no events")
@@ -34,12 +37,18 @@ async def get_user_events(owner_id: int, current_user: User = Depends(get_curren
 
 
 @router.get("/public/{public_token}")
-async def get_public_event(public_token: str, filters: Annotated[GiftFilters, Query()]):
+async def get_public_event(
+    public_token: str, filters: Annotated[GiftFilters, Query()],
+    current_user: User | None = Depends(get_optional_user),
+):
     event = event_service.get_event_by_token(public_token)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    gifts = gift_repository.get_gifts_by_event(event.id, filters)
+    is_owner = current_user is not None and current_user.id == event.owner_id
+    gifts = gift_repository.get_gifts_by_event(event.id, owner_gift_filters(filters) if is_owner else filters)
+    if is_owner:
+        gifts = [owner_gift_response(gift, filters.show_reservations) for gift in gifts]
     return {"event": event, "gifts": gifts}
 
 
@@ -48,6 +57,8 @@ async def get_event(event_id: int, current_user: User = Depends(get_current_user
     event = event_service.get_event(event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
+    if event.owner_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the event owner can view an event")
     return {"event": event}
 
 
@@ -93,10 +104,8 @@ async def update_event(
     if event.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Forbidden: you can only edit your own events")
 
-    for field_name in ("title", "description", "event_date", "place"):
-        value = getattr(event_request, field_name)
-        if value is not None:
-            setattr(event, field_name, value)
+    for field_name, value in event_request.model_dump(exclude_unset=True).items():
+        setattr(event, field_name, value)
 
     return {"event": event_service.update_event(event_id, event)}
 
