@@ -32,6 +32,26 @@
     font-size: 16px;
 }
 
+.gift-card-title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.gift-card-title h3 {
+    margin-bottom: 5px;
+}
+
+.gift-priority-badge {
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #fff0d6;
+    color: #9a5b00;
+    font-size: 11px;
+    font-weight: 700;
+}
+
 .gift-description {
     margin: 0 0 8px;
     color: var(--muted);

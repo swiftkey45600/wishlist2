@@ -89,6 +89,7 @@ function GiftFilters({ tags, filters, onFilterChange }) {
                         <option value="price:desc">Цена — по убыванию</option>
                         <option value="title:asc">Название — по возрастанию</option>
                         <option value="title:desc">Название — по убыванию</option>
+                        <option value="priority:desc">Сначала самые желанные</option>
                     </select>
                 </label>
             </div>

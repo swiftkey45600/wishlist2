@@ -20,6 +20,12 @@ import { resolveImageUrl, uploadImageFile } from "../../../application/imageAppl
 import { parseMarketplaceProduct } from "../../../application/marketplaceApplication"
 import GiftFilters from "../GiftFilters/GiftFilters"
 import { useGiftFilters } from "../GiftFilters/useGiftFilters"
+import { giftPriorityOptions } from "../giftPriority"
+import {
+    applySavedGiftPriorities,
+    removeSavedGiftPriority,
+    saveGiftPriority
+} from "../../../application/giftPriorityApplication"
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"])
 
@@ -30,6 +36,7 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [title, setTitle] = useState("")
     const [price, setPrice] = useState("")
+    const [priority, setPriority] = useState("normal")
     const [description, setDescription] = useState("")
     const [imageFile, setImageFile] = useState(null)
     const [imagePreview, setImagePreview] = useState("")
@@ -60,7 +67,7 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
 
             try {
                 const data = await getGiftsByEvent(eventId)
-                setGifts(Array.isArray(data) ? data : [])
+                setGifts(Array.isArray(data) ? applySavedGiftPriorities(data) : [])
             } catch (loadError) {
                 console.error(loadError)
                 setError("Не удалось загрузить подарки")
@@ -143,6 +150,7 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                 event_id: Number(eventId),
                 title: title.trim(),
                 price: parsedPrice,
+                priority,
                 description: description.trim() || undefined,
                 marketplace_url: marketplaceUrl.trim() || undefined,
                 image_id: imageId,
@@ -156,13 +164,16 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                 return
             }
 
+            saveGiftPriority(createdGift.id, priority)
             const selectedTags = tags.filter(tag => selectedTagIds.includes(tag.id))
             setGifts(prev => [{
                 ...createdGift,
+                priority,
                 tags: createdGift.tags || selectedTags
             }, ...prev])
             setTitle("")
             setPrice("")
+            setPriority("normal")
             setDescription("")
             setImageFile(null)
             setImagePreview("")
@@ -190,10 +201,14 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
         if (result) {
             const updatedGifts = await getGiftsByEvent(eventId)
             setGifts(previousGifts => Array.isArray(updatedGifts)
-                ? updatedGifts.map(updatedGift => ({
-                    ...updatedGift,
-                    tags: updatedGift.tags || previousGifts.find(gift => gift.id === updatedGift.id)?.tags || []
-                }))
+                ? applySavedGiftPriorities(updatedGifts).map(updatedGift => {
+                    const previousGift = previousGifts.find(gift => gift.id === updatedGift.id)
+                    return {
+                        ...updatedGift,
+                        priority: updatedGift.priority || previousGift?.priority || "normal",
+                        tags: updatedGift.tags || previousGift?.tags || []
+                    }
+                })
                 : [])
         } else {
             setError("Не удалось изменить бронь подарка")
@@ -202,6 +217,7 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
 
     async function handleDeleteGift() {
         await deleteGift(giftToDelete.id)
+        removeSavedGiftPriority(giftToDelete.id)
         setGifts(prev => prev.filter(gift => gift.id !== giftToDelete.id))
         setGiftToDelete(null)
         onGiftDataChange?.()
@@ -211,7 +227,7 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
         const updated = await editGift(giftId, { status: "bought" })
         if (updated) {
             setGifts(prev => prev.map(g => g.id === giftId
-                ? { ...updated, tags: updated.tags || g.tags || [] }
+                ? { ...updated, priority: updated.priority || g.priority || "normal", tags: updated.tags || g.tags || [] }
                 : g))
         }
     }
@@ -219,9 +235,14 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
     async function handleEditGift(giftId, data) {
         const updated = await editGift(giftId, data)
         if (updated) {
+            saveGiftPriority(giftId, data.priority || updated.priority || "normal")
             const selectedTags = tags.filter(tag => data.tag_ids.includes(tag.id))
             setGifts(prev => prev.map(g => g.id === giftId
-                ? { ...updated, tags: updated.tags || selectedTags }
+                ? {
+                    ...updated,
+                    priority: data.priority || updated.priority || g.priority || "normal",
+                    tags: updated.tags || selectedTags
+                }
                 : g))
             setEditingGift(null)
             onGiftDataChange?.()
@@ -248,6 +269,7 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
     })
 
     const { filters, filteredGifts, updateFilter } = useGiftFilters(gifts)
+    const isPrioritySort = filters.sortBy === "priority"
     const filteredGiftGroups = allTags
         .map(tag => ({
             tag,
@@ -315,6 +337,17 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                                 placeholder="Цена в рублях"
                                 type="number"
                             />
+                        </label>
+                        <label>
+                            Приоритет
+                            <select
+                                value={priority}
+                                onChange={event => setPriority(event.target.value)}
+                            >
+                                {giftPriorityOptions.map(option => (
+                                    <option key={option.value} value={option.value}>{option.label}</option>
+                                ))}
+                            </select>
                         </label>
                     </div>
 
@@ -434,7 +467,25 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                 <p className="gift-list-status">Подарки по заданным фильтрам не найдены.</p>
             )}
 
-            {!isLoading && !error && filteredGifts.length > 0 && (
+            {!isLoading && !error && filteredGifts.length > 0 && isPrioritySort && (
+                <div className="gift-grid">
+                    {filteredGifts.map(gift => (
+                        <GiftCard
+                            key={gift.id}
+                            gift={gift}
+                            onToggleStatus={!isOwner || showReservations || gift.status === "available"
+                                ? handleToggleStatus
+                                : undefined}
+                            onDelete={isOwner ? (giftId) => setGiftToDelete(gifts.find(item => item.id === giftId)) : undefined}
+                            onMarkBought={isOwner && showReservations ? handleMarkBought : undefined}
+                            hideReservationDetails={isOwner && !showReservations}
+                            onEdit={isOwner ? openEditForm : undefined}
+                        />
+                    ))}
+                </div>
+            )}
+
+            {!isLoading && !error && filteredGifts.length > 0 && !isPrioritySort && (
                 <div className="gift-groups">
                     {filteredGiftGroups.map(group => (
                         <section className="gift-group" key={group.tag.id}>
@@ -491,7 +542,8 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                 eventId={eventId}
                 gifts={gifts}
                 onAdd={gift => {
-                    setGifts(previous => [gift, ...previous])
+                    const giftWithPriority = applySavedGiftPriorities([gift])[0]
+                    setGifts(previous => [giftWithPriority, ...previous])
                     onGiftDataChange?.()
                 }}
             />}
@@ -513,6 +565,7 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                                     description: editingGift.description?.trim() || null,
                                     picture_url: editingGift.picture_url?.trim() || null,
                                     marketplace_url: editingGift.marketplace_url?.trim() || null,
+                                    priority: editingGift.priority || "normal",
                                     tag_ids: editingGift.tag_ids || [],
                                     image_id: imageId ?? null,
                                     ...(imageId ? { picture_url: null } : {})

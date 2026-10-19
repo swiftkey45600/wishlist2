@@ -28,20 +28,17 @@ function HomePage() {
   }, [])
 
 
-  async function handleCreateEvent(title, description, place, eventDate) {
+  async function handleCreateEvent(eventData) {
     setError(null)
-    const createdEvent = await createEvent({
-      title,
-      description,
-      place,
-      event_date: eventDate
-    })
+    const createdEvent = await createEvent(eventData)
 
     if (createdEvent) {
       setEvents((currentEvents) => [...currentEvents, createdEvent])
       setIsCreateOpen(false)
+      return true
     } else {
       setError("Не удалось создать событие")
+      return false
     }
   }
 

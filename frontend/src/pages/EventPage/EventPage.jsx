@@ -12,18 +12,22 @@ import GiftList from "../../components/Gifts/GiftList/GiftList"
 import ConfirmDeleteModal from "../../components/ConfirmDeleteModal/ConfirmDeleteModal"
 import EditEventForm from "../../components/Events/EditEventForm/EditEventForm"
 import GiftPriceWidget from "../../components/Gifts/GiftPriceWidget/GiftPriceWidget"
+import ShareEventModal from "../../components/Events/ShareEventModal/ShareEventModal"
 
 function EventPage() {
 	const navigate = useNavigate()
     const { id } = useParams()
     const [event, setEvent] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
-    const [showToast, setShowToast] = useState(false)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false)
     const [statisticsRefreshKey, setStatisticsRefreshKey] = useState(0)
     const user = JSON.parse(localStorage.getItem("user") || "null")
     const isOwner = user?.id === event?.owner_id
+    const shareLink = event?.public_token
+        ? `${window.location.origin}/share/${event.public_token}`
+        : window.location.href
 
     useEffect(() => {
         async function loadEvent() {
@@ -39,38 +43,11 @@ function EventPage() {
     }, [id])
 
     useEffect(() => {
-        if (!showToast) return
-
-        const timer = window.setTimeout(() => setShowToast(false), 2000)
-
-        return () => window.clearTimeout(timer)
-    }, [showToast])
-
-    async function handleShare() {
-        const shareLink = event?.public_token
-            ? `${window.location.origin}/share/${event.public_token}`
-            : window.location.href
-
-        try {
-            if (navigator.clipboard?.writeText) {
-                await navigator.clipboard.writeText(shareLink)
-            } else {
-                const textArea = document.createElement("textarea")
-                textArea.value = shareLink
-                textArea.setAttribute("readonly", "")
-                textArea.style.position = "fixed"
-                textArea.style.top = "-9999px"
-                document.body.appendChild(textArea)
-                textArea.select()
-                document.execCommand("copy")
-                document.body.removeChild(textArea)
-            }
-
-            setShowToast(true)
-        } catch (error) {
-            console.error("Не удалось скопировать ссылку", error)
-        }
-    }
+        if (!event?.title) return
+        const previousTitle = document.title
+        document.title = `${event.title} — Wishlist`
+        return () => { document.title = previousTitle }
+    }, [event?.title])
 
     async function handleDeleteEvent() {
         await deleteEvent(id)
@@ -97,8 +74,6 @@ function EventPage() {
                         ← Все события
                     </button>
 
-					{showToast && <div className="share-toast">Ссылка скопирована</div>}
-
                     {
                         isLoading && (
                             <p className="event-page-status">
@@ -120,7 +95,7 @@ function EventPage() {
                             <>
                                 <EventDetailsCard
                                     event={event}
-                                    onShare={isOwner ? handleShare : undefined}
+                                    onShare={isOwner ? () => setIsShareModalOpen(true) : undefined}
                                     onEdit={isOwner ? () => setIsEditModalOpen(true) : undefined}
                                     onDelete={isOwner ? () => setIsDeleteModalOpen(true) : undefined}
                                 />
@@ -151,6 +126,13 @@ function EventPage() {
                                         itemName="событие"
                                         onConfirm={handleDeleteEvent}
                                         onCancel={() => setIsDeleteModalOpen(false)}
+                                    />
+                                )}
+                                {isShareModalOpen && shareLink && (
+                                    <ShareEventModal
+                                        event={event}
+                                        shareLink={shareLink}
+                                        onClose={() => setIsShareModalOpen(false)}
                                     />
                                 )}
                             </>

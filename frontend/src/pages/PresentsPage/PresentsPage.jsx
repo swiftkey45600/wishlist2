@@ -15,6 +15,12 @@ import {
 import GiftEditForm from "../../components/Gifts/GiftEditForm/GiftEditForm"
 import GiftImage from "../../components/Gifts/GiftImage/GiftImage"
 import { getGiftStatusLabel } from "../../components/Gifts/giftStatus"
+import { getGiftPriorityLabel } from "../../components/Gifts/giftPriority"
+import {
+    applySavedGiftPriorities,
+    removeSavedGiftPriority,
+    saveGiftPriority
+} from "../../application/giftPriorityApplication"
 
 function getStatusClass(status) {
     return status === "reserved" ? "reserved" : status === "bought" ? "bought" : "available"
@@ -52,7 +58,7 @@ function PresentsPage() {
                     })
                 )
 
-                setGifts(giftGroups.flat())
+                setGifts(applySavedGiftPriorities(giftGroups.flat()))
             } catch (loadError) {
                 console.error(loadError)
                 setError("Не удалось загрузить подарки")
@@ -75,6 +81,7 @@ function PresentsPage() {
 
     async function handleDelete(giftId) {
         await deleteGift(giftId)
+        removeSavedGiftPriority(giftId)
         setGifts((currentGifts) => currentGifts.filter((gift) => gift.id !== giftId))
     }
 
@@ -82,8 +89,11 @@ function PresentsPage() {
         const updatedGift = await editGift(giftId, data)
         if (!updatedGift) return false
 
+        saveGiftPriority(giftId, data.priority || updatedGift.priority || "normal")
         setGifts((currentGifts) => currentGifts.map((gift) => (
-            gift.id === giftId ? { ...updatedGift, event: gift.event } : gift
+            gift.id === giftId
+                ? { ...updatedGift, priority: data.priority || updatedGift.priority || gift.priority || "normal", event: gift.event }
+                : gift
         )))
         setEditingGift(null)
         return true
@@ -107,8 +117,15 @@ function PresentsPage() {
         const refreshedGifts = await getGiftsByEvent(gift.event.id)
         setGifts((currentGifts) => currentGifts.map((currentGift) => {
             if (currentGift.event.id !== gift.event.id) return currentGift
-            return refreshedGifts.find((updatedGift) => updatedGift.id === currentGift.id)
-                ? { ...refreshedGifts.find((updatedGift) => updatedGift.id === currentGift.id), event: currentGift.event }
+            const refreshedGift = refreshedGifts.find((updatedGift) => updatedGift.id === currentGift.id)
+            return refreshedGift
+                ? {
+                    ...applySavedGiftPriorities([{
+                        ...refreshedGift,
+                        priority: refreshedGift.priority || currentGift.priority
+                    }])[0],
+                    event: currentGift.event
+                }
                 : currentGift
         }))
     }
@@ -186,6 +203,11 @@ function PresentsPage() {
                                         />
                                         <div>
                                             <h3>{gift.title}</h3>
+                                            {gift.priority === "high" && (
+                                                <span className="gift-priority-badge">
+                                                    {getGiftPriorityLabel(gift.priority)}
+                                                </span>
+                                            )}
                                             <button
                                                 className="presents-event-link"
                                                 onClick={(event) => {
@@ -267,6 +289,7 @@ function PresentsPage() {
                                         description: editingGift.description?.trim() || null,
                                         picture_url: editingGift.picture_url?.trim() || null,
                                         marketplace_url: editingGift.marketplace_url?.trim() || null,
+                                        priority: editingGift.priority || "normal",
                                         image_id: imageId ?? null,
                                         ...(imageId ? { picture_url: null } : {})
                                     })}

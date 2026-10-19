@@ -1,6 +1,7 @@
 import "./GiftCard.css"
 import GiftImage from "../GiftImage/GiftImage"
 import { getGiftStatusLabel } from "../giftStatus"
+import { getGiftPriorityLabel } from "../giftPriority"
 
 function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit, hideReservationDetails = false }) {
     const hideStatus = hideReservationDetails && ["reserved", "bought"].includes(gift.status)
@@ -14,7 +15,12 @@ function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit, hideRe
                     fallbackClassName="gift-image gift-image-fallback"
                 />
                 <div className="gift-card-info">
-                    <h3>{gift.title}</h3>
+                    <div className="gift-card-title">
+                        <h3>{gift.title}</h3>
+                        {gift.priority === "high" && (
+                            <span className="gift-priority-badge">{getGiftPriorityLabel(gift.priority)}</span>
+                        )}
+                    </div>
                     <p className="gift-description">{gift.description || "Описание подарка пока не добавлено."}</p>
                     {gift.tags?.length > 0 && (
                         <div className="gift-tag-list">

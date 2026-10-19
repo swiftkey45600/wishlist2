@@ -33,6 +33,7 @@ export async function addRecommendedGift(eventId, recommendation) {
         description: recommendation.description || null,
         picture_url: recommendation.picture_url || null,
         marketplace_url: recommendation.marketplace_url || null,
+        priority: "normal",
         status: "available"
     })
 }
