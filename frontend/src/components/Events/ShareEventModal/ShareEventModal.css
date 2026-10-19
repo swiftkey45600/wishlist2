@@ -1,0 +1,124 @@
+.share-event-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    display: grid;
+    place-items: center;
+    overflow-y: auto;
+    padding: 20px;
+    background: rgba(24, 27, 38, .5);
+}
+
+.share-event-dialog {
+    position: relative;
+    box-sizing: border-box;
+    width: min(100%, 440px);
+    padding: 25px;
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    background: var(--card);
+    box-shadow: 0 18px 45px rgba(30, 34, 55, .2);
+}
+
+.share-event-dialog h2 {
+    margin: 0;
+    padding-right: 30px;
+    font-size: 22px;
+}
+
+.share-event-description {
+    margin: 7px 0 18px;
+    color: var(--muted);
+}
+
+.share-event-close {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    padding: 2px 7px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 25px;
+    cursor: pointer;
+}
+
+.share-event-qr-placeholder {
+    display: grid;
+    width: min(280px, 100%);
+    aspect-ratio: 1;
+    margin: 0 auto 20px;
+    place-items: center;
+    border: 1px dashed var(--line);
+    border-radius: 14px;
+    background: #f8f8fc;
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+}
+
+.share-event-link {
+    display: grid;
+    gap: 7px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 650;
+}
+
+.share-event-link input {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: #fff;
+    color: var(--text);
+}
+
+.share-event-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin-top: 12px;
+}
+
+.share-event-actions button,
+.share-event-actions a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    box-sizing: border-box;
+    padding: 9px 13px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: #fff;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.share-event-actions .share-event-copy {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: #fff;
+}
+
+.share-event-message {
+    margin: 10px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+@media (max-width: 420px) {
+    .share-event-dialog {
+        padding: 20px;
+    }
+
+    .share-event-actions {
+        flex-direction: column;
+    }
+}

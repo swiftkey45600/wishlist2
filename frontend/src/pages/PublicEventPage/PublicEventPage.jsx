@@ -16,6 +16,7 @@ import {
 } from "../../application/guestReservationApplication"
 import GiftFilters from "../../components/Gifts/GiftFilters/GiftFilters"
 import { useGiftFilters } from "../../components/Gifts/GiftFilters/useGiftFilters"
+import { applySavedGiftPriorities } from "../../application/giftPriorityApplication"
 
 function PublicEventPage() {
     const navigate = useNavigate()
@@ -55,7 +56,9 @@ function PublicEventPage() {
 
         setData(previous => ({
             ...previous,
-            gifts: previous.gifts.map(item => item.id === gift.id ? updatedGift : item)
+            gifts: previous.gifts.map(item => item.id === gift.id
+                ? applySavedGiftPriorities([{ ...updatedGift, priority: updatedGift.priority || item.priority }])[0]
+                : item)
         }))
     }
 
@@ -66,7 +69,8 @@ function PublicEventPage() {
 
             try {
                 const response = await api.get(`/events/public/${token}`)
-                const gifts = await getGuestReservationGifts(token, response.data.gifts || [])
+                const reservedGifts = await getGuestReservationGifts(token, response.data.gifts || [])
+                const gifts = applySavedGiftPriorities(reservedGifts)
                 if (!cancelled) setData({ ...response.data, gifts })
             } catch (error) {
                 console.error("Не удалось загрузить публичное событие", error)
@@ -79,6 +83,15 @@ function PublicEventPage() {
         loadPublicEvent()
         return () => { cancelled = true }
     }, [token])
+
+    useEffect(() => {
+        const title = data?.event?.title
+        if (!title) return
+
+        const previousTitle = document.title
+        document.title = `${title} — Wishlist`
+        return () => { document.title = previousTitle }
+    }, [data?.event?.title])
 
     return (
         <div className="page-layout">
@@ -161,7 +174,12 @@ function PublicEventPage() {
                 onSuccess={updatedGift => {
                     setData(previous => ({
                         ...previous,
-                        gifts: previous.gifts.map(gift => gift.id === updatedGift.id ? updatedGift : gift)
+                        gifts: previous.gifts.map(gift => gift.id === updatedGift.id
+                            ? applySavedGiftPriorities([{
+                                ...updatedGift,
+                                priority: updatedGift.priority || gift.priority
+                            }])[0]
+                            : gift)
                     }))
                     setSelectedGift(null)
                 }}

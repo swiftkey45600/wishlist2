@@ -22,6 +22,7 @@
 
 .create-event-form-fields input,
 .create-event-form-fields textarea {
+    box-sizing: border-box;
     width: 100%;
     padding: 10px 11px;
     border: 1px solid var(--line);
@@ -30,6 +31,15 @@
     background: #fff;
     color: var(--text);
     font: inherit;
+}
+
+.event-cover-preview {
+    display: block;
+    width: 100%;
+    max-height: 180px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    object-fit: cover;
 }
 
 .create-event-form-fields textarea {

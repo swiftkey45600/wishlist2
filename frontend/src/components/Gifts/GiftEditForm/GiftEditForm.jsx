@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react"
 import { getImage, resolveImageUrl, uploadImageFile } from "../../../application/imageApplication"
 import { parseMarketplaceProduct } from "../../../application/marketplaceApplication"
 import TagSelector from "../../Tags/TagSelector/TagSelector"
+import { giftPriorityOptions } from "../giftPriority"
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"])
 
@@ -136,6 +137,18 @@ function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) 
                         })
                     }
                 />
+            </label>
+
+            <label>
+                Приоритет
+                <select
+                    value={gift.priority || "normal"}
+                    onChange={e => onChange({ ...gift, priority: e.target.value })}
+                >
+                    {giftPriorityOptions.map(option => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                </select>
             </label>
 
             <label>

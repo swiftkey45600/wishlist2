@@ -11,7 +11,8 @@ export async function createEvent(eventData) {
         title: eventData.title,
         description: eventData.description,
         event_date: eventData.event_date,
-        place: eventData.place
+        place: eventData.place,
+        cover_image_id: eventData.cover_image_id
     })
 
     return response.data.event

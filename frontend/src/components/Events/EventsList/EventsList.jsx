@@ -3,6 +3,7 @@ import "./EventsList.css"
 
 import EventCard from "../EventCard/EventCard"
 import { getGiftsByEvent } from "../../../application/giftApplication"
+import { applySavedGiftPriorities } from "../../../application/giftPriorityApplication"
 
 function EventsList({ events, onOpenEvent, onGiftsLoaded }) {
     const [giftsByEvent, setGiftsByEvent] = useState({})
@@ -13,7 +14,7 @@ function EventsList({ events, onOpenEvent, onGiftsLoaded }) {
         async function loadGifts() {
             const giftEntries = await Promise.all(events.map(async (event) => {
                 const gifts = await getGiftsByEvent(event.id)
-                return [event.id, Array.isArray(gifts) ? gifts : []]
+                return [event.id, Array.isArray(gifts) ? applySavedGiftPriorities(gifts) : []]
             }))
 
             if (isCurrent) {
