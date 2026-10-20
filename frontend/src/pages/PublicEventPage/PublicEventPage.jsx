@@ -10,10 +10,6 @@ import EventDetailsCard from "../../components/Events/EventDetailsCard/EventDeta
 import GiftCard from "../../components/Gifts/GiftCard/GiftCard"
 import { updatePublicGiftReservation } from "../../application/giftApplication"
 import GuestReservationModal from "../../components/Gifts/GuestReservationModal/GuestReservationModal"
-import {
-    getGuestReservationGifts,
-    useGuestReservationMocks
-} from "../../application/guestReservationApplication"
 import GiftFilters from "../../components/Gifts/GiftFilters/GiftFilters"
 import { useGiftFilters } from "../../components/Gifts/GiftFilters/useGiftFilters"
 
@@ -66,7 +62,7 @@ function PublicEventPage() {
 
             try {
                 const response = await api.get(`/events/public/${token}`)
-                const gifts = await getGuestReservationGifts(token, response.data.gifts || [])
+                const gifts = response.data.gifts || []
                 if (!cancelled) setData({ ...response.data, gifts })
             } catch (error) {
                 console.error("Не удалось загрузить публичное событие", error)
@@ -94,7 +90,7 @@ function PublicEventPage() {
                             ? "Это ваше событие"
                             : isAuthenticated
                                 ? "Вы можете забронировать подарок"
-                                : "Откройте подарок, чтобы выбрать способ бронирования"}
+                                : "Вы можете забронировать подарок без регистрации"}
                     </span>
                 </div>
 
@@ -109,9 +105,6 @@ function PublicEventPage() {
                 {!isLoading && data && (
                     <>
                         <EventDetailsCard event={data.event} />
-                        {useGuestReservationMocks && <p className="guest-reservation-demo" role="status">
-                            Демо гостевой брони: изменения видны только здесь и сбросятся после обновления страницы.
-                        </p>}
 
                         <div className="gift-list">
                             <div className="gift-list-header">

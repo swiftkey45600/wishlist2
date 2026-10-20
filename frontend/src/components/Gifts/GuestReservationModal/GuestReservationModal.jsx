@@ -1,8 +1,5 @@
 import { useEffect, useRef, useState } from "react"
-import {
-    changeGuestReservation,
-    useGuestReservationMocks
-} from "../../../application/guestReservationApplication"
+import { changeGuestReservation } from "../../../application/guestReservationApplication"
 import "./GuestReservationModal.css"
 
 function GuestReservationModal({ token, gift, onSuccess, onCancel }) {
@@ -27,6 +24,10 @@ function GuestReservationModal({ token, gift, onSuccess, onCancel }) {
             return
         }
 
+        if (new TextEncoder().encode(secretWord).length > 72) {
+            setError("Секретное слово слишком длинное. Используйте более короткое слово.")
+            return
+        }
         setError("")
         setIsSubmitting(true)
         try {
@@ -58,48 +59,42 @@ function GuestReservationModal({ token, gift, onSuccess, onCancel }) {
                 </h2>
                 <p>{gift.title}</p>
 
-                {(
-                    <>
-                        {useGuestReservationMocks && <p className="guest-reservation-demo" role="note">
-                            Демо: настоящая бронь не создаётся. Результат сбросится после обновления страницы.
-                        </p>}
-                        {!isCancelling && <label>
-                            Ваше имя
-                            <input
-                                value={name}
-                                onChange={event => setName(event.target.value)}
-                                autoComplete="name"
-                                required
-                                disabled={isSubmitting}
-                            />
-                        </label>}
-                        <label>
-                            Секретное слово
-                            <input
-                                type="password"
-                                value={secretWord}
-                                onChange={event => setSecretWord(event.target.value)}
-                                autoComplete="off"
-                                aria-describedby="guest-secret-hint"
-                                required
-                                disabled={isSubmitting}
-                            />
-                        </label>
-                        <p id="guest-secret-hint">
-                            {isCancelling
-                                ? "Введите то же слово, которое указали при бронировании."
-                                : "Запомните слово: оно понадобится, чтобы отменить бронь. Не используйте пароль от аккаунта."}
-                        </p>
-                    </>
-                )}
+                {!isCancelling && <label>
+                    Ваше имя
+                    <input
+                        value={name}
+                        onChange={event => setName(event.target.value)}
+                        autoComplete="name"
+                        maxLength={100}
+                        required
+                        disabled={isSubmitting}
+                    />
+                </label>}
+                <label>
+                    Секретное слово
+                    <input
+                        type="password"
+                        value={secretWord}
+                        onChange={event => setSecretWord(event.target.value)}
+                        autoComplete="off"
+                        aria-describedby="guest-secret-hint"
+                        required
+                        disabled={isSubmitting}
+                    />
+                </label>
+                <p id="guest-secret-hint">
+                    {isCancelling
+                        ? "Введите то же слово, которое указали при бронировании."
+                        : "Запомните слово: оно понадобится, чтобы отменить бронь. Не используйте пароль от аккаунта."}
+                </p>
 
                 {error && <p className="guest-reservation-error" role="alert">{error}</p>}
 
                 <div className="guest-reservation-actions">
                     <button type="button" onClick={onCancel} disabled={isSubmitting}>Закрыть</button>
                     <button type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? "Сохраняем..." : isCancelling ? "Отменить бронь" : "Забронировать"}
-                        </button>
+                        {isSubmitting ? "Сохраняем..." : isCancelling ? "Отменить бронь" : "Забронировать"}
+                    </button>
                 </div>
             </form>
         </dialog>

@@ -2,7 +2,7 @@ import { useState } from "react"
 import { createTag } from "../../../application/tagApplication"
 import "./TagSelector.css"
 
-function TagSelector({ eventId, tags, selectedTagIds, onTagsChange, onChange }) {
+function TagSelector({ eventId, tags, selectedTagIds, onTagsChange, onChange, disabled = false }) {
     const [newTagName, setNewTagName] = useState("")
     const [error, setError] = useState("")
     const [isCreating, setIsCreating] = useState(false)
@@ -16,6 +16,7 @@ function TagSelector({ eventId, tags, selectedTagIds, onTagsChange, onChange }) 
     }
 
     async function handleCreateTag() {
+        if (isCreating || disabled) return
         const name = newTagName.trim()
 
         if (!name) {
@@ -36,9 +37,9 @@ function TagSelector({ eventId, tags, selectedTagIds, onTagsChange, onChange }) 
             onChange([...selectedTagIds, createdTag.id])
             setNewTagName("")
         } catch (requestError) {
-            const detail = requestError.response?.data?.detail
-            setError(requestError.response?.status === 409 ? "Такой тег уже существует" :
-                typeof detail === "string" ? detail : "Не удалось сохранить тег. Попробуйте ещё раз.")
+            setError(requestError.response?.status === 409
+                ? "Такой тег уже существует. Обновите список тегов."
+                : "Не удалось создать тег. Попробуйте ещё раз.")
         } finally {
             setIsCreating(false)
         }
@@ -61,6 +62,8 @@ function TagSelector({ eventId, tags, selectedTagIds, onTagsChange, onChange }) 
                         key={tag.id}
                         type="button"
                         className={`tag-selector-chip ${selectedTagIds.includes(tag.id) ? "selected" : ""}`}
+                        disabled={disabled || isCreating}
+                        aria-pressed={selectedTagIds.includes(tag.id)}
                         onClick={() => toggleTag(tag.id)}
                     >
                         {tag.name}
@@ -73,6 +76,7 @@ function TagSelector({ eventId, tags, selectedTagIds, onTagsChange, onChange }) 
 
             <div className="tag-create-row">
                 <input
+                    disabled={disabled || isCreating}
                     value={newTagName}
                     onChange={event => setNewTagName(event.target.value)}
                     onKeyDown={handleKeyDown}
@@ -83,13 +87,13 @@ function TagSelector({ eventId, tags, selectedTagIds, onTagsChange, onChange }) 
                     type="button"
                     className="tag-create-button"
                     onClick={handleCreateTag}
-                    disabled={isCreating}
+                    disabled={disabled || isCreating}
                 >
                     {isCreating ? "Создаём..." : "+ Создать"}
                 </button>
             </div>
 
-            {error && <span className="tag-selector-error">{error}</span>}
+            {error && <span className="tag-selector-error" role="alert">{error}</span>}
         </div>
     )
 }

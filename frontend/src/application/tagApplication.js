@@ -1,18 +1,23 @@
-import { fetchEventTags, createEventTag, updateEventTag, deleteEventTag } from "../repositories/tagRepository"
+import {
+    fetchEventTags,
+    createEventTag,
+    updateEventTag,
+    deleteEventTag
+} from "../repositories/tagRepository"
 
 export async function getEventTags(eventId) {
-    return await fetchEventTags(eventId)
+    return fetchEventTags(eventId)
 }
 
 export async function createTag(eventId, name) {
-    return await createEventTag(eventId, name)
+    return createEventTag(eventId, name)
 }
 
-export async function editTag(tagId, name) {
-    return await updateEventTag(tagId, name)
+export async function editTag(eventId, tagId, name) {
+    return updateEventTag(eventId, tagId, name)
 }
 
-export async function deleteTag(tagId) {
-    await deleteEventTag(tagId)
+export async function deleteTag(eventId, tagId) {
+    await deleteEventTag(eventId, tagId)
     return true
 }

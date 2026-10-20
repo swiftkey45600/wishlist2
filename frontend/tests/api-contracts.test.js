@@ -17,7 +17,8 @@ async function loadApplication(name, api, createGift = () => {}) {
     )
     await tagRepository.link(() => apiModule)
     const repositoryName = name === "giftApplication" ? "giftRepository"
-        : name === "eventApplication" ? "eventRepository" : null
+        : name === "eventApplication" ? "eventRepository"
+        : name === "guestReservationApplication" ? "guestReservationRepository" : null
     const repository = repositoryName ? new vm.SourceTextModule(
         await readFile(new URL(`../src/repositories/${repositoryName}.js`, import.meta.url), 'utf8'), { context }
     ) : null

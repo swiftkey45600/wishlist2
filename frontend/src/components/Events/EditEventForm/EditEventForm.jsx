@@ -17,16 +17,18 @@ function EditEventForm({ event, onSave, onCancel }) {
     const [place, setPlace] = useState(event.place || "")
     const [eventDate, setEventDate] = useState(getDateTimeValue(event.event_date))
     const [error, setError] = useState("")
+    const [titleError, setTitleError] = useState("")
     const [isSaving, setIsSaving] = useState(false)
 
     async function handleSubmit(submitEvent) {
         submitEvent.preventDefault()
 
         if (!title.trim()) {
-            setError("Введите название события")
+            setTitleError("Введите название события")
             return
         }
 
+        setTitleError("")
         setError("")
         setIsSaving(true)
         const saved = await onSave({
@@ -46,7 +48,8 @@ function EditEventForm({ event, onSave, onCancel }) {
             <form className="create-event-form-fields" onSubmit={handleSubmit}>
                 <label className="create-event-field">
                     Название
-                    <input value={title} onChange={(inputEvent) => setTitle(inputEvent.target.value)} autoFocus />
+                    <input value={title} onChange={(inputEvent) => setTitle(inputEvent.target.value)} aria-invalid={Boolean(titleError)} aria-describedby="edit-event-title-error" autoFocus />
+                    {titleError && <span id="edit-event-title-error" className="create-event-error" role="alert">{titleError}</span>}
                 </label>
                 <label className="create-event-field">
                     Описание
