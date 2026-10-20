@@ -1,10 +1,14 @@
 import { createGift } from "../repositories/giftRepository"
+import api from "../services/api"
 
 export const useRecommendationMocks = import.meta.env.DEV
     && import.meta.env.VITE_RECOMMENDATION_MOCKS === "true"
 
-export async function getRecommendations() {
-    if (!useRecommendationMocks) return []
+export async function getRecommendations(eventId) {
+    if (!useRecommendationMocks) {
+        const { data } = await api.get(`/events/${eventId}/recommendations`)
+        return data
+    }
     const { fetchMockRecommendations } = await import("../mocks/mockRecommendations")
     return fetchMockRecommendations()
 }

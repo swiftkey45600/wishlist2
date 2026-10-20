@@ -72,13 +72,18 @@ function GiftEditForm({ gift, tags, tagsDisabled = false, onTagsChange, onChange
                 } : {}),
                 marketplace_url: product.marketplace_url || url
             })
+            setFieldErrors(previous => ({
+                ...previous,
+                ...(product.title ? { title: undefined } : {}),
+                ...(Number.isSafeInteger(product.price) && product.price > 0 ? { price: undefined } : {})
+            }))
             const missing = []
             if (!product.title) missing.push("название")
             if (product.price == null) missing.push("цену")
             if (!product.image_id && !product.picture_url) missing.push("картинку")
-            setMarketplaceNotice(missing.length
+            setMarketplaceNotice(product.warning || (missing.length
                 ? `Не удалось получить ${missing.join(", ")}. Проверьте эти поля и заполните их вручную.`
-                : "Данные получены. Проверьте их перед сохранением.")
+                : "Данные получены. Проверьте их перед сохранением."))
         } finally {
             setIsParsingMarketplace(false)
         }
@@ -128,12 +133,10 @@ function GiftEditForm({ gift, tags, tagsDisabled = false, onTagsChange, onChange
                     value={gift.title || ""}
                     aria-invalid={Boolean(fieldErrors.title)}
                     aria-describedby="edit-gift-title-error"
-                    onChange={e =>
-                        onChange({
-                            ...gift,
-                            title: e.target.value
-                        })
-                    }
+                    onChange={e => {
+                        onChange({ ...gift, title: e.target.value })
+                        setFieldErrors(previous => ({ ...previous, title: undefined }))
+                    }}
                 />
                 {fieldErrors.title && <span id="edit-gift-title-error" className="gift-form-error" role="alert">{fieldErrors.title}</span>}
             </label>
@@ -145,12 +148,10 @@ function GiftEditForm({ gift, tags, tagsDisabled = false, onTagsChange, onChange
                     value={gift.price || ""}
                     aria-invalid={Boolean(fieldErrors.price)}
                     aria-describedby="edit-gift-price-error"
-                    onChange={e =>
-                        onChange({
-                            ...gift,
-                            price: e.target.value
-                        })
-                    }
+                    onChange={e => {
+                        onChange({ ...gift, price: e.target.value })
+                        setFieldErrors(previous => ({ ...previous, price: undefined }))
+                    }}
                 />
                 {fieldErrors.price && <span id="edit-gift-price-error" className="gift-form-error" role="alert">{fieldErrors.price}</span>}
             </label>

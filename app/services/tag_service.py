@@ -51,3 +51,17 @@ class TagService:
         self._check_event(event_id, current_user)
         if not self.tag_repository.delete_tag(event_id, tag_id):
             raise HTTPException(status_code=404, detail="Tag not found")
+
+    def _get_tag(self, tag_id: int) -> Tag:
+        tag = self.tag_repository.get_tag(tag_id)
+        if tag is None:
+            raise HTTPException(status_code=404, detail="Tag not found")
+        return tag
+
+    def update_tag_by_id(self, tag_id: int, name: str, current_user: User) -> Tag:
+        tag = self._get_tag(tag_id)
+        return self.update_tag(tag.event_id, tag_id, name, current_user)
+
+    def delete_tag_by_id(self, tag_id: int, current_user: User) -> None:
+        tag = self._get_tag(tag_id)
+        self.delete_tag(tag.event_id, tag_id, current_user)

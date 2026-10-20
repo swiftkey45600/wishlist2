@@ -6,11 +6,12 @@ import {
     useRecommendationMocks
 } from "../../../application/recommendationApplication"
 import "./GiftRecommendations.css"
+import { resolveImageUrl } from "../../../repositories/imageRepository"
 
 function RecommendationImage({ url }) {
     const [failed, setFailed] = useState(false)
     return url && !failed
-        ? <img src={url} alt="" onError={() => setFailed(true)} />
+        ? <img src={resolveImageUrl(null, url)} alt="" onError={() => setFailed(true)} />
         : <span className="recommendation-placeholder" aria-hidden="true">🎁</span>
 }
 
@@ -68,14 +69,14 @@ function GiftRecommendations({ eventId, gifts, onAdd }) {
         }
     }
 
-    // До согласования ручки с бэкендом блок доступен только с dev-заглушкой.
-    if (!useRecommendationMocks) return null
     const available = items.filter(item => !isRecommendedGiftAdded(item, gifts))
 
     return (
         <section className="gift-recommendations" aria-labelledby="recommendations-heading">
             <h2 id="recommendations-heading">Может понравиться</h2>
-            <p className="recommendations-note">Примеры рекомендаций. Добавленные подарки сохраняются в вашем событии.</p>
+            <p className="recommendations-note">{useRecommendationMocks
+                ? "Примеры рекомендаций. Добавленные подарки сохраняются в вашем событии."
+                : "Подарки из ваших других событий с учётом тегов и цены."}</p>
             {isLoading && <p role="status">Подбираем подарки...</p>}
             {loadError && <div role="alert">
                 <p>{loadError}</p>

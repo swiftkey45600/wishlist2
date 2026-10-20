@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Annotated, Literal
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, StringConstraints, model_validator
 from app.models.marketplace import Marketplace
 from app.models.tag import Tag
 
@@ -8,7 +8,7 @@ from app.models.tag import Tag
 class Gift:
     event_id: int
     title: str
-    price: int
+    price: int | None
     status: str = "available"
     id: int | None = None
     description: str | None = None
@@ -26,17 +26,21 @@ class Gift:
 
 @dataclass
 class GiftCreateRequest(Gift):
+    title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+    price: Annotated[int, Field(gt=0, le=9223372036854775807)]
+    status: Literal["available"] = "available"
     tag_ids: list[int] = field(default_factory=list)
 
 
 class GiftFilters(BaseModel):
     min_price: int | None = Field(default=None, ge=0)
     max_price: int | None = Field(default=None, ge=0)
-    tags: list[Annotated[int, Field(gt=0)]] = Field(default_factory=list)
+    tags: list[Annotated[int, Field(gt=0)] | Literal["untagged"]] = Field(default_factory=list)
     q: str | None = None
     status: Literal["available", "reserved", "bought"] | None = None
     sort_by: Literal["id", "price", "title"] = "id"
     sort_order: Literal["asc", "desc"] = "asc"
+    show_reservations: bool = False
 
     @model_validator(mode="after")
     def validate_price_range(self):

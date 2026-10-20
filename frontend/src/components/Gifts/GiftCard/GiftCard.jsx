@@ -3,7 +3,7 @@ import GiftImage from "../GiftImage/GiftImage"
 import { getGiftStatusLabel } from "../giftStatus"
 
 function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit, hideReservationDetails = false }) {
-    const hideStatus = hideReservationDetails && ["reserved", "bought"].includes(gift.status)
+    const hideStatus = hideReservationDetails
 
     return (
         <div className="gift-card">

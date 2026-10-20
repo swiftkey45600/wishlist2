@@ -3,6 +3,7 @@ import binascii
 import hashlib
 import ipaddress
 import json
+import math
 import re
 import socket
 import time
@@ -11,7 +12,7 @@ from copy import deepcopy
 from html.parser import HTMLParser
 from http.cookiejar import CookieJar
 from urllib.error import HTTPError, URLError
-from urllib.parse import parse_qs, unquote, urljoin, urlparse
+from urllib.parse import parse_qs, quote, unquote, urljoin, urlparse
 from urllib.request import HTTPCookieProcessor, HTTPRedirectHandler, Request, build_opener
 from uuid import uuid4
 
@@ -132,6 +133,7 @@ class MarketplaceService:
             return deepcopy(cached[1])
 
         final_url = normalized_url
+        warning = None
         try:
             product = self._parse_wildberries(normalized_url)
             if product is None:
@@ -146,7 +148,11 @@ class MarketplaceService:
             product = self._product_from_url(final_url) or self._product_from_url(normalized_url)
             if product is None:
                 raise
+            warning = "Магазин не отдал карточку товара. Название взято из ссылки; проверьте его и укажите цену вручную."
         product["marketplace_url"] = final_url
+        if warning is None and product.get("price") is None:
+            warning = "Магазин не отдал цену товара. Укажите её вручную."
+        product["warning"] = warning
 
         source_image_url = product.pop("source_image_url", None)
         product["image_id"] = None
@@ -154,7 +160,7 @@ class MarketplaceService:
         if source_image_url:
             try:
                 image = self._download_image(urljoin(final_url, source_image_url), owner_id)
-            except MarketplaceParseError:
+            except (MarketplaceParseError, OSError):
                 image = None
             if image is not None:
                 product["image_id"] = image.id
@@ -217,8 +223,9 @@ class MarketplaceService:
             or target.username or target.password
         ):
             return None
-        # Sharing/tracking parameters are unnecessary when retrying the card.
-        canonical_url = target._replace(query="", fragment="").geturl()
+        # Offer parameters (including signed advertising links) can determine
+        # whether Market serves the actual card. Keep retpath intact on retry.
+        canonical_url = target._replace(fragment="").geturl()
         if MarketplaceService._product_from_url(canonical_url) is None:
             return None
         return canonical_url
@@ -227,7 +234,7 @@ class MarketplaceService:
         # Страницы WB закрыты антиботом, но карточка товара и фото лежат на открытом CDN.
         parsed = urlparse(url)
         hostname = (parsed.hostname or "").lower()
-        if not (hostname.endswith("wildberries.ru") or hostname.endswith("wb.ru")):
+        if not any(hostname == domain or hostname.endswith(f".{domain}") for domain in ("wildberries.ru", "wb.ru")):
             return None
         match = re.search(r"/catalog/(\d+)", parsed.path)
         if not match:
@@ -568,7 +575,7 @@ class MarketplaceService:
             price = float(normalized)
         except ValueError:
             return None
-        return round(price) if price >= 0 else None
+        return round(price) if math.isfinite(price) and price >= 0 else None
 
     @staticmethod
     def _clean_title(title: str, page_url: str) -> str:
@@ -610,7 +617,11 @@ class MarketplaceService:
 
     @staticmethod
     def _validate_url(url: str) -> str:
-        parsed = urlparse(str(url).strip())
+        try:
+            parsed = urlparse(str(url).strip())
+            parsed.port
+        except ValueError as error:
+            raise _UnsafeMarketplaceUrl("Укажите корректную http(s)-ссылку") from error
         if parsed.scheme not in {"http", "https"} or not parsed.hostname:
             raise _UnsafeMarketplaceUrl("Укажите корректную http(s)-ссылку")
         if parsed.username or parsed.password:
@@ -629,4 +640,13 @@ class MarketplaceService:
             ip = ipaddress.ip_address(address)
             if not ip.is_global:
                 raise _UnsafeMarketplaceUrl("Локальные адреса не поддерживаются")
-        return parsed.geturl()
+        ascii_hostname = hostname.encode("idna").decode("ascii")
+        netloc = f"[{ascii_hostname}]" if ":" in ascii_hostname else ascii_hostname
+        if parsed.port is not None:
+            netloc += f":{parsed.port}"
+        return parsed._replace(
+            netloc=netloc,
+            path=quote(parsed.path, safe="/%:@!$&'()*+,;=-._~"),
+            query=quote(parsed.query, safe="%=&?/:@!$'()*+,;~-._"),
+            fragment="",
+        ).geturl()

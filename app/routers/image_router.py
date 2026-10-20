@@ -83,6 +83,8 @@ def get_image(image_id: int):
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
 
+    if not Path(image.image_path).is_file():
+        raise HTTPException(status_code=404, detail="Image file not found")
     return FileResponse(path=image.image_path, media_type=image.image_type)
 
 

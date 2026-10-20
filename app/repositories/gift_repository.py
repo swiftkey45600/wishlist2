@@ -119,23 +119,28 @@ class GiftRepository:
             conditions.append("gifts.status = ?")
             parameters.append(filters.status)
         if filters.q is not None and filters.q.strip():
-            conditions.append("instr(casefold(gifts.title), ?) > 0")
+            conditions.append("instr(casefold(gifts.title || ' ' || coalesce(gifts.description, '')), ?) > 0")
             parameters.append(filters.q.strip().casefold())
         if filters.tags:
-            tag_ids = list(dict.fromkeys(filters.tags))
+            tag_ids = list(dict.fromkeys(tag for tag in filters.tags if tag != "untagged"))
             placeholders = ", ".join("?" for _ in tag_ids)
-            conditions.append(
-                f"""
-                EXISTS (
-                    SELECT 1
-                    FROM gift_tags
-                    JOIN tags ON tags.id = gift_tags.tag_id
-                    WHERE gift_tags.gift_id = gifts.id
-                      AND tags.event_id = gifts.event_id
-                      AND gift_tags.tag_id IN ({placeholders})
+            tag_conditions = []
+            if "untagged" in filters.tags:
+                tag_conditions.append("NOT EXISTS (SELECT 1 FROM gift_tags WHERE gift_tags.gift_id = gifts.id)")
+            if tag_ids:
+                tag_conditions.append(
+                    f"""
+                    EXISTS (
+                        SELECT 1
+                        FROM gift_tags
+                        JOIN tags ON tags.id = gift_tags.tag_id
+                        WHERE gift_tags.gift_id = gifts.id
+                          AND tags.event_id = gifts.event_id
+                          AND gift_tags.tag_id IN ({placeholders})
+                    )
+                    """
                 )
-                """
-            )
+            conditions.append("(" + " OR ".join(tag_conditions) + ")")
             parameters.extend(tag_ids)
 
         sort_columns = {

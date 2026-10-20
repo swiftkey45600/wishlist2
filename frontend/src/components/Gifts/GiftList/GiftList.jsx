@@ -59,28 +59,34 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
     }, [imagePreview])
 
     useEffect(() => {
+        let cancelled = false
         async function loadGifts() {
             setIsLoading(true)
             setError(null)
 
             try {
-                const data = await getGiftsByEvent(eventId)
-                setGifts(Array.isArray(data) ? data : [])
+                const data = await getGiftsByEvent(eventId, showReservations)
+                if (!cancelled) setGifts(Array.isArray(data) ? data : [])
             } catch (loadError) {
                 console.error(loadError)
-                setError("Не удалось загрузить подарки")
-                setGifts([])
+                if (!cancelled) {
+                    setError("Не удалось загрузить подарки")
+                    setGifts([])
+                }
             } finally {
-                setIsLoading(false)
+                if (!cancelled) setIsLoading(false)
             }
         }
 
         loadGifts()
-    }, [eventId])
+        return () => { cancelled = true }
+    }, [eventId, showReservations])
 
     useEffect(() => {
         let cancelled = false
         async function loadTags() {
+            setTags([])
+            setSelectedTagIds([])
             setTagsLoading(true)
             setTagsError("")
             try {
@@ -126,13 +132,18 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                 setImagePreview(resolveImageUrl(product.image_id, product.picture_url))
             }
 
+            setFieldErrors(previous => ({
+                ...previous,
+                ...(product.title ? { title: undefined } : {}),
+                ...(Number.isSafeInteger(product.price) && product.price > 0 ? { price: undefined } : {})
+            }))
             const missing = []
             if (!product.title) missing.push("название")
             if (product.price == null) missing.push("цену")
             if (!product.image_id && !product.picture_url) missing.push("картинку")
-            setMarketplaceNotice(missing.length
+            setMarketplaceNotice(product.warning || (missing.length
                 ? `Не удалось получить ${missing.join(", ")}. Проверьте эти поля и заполните их вручную.`
-                : "Данные получены. Проверьте их перед сохранением.")
+                : "Данные получены. Проверьте их перед сохранением."))
         } finally {
             setIsParsingMarketplace(false)
         }
@@ -201,7 +212,9 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
 
     async function handleToggleStatus(gift) {
         let result
-        if (gift.status === "available") {
+        if (isOwner) {
+            result = await editGift(gift.id, { status: "available" })
+        } else if (gift.status === "available") {
             result = await reserveGift(gift.id)
         } else if (gift.status === "bought") {
             result = await editGift(gift.id, { status: "available" })
@@ -210,7 +223,7 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
         }
 
         if (result) {
-            const updatedGifts = await getGiftsByEvent(eventId)
+            const updatedGifts = await getGiftsByEvent(eventId, showReservations)
             setGifts(previousGifts => Array.isArray(updatedGifts)
                 ? updatedGifts.map(updatedGift => ({
                     ...updatedGift,
@@ -223,18 +236,17 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
     }
 
     async function handleDeleteGift() {
-        await deleteGift(giftToDelete.id)
+        if (!await deleteGift(giftToDelete.id)) return false
         setGifts(prev => prev.filter(gift => gift.id !== giftToDelete.id))
         setGiftToDelete(null)
         onGiftDataChange?.()
+        return true
     }
 
     async function handleMarkBought(giftId) {
         const updated = await editGift(giftId, { status: "bought" })
         if (updated) {
-            setGifts(prev => prev.map(g => g.id === giftId
-                ? { ...updated, tags: updated.tags || g.tags || [] }
-                : g))
+            setGifts(await getGiftsByEvent(eventId, showReservations))
         }
     }
 
@@ -245,6 +257,7 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
             setGifts(prev => prev.map(g => g.id === giftId
                 ? { ...updated, tags: updated.tags || selectedTags }
                 : g))
+            if (showReservations) setGifts(await getGiftsByEvent(eventId, true))
             setEditingGift(null)
             onGiftDataChange?.()
             return true
@@ -269,7 +282,7 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
         })
     })
 
-    const { filters, filteredGifts, updateFilter } = useGiftFilters(gifts)
+    const { filters, filteredGifts, updateFilter } = useGiftFilters(gifts, isOwner && !showReservations)
     const filteredGiftGroups = allTags
         .map(tag => ({
             tag,
@@ -312,6 +325,7 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
             </div>
 
             <GiftFilters
+                hideStatus={isOwner && !showReservations}
                 tags={allTags}
                 filters={filters}
                 onFilterChange={updateFilter}
@@ -334,7 +348,10 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                                 value={title}
                                 aria-invalid={Boolean(fieldErrors.title)}
                                 aria-describedby="create-gift-title-error"
-                                onChange={e => setTitle(e.target.value)}
+                                onChange={e => {
+                                    setTitle(e.target.value)
+                                    setFieldErrors(previous => ({ ...previous, title: undefined }))
+                                }}
                                 placeholder="Название подарка"
                             />
                             {fieldErrors.title && <span id="create-gift-title-error" className="gift-form-error" role="alert">{fieldErrors.title}</span>}
@@ -345,7 +362,10 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                                 value={price}
                                 aria-invalid={Boolean(fieldErrors.price)}
                                 aria-describedby="create-gift-price-error"
-                                onChange={e => setPrice(e.target.value)}
+                                onChange={e => {
+                                    setPrice(e.target.value)
+                                    setFieldErrors(previous => ({ ...previous, price: undefined }))
+                                }}
                                 placeholder="Цена в рублях"
                                 type="number"
                             />
@@ -485,7 +505,7 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                                     <GiftCard
                                         key={`${group.tag.id}-${gift.id}`}
                                         gift={gift}
-                                        onToggleStatus={!isOwner || showReservations || gift.status === "available"
+                                        onToggleStatus={!isOwner || (showReservations && gift.status !== "available")
                                             ? handleToggleStatus
                                             : undefined}
                                         onDelete={isOwner ? (giftId) => setGiftToDelete(gifts.find(item => item.id === giftId)) : undefined}
@@ -509,7 +529,7 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                                     <GiftCard
                                         key={gift.id}
                                         gift={gift}
-                                        onToggleStatus={!isOwner || showReservations || gift.status === "available"
+                                        onToggleStatus={!isOwner || (showReservations && gift.status !== "available")
                                             ? handleToggleStatus
                                             : undefined}
                                         onDelete={isOwner ? (giftId) => setGiftToDelete(gifts.find(item => item.id === giftId)) : undefined}

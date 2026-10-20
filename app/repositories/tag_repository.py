@@ -28,6 +28,14 @@ class TagRepository:
             ).fetchone()
         return Tag(**dict(row)) if row is not None else None
 
+    def get_tag(self, tag_id: int) -> Tag | None:
+        with get_connection() as connection:
+            row = connection.execute(
+                "SELECT * FROM tags WHERE id = ?",
+                (tag_id,),
+            ).fetchone()
+        return Tag(**dict(row)) if row is not None else None
+
     def update_tag(self, tag: Tag) -> Tag:
         with get_connection() as connection:
             connection.execute(

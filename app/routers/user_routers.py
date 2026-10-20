@@ -67,23 +67,6 @@ async def update_my_profile(
     }
 
 
-@router.get("/")
-async def get_users(current_user: User = Depends(get_current_user)):
-    users = users_service.list_users()
-    return {
-        "users": [
-            {
-                "id": u.id,
-                "name": u.name,
-                "login": u.login,
-                "birthday": u.birthday,
-                "gender": u.gender
-            }
-            for u in users
-        ]
-    }
-
-
 @router.get("/{user_id}")
 async def get_user(user_id: int, current_user: User = Depends(get_current_user)):
     user = users_service.get_user(user_id)

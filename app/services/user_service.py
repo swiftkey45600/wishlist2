@@ -18,6 +18,8 @@ def validate_login(login: str) -> str:
 
 
 def validate_password(password: str) -> None:
+    if len(password.encode("utf-8")) > 72:
+        raise ValueError("Пароль должен занимать не более 72 байт UTF-8")
     if len(password) < MIN_PASSWORD_LENGTH:
         raise ValueError(
             f"Пароль должен содержать не менее {MIN_PASSWORD_LENGTH} символов"
@@ -42,7 +44,7 @@ class UserService:
         return self.user_repository.create_user(register_request)
 
     def authenticate_user(self, login_request: UserLoginRequest) -> User:
-        user = self.user_repository.get_user_by_login(login_request.login)
+        user = self.user_repository.get_user_by_login(login_request.login.strip())
         if not user:
           raise ValueError("No user with this login")
 
