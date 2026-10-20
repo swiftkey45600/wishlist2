@@ -25,11 +25,12 @@ function CreateEventForm({ onCreateEvent, onCancel }) {
         <div className="create-event-form">
             <h2>Создать событие</h2>
             <form className="create-event-form-fields" onSubmit={handleSubmit}>
-                <label className="create-event-field">Название<input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Например, День рождения" autoFocus /></label>
+                <label className="create-event-field">Название<input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Например, День рождения" aria-invalid={Boolean(error)} aria-describedby="create-event-title-error" autoFocus />
+                    {error && <span id="create-event-title-error" className="create-event-error" role="alert">{error}</span>}
+                </label>
                 <label className="create-event-field">Описание<input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Описание события" /></label>
                 <label className="create-event-field">Дата и время<input value={eventDate} type="datetime-local" onChange={(event) => setEventDate(event.target.value)} /></label>
                 <label className="create-event-field">Место<input value={place} onChange={(event) => setPlace(event.target.value)} placeholder="Город или место" /></label>
-                {error && <p className="create-event-error">{error}</p>}
                 <div className="create-event-actions">
                     <button type="button" className="create-event-secondary" onClick={onCancel}>Отмена</button>
                     <button type="submit" className="create-event-primary">Создать</button>

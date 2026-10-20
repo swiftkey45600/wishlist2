@@ -27,6 +27,7 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
     const [gifts, setGifts] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(null)
+    const [fieldErrors, setFieldErrors] = useState({})
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [title, setTitle] = useState("")
     const [price, setPrice] = useState("")
@@ -41,11 +42,15 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
     const [editingGift, setEditingGift] = useState(null)
     const [giftToDelete, setGiftToDelete] = useState(null)
     const [tags, setTags] = useState([])
+    const [tagsLoading, setTagsLoading] = useState(true)
+    const [tagsError, setTagsError] = useState("")
+    const [tagsAttempt, setTagsAttempt] = useState(0)
     const [selectedTagIds, setSelectedTagIds] = useState([])
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [showReservations, setShowReservations] = useState(false)
     const [isReservationConfirmationOpen, setIsReservationConfirmationOpen] = useState(false)
     const [isParsingMarketplace, setIsParsingMarketplace] = useState(false)
+    const [marketplaceNotice, setMarketplaceNotice] = useState("")
 
     useEffect(() => {
         return () => {
@@ -74,13 +79,23 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
     }, [eventId])
 
     useEffect(() => {
+        let cancelled = false
         async function loadTags() {
-            const data = await getEventTags(eventId)
-            setTags(Array.isArray(data) ? data : [])
+            setTagsLoading(true)
+            setTagsError("")
+            try {
+                const data = await getEventTags(eventId)
+                if (!cancelled) setTags(data)
+            } catch {
+                if (!cancelled) setTagsError("Не удалось загрузить теги")
+            } finally {
+                if (!cancelled) setTagsLoading(false)
+            }
         }
 
         loadTags()
-    }, [eventId])
+        return () => { cancelled = true }
+    }, [eventId, tagsAttempt])
 
     async function handleMarketplaceAutofill() {
         const url = marketplaceUrl.trim()
@@ -90,6 +105,7 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
         }
 
         setFormError(null)
+        setMarketplaceNotice("")
         setIsParsingMarketplace(true)
         try {
             const { product, error: parseError } = await parseMarketplaceProduct(url)
@@ -98,15 +114,25 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                 return
             }
 
-            setTitle(product.title || "")
+            if (product.title) setTitle(product.title)
             if (product.price != null) setPrice(String(product.price))
             if (product.description && !description.trim()) setDescription(product.description)
             setMarketplaceUrl(product.marketplace_url || url)
-            setImageFile(null)
-            if (imageInputRef.current) imageInputRef.current.value = ""
-            setPictureUrl(product.image_id ? "" : resolveImageUrl(null, product.picture_url))
-            setParsedImageId(product.image_id || null)
-            setImagePreview(resolveImageUrl(product.image_id, product.picture_url))
+            if (product.image_id || product.picture_url) {
+                setImageFile(null)
+                if (imageInputRef.current) imageInputRef.current.value = ""
+                setPictureUrl(product.image_id ? "" : resolveImageUrl(null, product.picture_url))
+                setParsedImageId(product.image_id || null)
+                setImagePreview(resolveImageUrl(product.image_id, product.picture_url))
+            }
+
+            const missing = []
+            if (!product.title) missing.push("название")
+            if (product.price == null) missing.push("цену")
+            if (!product.image_id && !product.picture_url) missing.push("картинку")
+            setMarketplaceNotice(missing.length
+                ? `Не удалось получить ${missing.join(", ")}. Проверьте эти поля и заполните их вручную.`
+                : "Данные получены. Проверьте их перед сохранением.")
         } finally {
             setIsParsingMarketplace(false)
         }
@@ -116,16 +142,12 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
         event.preventDefault()
         setFormError(null)
 
-        if (!title.trim()) {
-            setFormError("Название подарка обязательно")
-            return
-        }
-
         const parsedPrice = Number(price)
-        if (!price || Number.isNaN(parsedPrice) || parsedPrice <= 0) {
-            setFormError("Цена должна быть положительным числом")
-            return
-        }
+        const errors = {}
+        if (!title?.trim()) errors.title = "Введите название подарка"
+        if (!Number.isSafeInteger(parsedPrice) || parsedPrice <= 0) errors.price = "Введите положительную цену в целых рублях"
+        setFieldErrors(errors)
+        if (Object.keys(errors).length) return
 
         setIsSubmitting(true)
         try {
@@ -295,26 +317,39 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                 onFilterChange={updateFilter}
             />
 
+            {isOwner && tagsLoading && <p role="status">Загружаем теги...</p>}
+            {isOwner && tagsError && <div role="alert">
+                <p>{tagsError}</p>
+                <button type="button" className="gift-secondary-button"
+                    onClick={() => setTagsAttempt(value => value + 1)}>Повторить загрузку тегов</button>
+            </div>}
+
             {isOwner && isFormOpen && (
-                <form className="gift-create-form gift-modal-form" onSubmit={handleSubmit}>
+                <form className="gift-create-form gift-modal-form" onSubmit={handleSubmit} noValidate>
                     <h3>Добавить подарок</h3>
                     <div className="gift-create-row">
                         <label>
                             Название
                             <input
                                 value={title}
+                                aria-invalid={Boolean(fieldErrors.title)}
+                                aria-describedby="create-gift-title-error"
                                 onChange={e => setTitle(e.target.value)}
                                 placeholder="Название подарка"
                             />
+                            {fieldErrors.title && <span id="create-gift-title-error" className="gift-form-error" role="alert">{fieldErrors.title}</span>}
                         </label>
                         <label>
                             Цена
                             <input
                                 value={price}
+                                aria-invalid={Boolean(fieldErrors.price)}
+                                aria-describedby="create-gift-price-error"
                                 onChange={e => setPrice(e.target.value)}
                                 placeholder="Цена в рублях"
                                 type="number"
                             />
+                            {fieldErrors.price && <span id="create-gift-price-error" className="gift-form-error" role="alert">{fieldErrors.price}</span>}
                         </label>
                     </div>
 
@@ -390,7 +425,10 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                         </button>
                     </div>
 
+                    {marketplaceNotice && <p role="status">{marketplaceNotice}</p>}
+
                     <TagSelector
+                        disabled={tagsLoading || Boolean(tagsError) || isSubmitting}
                         eventId={eventId}
                         tags={tags}
                         selectedTagIds={selectedTagIds}
@@ -503,6 +541,7 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                     <div className="gift-edit-dialog">
                         <GiftEditForm
                             gift={editingGift}
+                            tagsDisabled={tagsLoading || Boolean(tagsError)}
                             tags={tags}
                             onTagsChange={setTags}
                             onChange={setEditingGift}
