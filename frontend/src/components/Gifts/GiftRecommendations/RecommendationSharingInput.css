@@ -1,0 +1,22 @@
+.recommendation-sharing {
+    display: grid;
+    gap: 8px;
+}
+
+.recommendation-sharing label {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.recommendation-sharing input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+}
+
+.recommendation-sharing span {
+    color: var(--muted);
+    font-size: 12px;
+}

@@ -76,7 +76,7 @@ function GiftRecommendations({ eventId, gifts, onAdd }) {
             <h2 id="recommendations-heading">Может понравиться</h2>
             <p className="recommendations-note">{useRecommendationMocks
                 ? "Примеры рекомендаций. Добавленные подарки сохраняются в вашем событии."
-                : "Подарки из ваших других событий с учётом тегов и цены."}</p>
+                : "Подарки из вашей истории и общего каталога с учётом тегов, цены и популярности."}</p>
             {isLoading && <p role="status">Подбираем подарки...</p>}
             {loadError && <div role="alert">
                 <p>{loadError}</p>

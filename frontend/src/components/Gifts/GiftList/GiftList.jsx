@@ -20,10 +20,14 @@ import { resolveImageUrl, uploadImageFile } from "../../../application/imageAppl
 import { parseMarketplaceProduct } from "../../../application/marketplaceApplication"
 import GiftFilters from "../GiftFilters/GiftFilters"
 import { useGiftFilters } from "../GiftFilters/useGiftFilters"
+import FundraisingGoalInput from "../GiftFundraising/FundraisingGoalInput"
+import { parseContributionGoal } from "../../../application/contributionApplication"
+import { fetchGiftsByEvent } from "../../../repositories/giftRepository"
+import RecommendationSharingInput from "../GiftRecommendations/RecommendationSharingInput"
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"])
 
-function GiftList({ eventId, isOwner, onGiftDataChange }) {
+function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
     const [gifts, setGifts] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(null)
@@ -31,6 +35,8 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [title, setTitle] = useState("")
     const [price, setPrice] = useState("")
+    const [contributionGoal, setContributionGoal] = useState(null)
+    const [shareInRecommendations, setShareInRecommendations] = useState(false)
     const [description, setDescription] = useState("")
     const [imageFile, setImageFile] = useState(null)
     const [imagePreview, setImagePreview] = useState("")
@@ -157,6 +163,12 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
         const errors = {}
         if (!title?.trim()) errors.title = "Введите название подарка"
         if (!Number.isSafeInteger(parsedPrice) || parsedPrice <= 0) errors.price = "Введите положительную цену в целых рублях"
+        let parsedGoal
+        try {
+            parsedGoal = parseContributionGoal(contributionGoal)
+        } catch (validationError) {
+            errors.contribution_goal = validationError.message
+        }
         setFieldErrors(errors)
         if (Object.keys(errors).length) return
 
@@ -176,6 +188,8 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                 event_id: Number(eventId),
                 title: title.trim(),
                 price: parsedPrice,
+                contribution_goal: parsedGoal,
+                share_in_recommendations: shareInRecommendations,
                 description: description.trim() || undefined,
                 marketplace_url: marketplaceUrl.trim() || undefined,
                 image_id: imageId,
@@ -196,6 +210,8 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
             }, ...prev])
             setTitle("")
             setPrice("")
+            setContributionGoal(null)
+            setShareInRecommendations(false)
             setDescription("")
             setImageFile(null)
             setImagePreview("")
@@ -233,6 +249,12 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
         } else {
             setError("Не удалось изменить бронь подарка")
         }
+    }
+
+    async function handleFundraisingChange() {
+        const updatedGifts = await fetchGiftsByEvent(eventId, showReservations)
+        setGifts(updatedGifts)
+        onGiftDataChange?.()
     }
 
     async function handleDeleteGift() {
@@ -373,6 +395,23 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                         </label>
                     </div>
 
+                    <FundraisingGoalInput
+                        value={contributionGoal}
+                        defaultGoal={price}
+                        disabled={isSubmitting || isParsingMarketplace}
+                        error={fieldErrors.contribution_goal}
+                        onChange={value => {
+                            setContributionGoal(value)
+                            setFieldErrors(previous => ({ ...previous, contribution_goal: undefined }))
+                        }}
+                    />
+
+                    <RecommendationSharingInput
+                        checked={shareInRecommendations}
+                        disabled={isSubmitting || isParsingMarketplace}
+                        onChange={setShareInRecommendations}
+                    />
+
                     <label>
                         Описание
                         <textarea
@@ -464,6 +503,8 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                             setImagePreview("")
                             setParsedImageId(null)
                             setPictureUrl("")
+                            setContributionGoal(null)
+                            setShareInRecommendations(false)
                             setFormError(null)
                             setIsFormOpen(false)
                         }} disabled={isSubmitting || isParsingMarketplace}>
@@ -505,6 +546,9 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                                     <GiftCard
                                         key={`${group.tag.id}-${gift.id}`}
                                         gift={gift}
+                                        publicToken={publicToken}
+                                        isOwner={isOwner}
+                                        onGiftChange={handleFundraisingChange}
                                         onToggleStatus={!isOwner || (showReservations && gift.status !== "available")
                                             ? handleToggleStatus
                                             : undefined}
@@ -529,6 +573,9 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                                     <GiftCard
                                         key={gift.id}
                                         gift={gift}
+                                        publicToken={publicToken}
+                                        isOwner={isOwner}
+                                        onGiftChange={handleFundraisingChange}
                                         onToggleStatus={!isOwner || (showReservations && gift.status !== "available")
                                             ? handleToggleStatus
                                             : undefined}
@@ -569,6 +616,8 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                                 handleEditGift(editingGift.id, {
                                     title: editingGift.title.trim(),
                                     price: Number(editingGift.price),
+                                    contribution_goal: parseContributionGoal(editingGift.contribution_goal, editingGift.contribution_total),
+                                    share_in_recommendations: Boolean(editingGift.share_in_recommendations),
                                     description: editingGift.description?.trim() || null,
                                     picture_url: editingGift.picture_url?.trim() || null,
                                     marketplace_url: editingGift.marketplace_url?.trim() || null,

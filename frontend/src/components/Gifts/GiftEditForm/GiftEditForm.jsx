@@ -3,6 +3,9 @@ import { useEffect, useRef, useState } from "react"
 import { getImage, resolveImageUrl, uploadImageFile } from "../../../application/imageApplication"
 import { parseMarketplaceProduct } from "../../../application/marketplaceApplication"
 import TagSelector from "../../Tags/TagSelector/TagSelector"
+import FundraisingGoalInput from "../GiftFundraising/FundraisingGoalInput"
+import { parseContributionGoal } from "../../../application/contributionApplication"
+import RecommendationSharingInput from "../GiftRecommendations/RecommendationSharingInput"
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"])
 
@@ -96,6 +99,11 @@ function GiftEditForm({ gift, tags, tagsDisabled = false, onTagsChange, onChange
         const errors = {}
         if (!gift.title?.trim()) errors.title = "Введите название подарка"
         if (!Number.isSafeInteger(price) || price <= 0) errors.price = "Введите положительную цену в целых рублях"
+        try {
+            parseContributionGoal(gift.contribution_goal, gift.contribution_total)
+        } catch (validationError) {
+            errors.contribution_goal = validationError.message
+        }
         setFieldErrors(errors)
         if (Object.keys(errors).length) return
 
@@ -168,6 +176,24 @@ function GiftEditForm({ gift, tags, tagsDisabled = false, onTagsChange, onChange
                     }
                 />
             </label>
+
+            <FundraisingGoalInput
+                value={gift.contribution_goal}
+                defaultGoal={gift.price}
+                collected={gift.contribution_total || 0}
+                disabled={isSaving || isParsingMarketplace}
+                error={fieldErrors.contribution_goal}
+                onChange={value => {
+                    onChange({ ...gift, contribution_goal: value })
+                    setFieldErrors(previous => ({ ...previous, contribution_goal: undefined }))
+                }}
+            />
+
+            <RecommendationSharingInput
+                checked={Boolean(gift.share_in_recommendations)}
+                disabled={isSaving || isParsingMarketplace}
+                onChange={value => onChange({ ...gift, share_in_recommendations: value })}
+            />
 
             <label>
                 Загрузить изображение файлом
