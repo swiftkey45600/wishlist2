@@ -50,9 +50,6 @@ class GiftService:
     def _fill_marketplace_links(self, gift: Gift) -> None:
         gift.marketplace_links = self.marketplace_links_repository.get_all()
 
-    def _fill_contribution_total(self, gift: Gift) -> None:
-        gift.contribution_total = 0
-
     def _prepare_gift_response(self, gift: Gift) -> Gift:
         self._fill_image(gift)
         self._fill_marketplace_links(gift)
@@ -118,10 +115,12 @@ class GiftService:
         if "tag_ids" in data:
             self._validate_tag_ids(gift.event_id, data["tag_ids"])
 
-        if data.get("status") == "available":
-            self.reservation_service.clear_reservation_for_gift(gift_id)
-
-        updated_gift = self.gift_repository.update_gift(gift_id, data)
+        try:
+            updated_gift = self.gift_repository.update_gift(gift_id, data)
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+        if updated_gift is None:
+            raise HTTPException(status_code=404, detail="Gift not found")
         return self._prepare_gift_response(updated_gift)
 
     def update_public_gift_reservation(
