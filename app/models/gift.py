@@ -23,6 +23,8 @@ class Gift:
     marketplace_links: list[Marketplace] = field(default_factory=list)
     contribution_total: int = 0
     tags: list[Tag] = field(default_factory=list)
+    contribution_goal: int | None = None
+    share_in_recommendations: bool = False
 
 @dataclass
 class GiftCreateRequest(Gift):
@@ -30,6 +32,7 @@ class GiftCreateRequest(Gift):
     price: Annotated[int, Field(gt=0, le=9223372036854775807)]
     status: Literal["available"] = "available"
     tag_ids: list[int] = field(default_factory=list)
+    contribution_goal: Annotated[int, Field(gt=0, le=9223372036854775807)] | None = None
 
 
 class GiftFilters(BaseModel):

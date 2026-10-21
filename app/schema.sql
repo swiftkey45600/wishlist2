@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS gifts (
     marketplace_url TEXT,
     category_id INTEGER,
     image_id INTEGER,
+    contribution_goal INTEGER CHECK (contribution_goal > 0),
+    share_in_recommendations INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
     FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE SET NULL
 );
@@ -58,6 +60,7 @@ CREATE TABLE IF NOT EXISTS reservations (
     reserver_name TEXT,
     reserver_id INTEGER,
     secret_word_hash TEXT,
+    is_fundraising INTEGER NOT NULL DEFAULT 0,
     is_anonymous INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (gift_id) REFERENCES gifts(id) ON DELETE CASCADE,
     FOREIGN KEY (reserver_id) REFERENCES users(id) ON DELETE SET NULL
@@ -71,6 +74,20 @@ CREATE TABLE IF NOT EXISTS images (
     owner_id INTEGER,
     FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE SET NULL
 );
+
+CREATE TABLE IF NOT EXISTS contributions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    gift_id INTEGER NOT NULL,
+    amount INTEGER NOT NULL CHECK (amount > 0),
+    contributor_name TEXT,
+    contributor_id INTEGER,
+    secret_word_hash TEXT,
+    is_anonymous INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY (gift_id) REFERENCES gifts(id) ON DELETE CASCADE,
+    FOREIGN KEY (contributor_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE INDEX IF NOT EXISTS contributions_gift_id ON contributions(gift_id);
 
 CREATE TABLE IF NOT EXISTS guest_reservation_rate_limits (
     key TEXT PRIMARY KEY,

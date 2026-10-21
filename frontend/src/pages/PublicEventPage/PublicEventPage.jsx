@@ -55,6 +55,11 @@ function PublicEventPage() {
         }))
     }
 
+    async function handleFundraisingChange() {
+        const response = await api.get(`/events/public/${token}`)
+        setData(previous => previous?.event?.public_token === token ? response.data : previous)
+    }
+
     useEffect(() => {
         let cancelled = false
         async function loadPublicEvent() {
@@ -136,6 +141,9 @@ function PublicEventPage() {
                                         <GiftCard
                                             key={gift.id}
                                             gift={gift}
+                                            publicToken={token}
+                                            isOwner={isOwner}
+                                            onGiftChange={handleFundraisingChange}
                                             hideReservationDetails={isOwner}
                                             onToggleStatus={!isOwner && gift.status !== "bought" ? handleToggleStatus : undefined}
                                         />

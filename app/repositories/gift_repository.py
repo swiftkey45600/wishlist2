@@ -1,6 +1,7 @@
 from app.models.gift import Gift, GiftFilters
 from app.models.tag import Tag
 from app.database import get_connection
+from app.repositories.contribution_repository import ContributionRepository
 
 class GiftRepository:
     def _get_gift_tags(self, connection, gift_id: int) -> list[Tag]:
@@ -37,6 +38,11 @@ class GiftRepository:
             image_id=row["image_id"],
             reservation_id=row["reservation_id"] if "reservation_id" in row.keys() else None,
             tags=self._get_gift_tags(connection, row["id"]),
+            contribution_goal=row["contribution_goal"],
+            share_in_recommendations=bool(row["share_in_recommendations"]),
+            contribution_total=connection.execute(
+                "SELECT COALESCE(SUM(amount), 0) FROM contributions WHERE gift_id = ?", (row["id"],)
+            ).fetchone()[0],
         )
 
     def create_gift(self, gift: Gift, tag_ids: list[int] | None = None) -> Gift:
@@ -52,9 +58,11 @@ class GiftRepository:
                     picture_url,
                     marketplace_url,
                     category_id,
-                    image_id
+                    image_id,
+                    contribution_goal,
+                    share_in_recommendations
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     gift.event_id,
@@ -66,10 +74,13 @@ class GiftRepository:
                     gift.marketplace_url,
                     gift.category_id,
                     gift.image_id,
+                    gift.contribution_goal,
+                    gift.share_in_recommendations,
                 ),
             )
 
             gift.id = cursor.lastrowid
+            gift.contribution_total = 0
             self._replace_gift_tags(connection, gift.id, tag_ids or [])
             gift.tags = self._get_gift_tags(connection, gift.id)
             connection.commit()
@@ -91,6 +102,8 @@ class GiftRepository:
                     gifts.marketplace_url,
                     gifts.category_id,
                     gifts.image_id,
+                    gifts.contribution_goal,
+                    gifts.share_in_recommendations,
                     reservations.id AS reservation_id
                 FROM gifts
                 LEFT JOIN reservations ON reservations.gift_id = gifts.id
@@ -169,6 +182,8 @@ class GiftRepository:
                     gifts.marketplace_url,
                     gifts.category_id,
                     gifts.image_id,
+                    gifts.contribution_goal,
+                    gifts.share_in_recommendations,
                     reservations.id AS reservation_id
                 FROM gifts
                 LEFT JOIN reservations ON reservations.gift_id = gifts.id
@@ -178,6 +193,23 @@ class GiftRepository:
                 parameters,
             ).fetchall()
 
+            return [self._row_to_gift(row, connection) for row in rows]
+
+    def get_recommendation_candidates(self, owner_id: int, event_id: int) -> list[Gift]:
+        with get_connection() as connection:
+            rows = connection.execute(
+                """
+                SELECT gifts.*, reservations.id AS reservation_id
+                FROM gifts
+                JOIN events ON events.id = gifts.event_id
+                LEFT JOIN reservations ON reservations.gift_id = gifts.id
+                WHERE gifts.event_id != ?
+                  AND (events.owner_id = ? OR gifts.share_in_recommendations = 1)
+                  AND gifts.price > 0
+                ORDER BY gifts.id
+                """,
+                (event_id, owner_id),
+            ).fetchall()
             return [self._row_to_gift(row, connection) for row in rows]
 
     def update_gift_status(self, gift_id: int, status: str) -> Gift | None:
@@ -203,6 +235,22 @@ class GiftRepository:
         tag_ids = data.pop("tag_ids", None)
 
         with get_connection() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            gift = connection.execute("SELECT contribution_goal, status FROM gifts WHERE id = ?", (gift_id,)).fetchone()
+            if gift is None:
+                return None
+            total = connection.execute(
+                "SELECT COALESCE(SUM(amount), 0) FROM contributions WHERE gift_id = ?", (gift_id,)
+            ).fetchone()[0]
+            goal = data.get("contribution_goal", gift["contribution_goal"])
+            if goal is not None and gift["contribution_goal"] is None and gift["status"] != "available":
+                raise ValueError("Fundraising can only be enabled for an available gift")
+            if total and (goal is None or goal < total):
+                raise ValueError("The fundraising goal cannot be removed or reduced below the collected amount")
+            if data.get("status") == "available":
+                if goal is not None and total >= goal:
+                    raise ValueError("A fully funded gift must remain reserved")
+                connection.execute("DELETE FROM reservations WHERE gift_id = ?", (gift_id,))
             if data:
                 set_clause = ", ".join(f"{field} = ?" for field in data)
                 connection.execute(
@@ -217,6 +265,7 @@ class GiftRepository:
             if tag_ids is not None:
                 self._replace_gift_tags(connection, gift_id, tag_ids)
 
+            ContributionRepository.sync_goal(connection, gift_id)
             connection.commit()
 
         return self.get_gift_by_id(gift_id)
