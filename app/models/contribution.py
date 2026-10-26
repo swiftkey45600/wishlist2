@@ -35,3 +35,5 @@ class ContributionResponse(BaseModel):
     amount: int
     is_anonymous: bool
     contributor_name: str | None
+    can_cancel: bool
+    requires_secret_word: bool

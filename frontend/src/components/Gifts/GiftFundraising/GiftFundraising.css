@@ -1,0 +1,91 @@
+.gift-fundraising {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.fundraising-summary {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.fundraising-summary span,
+.fundraising-hint {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 400;
+}
+
+.gift-fundraising progress {
+    width: 100%;
+    height: 12px;
+    accent-color: var(--primary);
+}
+
+.fundraising-details,
+.fundraising-form,
+.fundraising-goal {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.fundraising-form {
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+}
+
+.fundraising-form label,
+.fundraising-goal > label:not(.fundraising-toggle) {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 13px;
+}
+
+.fundraising-form input,
+.fundraising-goal input[type="number"] {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font: inherit;
+}
+
+.fundraising-entries {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+}
+
+.fundraising-entries li,
+.fundraising-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.fundraising-goal .fundraising-toggle,
+.fundraising-form .fundraising-toggle {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
+.fundraising-toggle input[type="checkbox"] {
+    width: auto;
+    margin: 0;
+}

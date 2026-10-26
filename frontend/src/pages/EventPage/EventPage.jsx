@@ -107,6 +107,7 @@ function EventPage() {
                                     key={id}
                                     eventId={id}
                                     isOwner={isOwner}
+                                    publicToken={event.public_token}
                                     onGiftDataChange={() => setStatisticsRefreshKey((key) => key + 1)}
                                 />
                                 {isEditModalOpen && (
