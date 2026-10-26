@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS gifts (
     category_id INTEGER,
     image_id INTEGER,
     contribution_goal INTEGER CHECK (contribution_goal > 0),
+    share_in_recommendations INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
     FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE SET NULL
 );

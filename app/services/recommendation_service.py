@@ -19,9 +19,17 @@ def product_key(gift):
     return urlunsplit((url.scheme.lower(), url.netloc.lower(), url.path.rstrip('/'), '', ''))
 
 
-class RecommendationService:
-    """Reuse the owner's own wishlist history; never publish other users' gifts."""
+def product_url(value):
+    if not value:
+        return None
+    try:
+        parsed = urlsplit(value)
+    except ValueError:
+        return None
+    return value if parsed.scheme in {"http", "https"} and parsed.netloc else None
 
+
+class RecommendationService:
     def get_recommendations(self, event, limit=6):
         repository = GiftRepository()
         current = repository.get_gifts_by_event(event.id)
@@ -30,13 +38,8 @@ class RecommendationService:
         tags = {tag.name.casefold() for gift in current for tag in gift.tags}
         prices = [gift.price for gift in current if gift.price and gift.price > 0]
         target_price = median(prices) if prices else None
-        candidates = [
-            gift
-            for source in EventRepository().get_events_by_user(event.owner_id)
-            if source.id != event.id
-            for gift in repository.get_gifts_by_event(source.id)
-            if gift.price and gift.price > 0
-        ]
+        candidates = repository.get_recommendation_candidates(event.owner_id, event.id)
+        own_event_ids = {source.id for source in EventRepository().get_events_by_user(event.owner_id)}
         popularity = Counter(product_key(gift) for gift in candidates)
 
         def rank(gift):
@@ -57,9 +60,9 @@ class RecommendationService:
                 "id": len(result) + 1,
                 "title": gift.title,
                 "price": gift.price,
-                "description": gift.description,
-                "picture_url": f"/images/{gift.image_id}" if gift.image_id else gift.picture_url,
-                "marketplace_url": gift.marketplace_url,
+                "description": gift.description if gift.event_id in own_event_ids else None,
+                "picture_url": f"/images/{gift.image_id}" if gift.image_id else product_url(gift.picture_url),
+                "marketplace_url": product_url(gift.marketplace_url),
             })
             if len(result) >= limit:
                 break

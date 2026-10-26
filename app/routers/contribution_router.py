@@ -18,8 +18,8 @@ def get_owner_contributions(gift_id: int, current_user: User = Depends(get_curre
 
 
 @router.get("/events/public/{public_token}/gifts/{gift_id}/contributions", response_model=list[ContributionResponse])
-def get_public_contributions(public_token: str, gift_id: int):
-    return contribution_service.get_gift_contributions(public_token, gift_id)
+def get_public_contributions(public_token: str, gift_id: int, current_user: User | None = Depends(get_optional_user)):
+    return contribution_service.get_gift_contributions(public_token, gift_id, current_user)
 
 
 @router.post("/events/public/{public_token}/gifts/{gift_id}/contributions", response_model=ContributionResponse)

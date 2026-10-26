@@ -24,6 +24,7 @@ class Gift:
     contribution_total: int = 0
     tags: list[Tag] = field(default_factory=list)
     contribution_goal: int | None = None
+    share_in_recommendations: bool = False
 
 @dataclass
 class GiftCreateRequest(Gift):

@@ -1,9 +1,11 @@
 import "./GiftCard.css"
 import GiftImage from "../GiftImage/GiftImage"
 import { getGiftStatusLabel } from "../giftStatus"
+import GiftFundraising from "../GiftFundraising/GiftFundraising"
 import { getGiftPriorityLabel } from "../giftPriority"
 
-function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit, hideReservationDetails = false }) {
+function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit, hideReservationDetails = false,
+    publicToken, isOwner = false, onGiftChange }) {
     const hideStatus = hideReservationDetails && ["reserved", "bought"].includes(gift.status)
 
     return (
@@ -35,7 +37,7 @@ function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit, hideRe
                     {!hideStatus && (
                         <span className={`gift-status ${gift.status}`}>{getGiftStatusLabel(gift.status)}</span>
                     )}
-                    {onToggleStatus && (
+                    {onToggleStatus && !gift.contribution_goal && (
                         <button
                             className="gift-secondary-button"
                             onClick={() => onToggleStatus(gift)}
@@ -57,6 +59,14 @@ function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit, hideRe
                     )}
                 </div>
             </div>
+
+            {gift.contribution_goal > 0 && <GiftFundraising
+                gift={gift}
+                publicToken={publicToken}
+                isOwner={isOwner}
+                hideContributionDetails={hideReservationDetails && isOwner}
+                onGiftChange={onGiftChange}
+            />}
 
             <div className="gift-card-footer">
                 {gift.marketplace_url ? (

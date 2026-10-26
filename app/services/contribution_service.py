@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 
 from app.models.contribution import Contribution, ContributionCreateRequest, ContributionResponse
+from app.models.gift import Gift
 from app.models.user import User
 from app.repositories.contribution_repository import ContributionRepository
 from app.repositories.event_repository import EventRepository
@@ -22,24 +23,33 @@ class ContributionService:
         self.event_repository = event_repository or EventRepository()
         self.reservation_repository = reservation_repository or ReservationRepository()
 
-    def _check_public_gift(self, public_token: str, gift_id: int) -> None:
+    def _check_public_gift(self, public_token: str, gift_id: int) -> Gift:
         event = self.event_repository.get_event_by_public_token(public_token)
         gift = self.gift_repository.get_gift_by_id(gift_id)
         if event is None or gift is None or gift.event_id != event.id:
             raise HTTPException(status_code=404, detail="Gift not found")
+        return gift
 
     def _check_rate_limit(self, client_ip: str, gift_id: int | None = None) -> None:
         retry_after = self.reservation_repository.check_guest_rate_limit(f"contribution:{client_ip}", gift_id)
         if retry_after is not None:
             raise HTTPException(status_code=429, detail="Too many contribution attempts", headers={"Retry-After": str(retry_after)})
 
-    @staticmethod
-    def _response(contribution: Contribution) -> ContributionResponse:
+    def _response(
+        self, contribution: Contribution, current_user: User | None = None, can_withdraw: bool = True
+    ) -> ContributionResponse:
+        requires_word = (
+            contribution.contributor_id is None
+            and self.contribution_repository.get_secret_word_hash(contribution.id) is not None
+        )
+        is_author = current_user is not None and contribution.contributor_id == current_user.id
         return ContributionResponse(
             id=contribution.id,
             amount=contribution.amount,
             is_anonymous=contribution.is_anonymous,
             contributor_name=None if contribution.is_anonymous else contribution.contributor_name,
+            can_cancel=can_withdraw and (requires_word or is_author),
+            requires_secret_word=requires_word,
         )
 
     def add_contribution(
@@ -63,11 +73,14 @@ class ContributionService:
             created = self.contribution_repository.create_contribution(contribution, secret_word_hash)
         except ValueError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
-        return self._response(created)
+        return self._response(created, current_user)
 
-    def get_gift_contributions(self, public_token: str, gift_id: int) -> list[ContributionResponse]:
-        self._check_public_gift(public_token, gift_id)
-        return [self._response(item) for item in self.contribution_repository.get_contributions_by_gift(gift_id)]
+    def get_gift_contributions(
+        self, public_token: str, gift_id: int, current_user: User | None = None
+    ) -> list[ContributionResponse]:
+        gift = self._check_public_gift(public_token, gift_id)
+        return [self._response(item, current_user, gift.status != "bought")
+                for item in self.contribution_repository.get_contributions_by_gift(gift_id)]
 
     def get_owner_contributions(self, gift_id: int, current_user: User) -> list[ContributionResponse]:
         gift = self.gift_repository.get_gift_by_id(gift_id)
@@ -76,7 +89,8 @@ class ContributionService:
         event = self.event_repository.get_event_by_id(gift.event_id)
         if event is None or event.owner_id != current_user.id:
             raise HTTPException(status_code=403, detail="Only the event owner can view contributions by gift ID")
-        return [self._response(item) for item in self.contribution_repository.get_contributions_by_gift(gift_id)]
+        return [self._response(item, current_user, gift.status != "bought")
+                for item in self.contribution_repository.get_contributions_by_gift(gift_id)]
 
     def get_total_collected(self, gift_id: int) -> int:
         return self.contribution_repository.get_total_collected(gift_id)

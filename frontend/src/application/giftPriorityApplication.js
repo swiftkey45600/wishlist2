@@ -17,10 +17,11 @@ export function applySavedGiftPriorities(gifts) {
         try {
             const key = `${PRIORITY_STORAGE_PREFIX}${gift.id}`
             const savedPriority = localStorage.getItem(key)
-            if (validPriorities.has(savedPriority)) return { ...gift, priority: savedPriority }
-
-            localStorage.setItem(key, apiPriority)
-            return { ...gift, priority: apiPriority }
+            const priority = validPriorities.has(gift.priority)
+                ? apiPriority
+                : validPriorities.has(savedPriority) ? savedPriority : apiPriority
+            localStorage.setItem(key, priority)
+            return { ...gift, priority }
         } catch (error) {
             console.error("Не удалось загрузить локальный приоритет подарка", error)
             return { ...gift, priority: apiPriority }

@@ -39,6 +39,7 @@ class GiftRepository:
             reservation_id=row["reservation_id"] if "reservation_id" in row.keys() else None,
             tags=self._get_gift_tags(connection, row["id"]),
             contribution_goal=row["contribution_goal"],
+            share_in_recommendations=bool(row["share_in_recommendations"]),
             contribution_total=connection.execute(
                 "SELECT COALESCE(SUM(amount), 0) FROM contributions WHERE gift_id = ?", (row["id"],)
             ).fetchone()[0],
@@ -58,9 +59,10 @@ class GiftRepository:
                     marketplace_url,
                     category_id,
                     image_id,
-                    contribution_goal
+                    contribution_goal,
+                    share_in_recommendations
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     gift.event_id,
@@ -73,6 +75,7 @@ class GiftRepository:
                     gift.category_id,
                     gift.image_id,
                     gift.contribution_goal,
+                    gift.share_in_recommendations,
                 ),
             )
 
@@ -100,6 +103,7 @@ class GiftRepository:
                     gifts.category_id,
                     gifts.image_id,
                     gifts.contribution_goal,
+                    gifts.share_in_recommendations,
                     reservations.id AS reservation_id
                 FROM gifts
                 LEFT JOIN reservations ON reservations.gift_id = gifts.id
@@ -179,6 +183,7 @@ class GiftRepository:
                     gifts.category_id,
                     gifts.image_id,
                     gifts.contribution_goal,
+                    gifts.share_in_recommendations,
                     reservations.id AS reservation_id
                 FROM gifts
                 LEFT JOIN reservations ON reservations.gift_id = gifts.id
@@ -188,6 +193,23 @@ class GiftRepository:
                 parameters,
             ).fetchall()
 
+            return [self._row_to_gift(row, connection) for row in rows]
+
+    def get_recommendation_candidates(self, owner_id: int, event_id: int) -> list[Gift]:
+        with get_connection() as connection:
+            rows = connection.execute(
+                """
+                SELECT gifts.*, reservations.id AS reservation_id
+                FROM gifts
+                JOIN events ON events.id = gifts.event_id
+                LEFT JOIN reservations ON reservations.gift_id = gifts.id
+                WHERE gifts.event_id != ?
+                  AND (events.owner_id = ? OR gifts.share_in_recommendations = 1)
+                  AND gifts.price > 0
+                ORDER BY gifts.id
+                """,
+                (event_id, owner_id),
+            ).fetchall()
             return [self._row_to_gift(row, connection) for row in rows]
 
     def update_gift_status(self, gift_id: int, status: str) -> Gift | None:
