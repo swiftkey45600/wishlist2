@@ -37,12 +37,6 @@
 }
 .guest-reservation-form input:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
 .guest-reservation-form .guest-reservation-error { color: var(--danger); }
-.guest-reservation-demo {
-    padding: 12px;
-    border-radius: 10px;
-    background: var(--warnbg);
-    color: var(--warn);
-}
 .guest-reservation-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .guest-reservation-actions button, .guest-reservation-actions a {
     padding: 10px 15px;

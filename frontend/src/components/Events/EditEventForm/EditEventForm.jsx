@@ -24,6 +24,7 @@ function EditEventForm({ event, onSave, onCancel }) {
         resolveImageUrl(event.cover_image_id, event.cover_url || event.cover_image_url)
     )
     const [error, setError] = useState("")
+    const [titleError, setTitleError] = useState("")
     const [isSaving, setIsSaving] = useState(false)
 
     useEffect(() => {
@@ -35,10 +36,11 @@ function EditEventForm({ event, onSave, onCancel }) {
         submitEvent.preventDefault()
 
         if (!title.trim()) {
-            setError("Введите название события")
+            setTitleError("Введите название события")
             return
         }
 
+        setTitleError("")
         setError("")
         setIsSaving(true)
         try {
@@ -70,7 +72,8 @@ function EditEventForm({ event, onSave, onCancel }) {
             <form className="create-event-form-fields" onSubmit={handleSubmit}>
                 <label className="create-event-field">
                     Название
-                    <input value={title} onChange={(inputEvent) => setTitle(inputEvent.target.value)} autoFocus />
+                    <input value={title} onChange={(inputEvent) => setTitle(inputEvent.target.value)} aria-invalid={Boolean(titleError)} aria-describedby="edit-event-title-error" autoFocus />
+                    {titleError && <span id="edit-event-title-error" className="create-event-error" role="alert">{titleError}</span>}
                 </label>
                 <label className="create-event-field">
                     Описание

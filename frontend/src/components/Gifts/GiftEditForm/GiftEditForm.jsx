@@ -7,10 +7,12 @@ import { giftPriorityOptions } from "../giftPriority"
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"])
 
-function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) {
+function GiftEditForm({ gift, tags, tagsDisabled = false, onTagsChange, onChange, onSave, onCancel }) {
     const [error, setError] = useState("")
+    const [fieldErrors, setFieldErrors] = useState({})
     const [isSaving, setIsSaving] = useState(false)
     const [isParsingMarketplace, setIsParsingMarketplace] = useState(false)
+    const [marketplaceNotice, setMarketplaceNotice] = useState("")
     const [imageFile, setImageFile] = useState(null)
     const imageInputRef = useRef(null)
     const [imagePreview, setImagePreview] = useState(
@@ -45,6 +47,7 @@ function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) 
         }
 
         setError("")
+        setMarketplaceNotice("")
         setIsParsingMarketplace(true)
         try {
             const { product, error: parseError } = await parseMarketplaceProduct(url)
@@ -53,18 +56,35 @@ function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) 
                 return
             }
 
-            setImageFile(null)
-            if (imageInputRef.current) imageInputRef.current.value = ""
-            setImagePreview(resolveImageUrl(product.image_id, product.picture_url))
+            const hasImage = Boolean(product.image_id || product.picture_url)
+            if (hasImage) {
+                setImageFile(null)
+                if (imageInputRef.current) imageInputRef.current.value = ""
+                setImagePreview(resolveImageUrl(product.image_id, product.picture_url))
+            }
             onChange({
                 ...gift,
                 title: product.title || gift.title,
                 price: product.price ?? gift.price,
                 description: gift.description || product.description,
-                image_id: product.image_id,
-                picture_url: product.image_id ? null : resolveImageUrl(null, product.picture_url),
+                ...(hasImage ? {
+                    image_id: product.image_id || null,
+                    picture_url: product.image_id ? null : resolveImageUrl(null, product.picture_url)
+                } : {}),
                 marketplace_url: product.marketplace_url || url
             })
+            setFieldErrors(previous => ({
+                ...previous,
+                ...(product.title ? { title: undefined } : {}),
+                ...(Number.isSafeInteger(product.price) && product.price > 0 ? { price: undefined } : {})
+            }))
+            const missing = []
+            if (!product.title) missing.push("название")
+            if (product.price == null) missing.push("цену")
+            if (!product.image_id && !product.picture_url) missing.push("картинку")
+            setMarketplaceNotice(product.warning || (missing.length
+                ? `Не удалось получить ${missing.join(", ")}. Проверьте эти поля и заполните их вручную.`
+                : "Данные получены. Проверьте их перед сохранением."))
         } finally {
             setIsParsingMarketplace(false)
         }
@@ -73,16 +93,12 @@ function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) 
     async function handleSubmit(event) {
         event.preventDefault()
 
-        if (!gift.title?.trim()) {
-            setError("Введите название подарка")
-            return
-        }
-
         const price = Number(gift.price)
-        if (!gift.price || Number.isNaN(price) || price <= 0) {
-            setError("Цена должна быть положительным числом")
-            return
-        }
+        const errors = {}
+        if (!gift.title?.trim()) errors.title = "Введите название подарка"
+        if (!Number.isSafeInteger(price) || price <= 0) errors.price = "Введите положительную цену в целых рублях"
+        setFieldErrors(errors)
+        if (Object.keys(errors).length) return
 
         setError("")
         setIsSaving(true)
@@ -108,6 +124,7 @@ function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) 
         <form
             className="gift-edit-form"
             onSubmit={handleSubmit}
+            noValidate
         >
             <h3>Редактирование подарка</h3>
 
@@ -115,13 +132,14 @@ function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) 
                 Название
                 <input
                     value={gift.title || ""}
-                    onChange={e =>
-                        onChange({
-                            ...gift,
-                            title: e.target.value
-                        })
-                    }
+                    aria-invalid={Boolean(fieldErrors.title)}
+                    aria-describedby="edit-gift-title-error"
+                    onChange={e => {
+                        onChange({ ...gift, title: e.target.value })
+                        setFieldErrors(previous => ({ ...previous, title: undefined }))
+                    }}
                 />
+                {fieldErrors.title && <span id="edit-gift-title-error" className="gift-form-error" role="alert">{fieldErrors.title}</span>}
             </label>
 
             <label>
@@ -129,13 +147,14 @@ function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) 
                 <input
                     type="number"
                     value={gift.price || ""}
-                    onChange={e =>
-                        onChange({
-                            ...gift,
-                            price: e.target.value
-                        })
-                    }
+                    aria-invalid={Boolean(fieldErrors.price)}
+                    aria-describedby="edit-gift-price-error"
+                    onChange={e => {
+                        onChange({ ...gift, price: e.target.value })
+                        setFieldErrors(previous => ({ ...previous, price: undefined }))
+                    }}
                 />
+                {fieldErrors.price && <span id="edit-gift-price-error" className="gift-form-error" role="alert">{fieldErrors.price}</span>}
             </label>
 
             <label>
@@ -228,7 +247,10 @@ function GiftEditForm({ gift, tags, onTagsChange, onChange, onSave, onCancel }) 
                 </button>
             </div>
 
+            {marketplaceNotice && <p role="status">{marketplaceNotice}</p>}
+
             {tags && <TagSelector
+                disabled={tagsDisabled || isSaving}
                 eventId={gift.event_id}
                 tags={tags}
                 selectedTagIds={gift.tag_ids || []}

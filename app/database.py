@@ -7,8 +7,16 @@ BASE_DIR = Path(__file__).resolve().parent
 SCHEMA_PATH = BASE_DIR / "schema.sql"
 
 
+class _Connection(sqlite3.Connection):
+    def __exit__(self, exc_type, exc_value, traceback):
+        try:
+            return super().__exit__(exc_type, exc_value, traceback)
+        finally:
+            self.close()
+
+
 def get_connection() -> sqlite3.Connection:
-    connection = sqlite3.connect(DATABASE_PATH)
+    connection = sqlite3.connect(DATABASE_PATH, factory=_Connection)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
     return connection

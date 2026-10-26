@@ -55,9 +55,11 @@ export async function getEventStatistics(eventId) {
 
 export async function deleteEvent(eventId) {
     try {
-        return await deleteEventRepository(eventId)
+        await deleteEventRepository(eventId)
+        return true
     } catch (error) {
         console.error(error)
+        return false
     }
 }
 

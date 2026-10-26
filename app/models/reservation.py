@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from pydantic import BaseModel, Field, SecretStr, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 
 @dataclass
 class Reservation:
@@ -15,6 +15,12 @@ class ReservationCreateRequest:
     gift_id: int
     is_anonymous: bool
     reserver_name: str | None = None
+
+
+class PublicGiftReservationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    is_reserved: bool
 
 
 class GuestReservationCancelRequest(BaseModel):

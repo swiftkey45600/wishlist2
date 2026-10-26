@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -12,14 +12,32 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 90
 
 security = HTTPBearer()
+optional_security = HTTPBearer(auto_error=False)
+
+
+def get_optional_user(credentials: HTTPAuthorizationCredentials | None = Depends(optional_security)):
+    if credentials is None:
+        return None
+    payload = verify_token(credentials.credentials)
+    return _user_from_payload(payload) if payload else None
+
+
+def _user_from_payload(payload):
+    user_id = payload.get("user_id")
+    if isinstance(user_id, int) and not isinstance(user_id, bool) and 0 < user_id <= 9223372036854775807:
+        return _user_repository.get_user_by_id(user_id)
+    # Compatibility with tokens issued before user_id was included.
+    if user_id is None:
+        return _user_repository.get_user_by_login(payload.get("sub"))
+    return None
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
 
     if expires_delta:
-        expire = datetime.now() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
@@ -44,9 +62,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
             detail="Invalid token"
         )
 
-    user_login = payload.get("sub")
-    
-    user = _user_repository.get_user_by_login(user_login)
+    user = _user_from_payload(payload)
 
     if user is None:
         raise HTTPException(

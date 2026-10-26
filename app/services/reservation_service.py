@@ -74,6 +74,9 @@ class ReservationService:
         gift = self.gift_repository.get_gift_by_id(gift_id)
         if gift is None:
             raise HTTPException(status_code=404, detail="Gift not found")
+        event = self.event_repository.get_event_by_id(gift.event_id)
+        if event is not None and event.owner_id == reserver_id:
+            raise HTTPException(status_code=403, detail="Event owner cannot reserve their own gift")
         if gift.status != "available":
             raise HTTPException(status_code=409, detail="Gift is not available for reservation")
 
@@ -89,9 +92,10 @@ class ReservationService:
             reserver_id=reserver_id,
         )
 
-        created_reservation = self.reservation_repository.reserve_gift(reservation)
-        self.gift_repository.update_gift_status(gift_id, "reserved")
-        return created_reservation
+        try:
+            return self.reservation_repository.reserve_gift(reservation)
+        except IntegrityError as error:
+            raise HTTPException(status_code=409, detail="Gift is not available for reservation") from error
 
     def unreserve_gift(self, reservation_id: int) -> None:
         reservation = self.get_reservation(reservation_id)

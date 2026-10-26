@@ -6,11 +6,12 @@ import {
     useRecommendationMocks
 } from "../../../application/recommendationApplication"
 import "./GiftRecommendations.css"
+import { resolveImageUrl } from "../../../repositories/imageRepository"
 
 function RecommendationImage({ url, emoji }) {
     const [failed, setFailed] = useState(false)
     return url && !failed
-        ? <img src={url} alt="" onError={() => setFailed(true)} />
+        ? <img src={resolveImageUrl(null, url)} alt="" onError={() => setFailed(true)} />
         : <span className="recommendation-placeholder" aria-hidden="true">{emoji || "🎁"}</span>
 }
 
@@ -20,7 +21,6 @@ function GiftRecommendations({ eventId, gifts, onAdd }) {
     const [loadError, setLoadError] = useState("")
     const [addError, setAddError] = useState("")
     const [pendingId, setPendingId] = useState(null)
-    const [notice, setNotice] = useState("")
     const [attempt, setAttempt] = useState(0)
     const submitting = useRef(false)
     const active = useRef(false)
@@ -53,7 +53,6 @@ function GiftRecommendations({ eventId, gifts, onAdd }) {
         submitting.current = true
         setPendingId(item.id)
         setAddError("")
-        setNotice("")
         try {
             const gift = await addRecommendedGift(eventId, item)
             if (!gift?.id) throw new Error("Missing gift")
@@ -67,12 +66,14 @@ function GiftRecommendations({ eventId, gifts, onAdd }) {
         }
     }
 
-    if (!useRecommendationMocks) return null
-    const available = (Array.isArray(items) ? items : []).filter(item => !isRecommendedGiftAdded(item, gifts))
+    const available = items.filter(item => !isRecommendedGiftAdded(item, gifts))
 
     return (
         <section className="gift-recommendations" aria-labelledby="recommendations-heading">
             <h2 id="recommendations-heading">Может понравиться</h2>
+            <p className="recommendations-note">{useRecommendationMocks
+                ? "Примеры рекомендаций. Добавленные подарки сохраняются в вашем событии."
+                : "Подарки из ваших других событий с учётом тегов и цены."}</p>
             {isLoading && <p role="status">Подбираем подарки...</p>}
             {loadError && <div role="alert">
                 <p>{loadError}</p>

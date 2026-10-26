@@ -10,11 +10,11 @@ export async function createEventTag(eventId, name) {
     return response.data
 }
 
-export async function updateEventTag(tagId, name) {
-    const response = await api.patch(`/tags/${tagId}`, { name })
+export async function updateEventTag(eventId, tagId, name) {
+    const response = await api.patch(`/events/${eventId}/tags/${tagId}`, { name })
     return response.data
 }
 
-export async function deleteEventTag(tagId) {
-    await api.delete(`/tags/${tagId}`)
+export async function deleteEventTag(eventId, tagId) {
+    await api.delete(`/events/${eventId}/tags/${tagId}`)
 }

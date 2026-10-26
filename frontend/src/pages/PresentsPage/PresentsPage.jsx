@@ -8,23 +8,16 @@ import { getEvents } from "../../application/eventApplication"
 import {
     getGiftsByEvent,
     deleteGift,
-    editGift,
-    reserveGift,
-    unreserveGift
+    editGift
 } from "../../application/giftApplication"
 import GiftEditForm from "../../components/Gifts/GiftEditForm/GiftEditForm"
 import GiftImage from "../../components/Gifts/GiftImage/GiftImage"
-import { getGiftStatusLabel } from "../../components/Gifts/giftStatus"
 import { getGiftPriorityLabel } from "../../components/Gifts/giftPriority"
 import {
     applySavedGiftPriorities,
     removeSavedGiftPriority,
     saveGiftPriority
 } from "../../application/giftPriorityApplication"
-
-function getStatusClass(status) {
-    return status === "reserved" ? "reserved" : status === "bought" ? "bought" : "available"
-}
 
 function getGiftCountLabel(count) {
     if (count % 10 === 1 && count % 100 !== 11) return "подарок"
@@ -80,8 +73,12 @@ function PresentsPage() {
     }, [gifts, search])
 
     async function handleDelete(giftId) {
-        await deleteGift(giftId)
+        if (!await deleteGift(giftId)) {
+            setError("Не удалось удалить подарок. Попробуйте ещё раз.")
+            return
+        }
         removeSavedGiftPriority(giftId)
+        setError(null)
         setGifts((currentGifts) => currentGifts.filter((gift) => gift.id !== giftId))
     }
 
@@ -97,51 +94,6 @@ function PresentsPage() {
         )))
         setEditingGift(null)
         return true
-    }
-
-    async function handleToggleStatus(gift) {
-        let result
-        if (gift.status === "available") {
-            result = await reserveGift(gift.id)
-        } else if (gift.status === "bought") {
-            result = await editGift(gift.id, { status: "available" })
-        } else {
-            result = gift.reservation_id ? await unreserveGift(gift.reservation_id) : null
-        }
-
-        if (!result) {
-            setError("Не удалось изменить статус подарка")
-            return
-        }
-
-        const refreshedGifts = await getGiftsByEvent(gift.event.id)
-        setGifts((currentGifts) => currentGifts.map((currentGift) => {
-            if (currentGift.event.id !== gift.event.id) return currentGift
-            const refreshedGift = refreshedGifts.find((updatedGift) => updatedGift.id === currentGift.id)
-            return refreshedGift
-                ? {
-                    ...applySavedGiftPriorities([{
-                        ...refreshedGift,
-                        priority: refreshedGift.priority || currentGift.priority
-                    }])[0],
-                    event: currentGift.event
-                }
-                : currentGift
-        }))
-    }
-
-    async function handleMarkBought(gift) {
-        const updatedGift = await editGift(gift.id, { status: "bought" })
-        if (!updatedGift) {
-            setError("Не удалось подтвердить покупку")
-            return
-        }
-
-        setGifts((currentGifts) => currentGifts.map((currentGift) => (
-            currentGift.id === gift.id
-                ? { ...updatedGift, event: currentGift.event }
-                : currentGift
-        )))
     }
 
     return (
@@ -182,12 +134,12 @@ function PresentsPage() {
                     </div>
 
                     {isLoading && <p className="presents-status">Загружаем подарки...</p>}
-                    {!isLoading && error && <p className="presents-status error-text">{error}</p>}
+                    {error && <p className="presents-status error-text">{error}</p>}
                     {!isLoading && !error && filteredGifts.length === 0 && (
                         <p className="presents-status">Подарки не найдены.</p>
                     )}
 
-                    {!isLoading && !error && filteredGifts.length > 0 && (
+                    {!isLoading && filteredGifts.length > 0 && (
                         <div className="presents-grid">
                             {filteredGifts.map((gift) => (
                                 <article
@@ -221,31 +173,7 @@ function PresentsPage() {
                                                 {gift.description || "Описание подарка пока не добавлено."}
                                             </p>
                                             <strong className="presents-price">{gift.price} ₽</strong>
-                                            <div className="presents-status-controls">
-                                                <span className={`presents-badge ${getStatusClass(gift.status)}`}>
-                                                    {getGiftStatusLabel(gift.status)}
-                                                </span>
-                                                <div className="presents-status-buttons">
-                                                    <button className="presents-button secondary" onClick={(event) => {
-                                                        event.stopPropagation()
-                                                        handleToggleStatus(gift)
-                                                    }}>
-                                                        {gift.status === "available"
-                                                            ? "Забронировать"
-                                                            : gift.status === "bought"
-                                                                ? "Отмена"
-                                                                : "Отменить"}
-                                                    </button>
-                                                    {gift.status === "reserved" && (
-                                                        <button className="presents-button secondary" onClick={(event) => {
-                                                            event.stopPropagation()
-                                                            handleMarkBought(gift)
-                                                        }}>
-                                                            Куплено
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </div>
+                                            <p className="presents-muted">Брони скрыты. Посмотреть их можно на странице события.</p>
                                         </div>
                                     </div>
                                     <div className="presents-gift-bottom">

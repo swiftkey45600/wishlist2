@@ -50,8 +50,9 @@ function EventPage() {
     }, [event?.title])
 
     async function handleDeleteEvent() {
-        await deleteEvent(id)
+        if (!await deleteEvent(id)) return false
         navigate("/")
+        return true
     }
 
     async function handleEditEvent(eventData) {

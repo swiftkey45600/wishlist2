@@ -57,7 +57,9 @@ function CreateEventForm({ onCreateEvent, onCancel }) {
         <div className="create-event-form">
             <h2>Создать событие</h2>
             <form className="create-event-form-fields" onSubmit={handleSubmit}>
-                <label className="create-event-field">Название<input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Например, День рождения" autoFocus /></label>
+                <label className="create-event-field">Название<input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Например, День рождения" aria-invalid={error === "Введите название события"} aria-describedby="create-event-title-error" autoFocus />
+                    {error === "Введите название события" && <span id="create-event-title-error" className="create-event-error" role="alert">{error}</span>}
+                </label>
                 <label className="create-event-field">Описание<input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Описание события" /></label>
                 <label className="create-event-field">Дата и время<input value={eventDate} type="datetime-local" onChange={(event) => setEventDate(event.target.value)} /></label>
                 <label className="create-event-field">Место<input value={place} onChange={(event) => setPlace(event.target.value)} placeholder="Город или место" /></label>
@@ -82,7 +84,7 @@ function CreateEventForm({ onCreateEvent, onCancel }) {
                     />
                 </label>
                 {coverPreview && <img className="event-cover-preview" src={coverPreview} alt="Предпросмотр обложки события" />}
-                {error && <p className="create-event-error">{error}</p>}
+                {error && error !== "Введите название события" && <p className="create-event-error" role="alert">{error}</p>}
                 <div className="create-event-actions">
                     <button type="button" className="create-event-secondary" onClick={onCancel} disabled={isSaving}>Отмена</button>
                     <button type="submit" className="create-event-primary" disabled={isSaving}>{isSaving ? "Создание..." : "Создать"}</button>
