@@ -30,7 +30,8 @@
 }
 
 .gift-edit-form input,
-.gift-edit-form textarea {
+.gift-edit-form textarea,
+.gift-edit-form select {
     box-sizing: border-box;
     width: 100%;
 
@@ -64,7 +65,8 @@
 }
 
 .gift-edit-form input:focus,
-.gift-edit-form textarea:focus {
+.gift-edit-form textarea:focus,
+.gift-edit-form select:focus {
     outline: none;
 
     border-color: var(--primary);

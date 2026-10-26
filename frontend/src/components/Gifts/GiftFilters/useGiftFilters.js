@@ -1,4 +1,5 @@
 import { useSearchParams } from "react-router-dom"
+import { getGiftPriorityRank } from "../giftPriority"
 
 function getNonNegativeNumber(value) {
     if (value === "" || value === null) return null
@@ -43,6 +44,8 @@ export function useGiftFilters(gifts, hideStatus = false) {
             ? Number(left.price) - Number(right.price)
             : filters.sortBy === "title"
                 ? (left.title || "").localeCompare(right.title || "", "ru")
+                : filters.sortBy === "priority"
+                    ? getGiftPriorityRank(left.priority || "normal") - getGiftPriorityRank(right.priority || "normal")
                 : Number(left.id) - Number(right.id)
         return filters.sortOrder === "desc" ? -comparison : comparison
     })
