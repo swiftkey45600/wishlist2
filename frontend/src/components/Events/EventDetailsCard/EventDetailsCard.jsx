@@ -1,6 +1,11 @@
 import "./EventDetailsCard.css"
+import { resolveImageUrl } from "../../../application/imageApplication"
 
 function EventDetailsCard({ event, onShare, onEdit, onDelete }) {
+    const coverUrl = resolveImageUrl(
+        event.cover_image_id,
+        event.cover_url || event.cover_image_url
+    )
     const eventDate = event.event_date ? new Date(event.event_date) : null
     const formattedDate = eventDate
         ? eventDate.toLocaleDateString("ru-RU", {
@@ -13,7 +18,9 @@ function EventDetailsCard({ event, onShare, onEdit, onDelete }) {
     return (
         <div className="event-details-card">
             <div className="event-cover">
-                <div className="event-icon">🎂</div>
+                {coverUrl
+                    ? <img className="event-cover-image" src={coverUrl} alt={`Обложка события «${event.title}»`} />
+                    : <div className="event-icon">🎂</div>}
             </div>
             <div className="event-info">
                 <div>

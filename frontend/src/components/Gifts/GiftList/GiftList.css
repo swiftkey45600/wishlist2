@@ -128,7 +128,8 @@
 }
 
 .gift-create-form input,
-.gift-create-form textarea {
+.gift-create-form textarea,
+.gift-create-form select {
     box-sizing: border-box;
     width: 100%;
     padding: 11px 12px;
@@ -147,7 +148,8 @@
 }
 
 .gift-create-form input:focus,
-.gift-create-form textarea:focus {
+.gift-create-form textarea:focus,
+.gift-create-form select:focus {
     border-color: var(--primary);
     box-shadow: 0 0 0 3px #655cff1c;
 }

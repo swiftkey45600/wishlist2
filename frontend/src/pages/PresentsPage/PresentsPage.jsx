@@ -12,6 +12,12 @@ import {
 } from "../../application/giftApplication"
 import GiftEditForm from "../../components/Gifts/GiftEditForm/GiftEditForm"
 import GiftImage from "../../components/Gifts/GiftImage/GiftImage"
+import { getGiftPriorityLabel } from "../../components/Gifts/giftPriority"
+import {
+    applySavedGiftPriorities,
+    removeSavedGiftPriority,
+    saveGiftPriority
+} from "../../application/giftPriorityApplication"
 
 function getGiftCountLabel(count) {
     if (count % 10 === 1 && count % 100 !== 11) return "подарок"
@@ -45,7 +51,7 @@ function PresentsPage() {
                     })
                 )
 
-                setGifts(giftGroups.flat())
+                setGifts(applySavedGiftPriorities(giftGroups.flat()))
             } catch (loadError) {
                 console.error(loadError)
                 setError("Не удалось загрузить подарки")
@@ -71,6 +77,7 @@ function PresentsPage() {
             setError("Не удалось удалить подарок. Попробуйте ещё раз.")
             return
         }
+        removeSavedGiftPriority(giftId)
         setError(null)
         setGifts((currentGifts) => currentGifts.filter((gift) => gift.id !== giftId))
     }
@@ -79,8 +86,11 @@ function PresentsPage() {
         const updatedGift = await editGift(giftId, data)
         if (!updatedGift) return false
 
+        saveGiftPriority(giftId, data.priority || updatedGift.priority || "normal")
         setGifts((currentGifts) => currentGifts.map((gift) => (
-            gift.id === giftId ? { ...updatedGift, event: gift.event } : gift
+            gift.id === giftId
+                ? { ...updatedGift, priority: data.priority || updatedGift.priority || gift.priority || "normal", event: gift.event }
+                : gift
         )))
         setEditingGift(null)
         return true
@@ -145,6 +155,11 @@ function PresentsPage() {
                                         />
                                         <div>
                                             <h3>{gift.title}</h3>
+                                            {gift.priority === "high" && (
+                                                <span className="gift-priority-badge">
+                                                    {getGiftPriorityLabel(gift.priority)}
+                                                </span>
+                                            )}
                                             <button
                                                 className="presents-event-link"
                                                 onClick={(event) => {
@@ -202,6 +217,7 @@ function PresentsPage() {
                                         description: editingGift.description?.trim() || null,
                                         picture_url: editingGift.picture_url?.trim() || null,
                                         marketplace_url: editingGift.marketplace_url?.trim() || null,
+                                        priority: editingGift.priority || "normal",
                                         image_id: imageId ?? null,
                                         ...(imageId ? { picture_url: null } : {})
                                     })}

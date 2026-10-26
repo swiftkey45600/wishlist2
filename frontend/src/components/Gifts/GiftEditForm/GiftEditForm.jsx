@@ -6,6 +6,7 @@ import TagSelector from "../../Tags/TagSelector/TagSelector"
 import FundraisingGoalInput from "../GiftFundraising/FundraisingGoalInput"
 import { parseContributionGoal } from "../../../application/contributionApplication"
 import RecommendationSharingInput from "../GiftRecommendations/RecommendationSharingInput"
+import { giftPriorityOptions } from "../giftPriority"
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"])
 
@@ -162,6 +163,18 @@ function GiftEditForm({ gift, tags, tagsDisabled = false, onTagsChange, onChange
                     }}
                 />
                 {fieldErrors.price && <span id="edit-gift-price-error" className="gift-form-error" role="alert">{fieldErrors.price}</span>}
+            </label>
+
+            <label>
+                Приоритет
+                <select
+                    value={gift.priority || "normal"}
+                    onChange={e => onChange({ ...gift, priority: e.target.value })}
+                >
+                    {giftPriorityOptions.map(option => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                </select>
             </label>
 
             <label>
