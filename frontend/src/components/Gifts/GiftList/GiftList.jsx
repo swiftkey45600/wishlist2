@@ -341,7 +341,7 @@ function GiftList({ eventId, isOwner, onGiftDataChange }) {
                                 }
                             }}
                         >
-                            {showReservations ? "Скрыть брони" : "Показать брони"}
+                            {showReservations ? "Скрыть брони" : "Показать брони (спойлер)"}
                         </button>
                     )}
                     {isOwner && <button
