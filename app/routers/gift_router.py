@@ -99,6 +99,7 @@ class GiftUpdateRequest(BaseModel):
     status: Optional[Literal["available", "bought"]] = None
     is_reserved: Optional[bool] = None
     tag_ids: list[int] = Field(default_factory=list)
+    contribution_goal: int | None = Field(default=None, gt=0, le=9223372036854775807)
 
     @field_validator("title", "price", "status")
     @classmethod
