@@ -145,3 +145,23 @@ test("adding a recommendation copies only product data", async () => {
     assert.equal(body.status, "available")
     for (const key of ["id", "reservation_id", "tags", "public_token"]) assert.equal(key in body, false)
 })
+
+test("server gift priority takes precedence over the local fallback", async () => {
+    const values = new Map([["wishlist.gift-priority.7", "low"]])
+    const context = vm.createContext({
+        Error,
+        console,
+        localStorage: {
+            getItem(key) { return values.get(key) || null },
+            setItem(key, value) { values.set(key, value) }
+        }
+    })
+    const source = await readFile(new URL("../src/application/giftPriorityApplication.js", import.meta.url), "utf8")
+    const module = new vm.SourceTextModule(source, { context })
+    await module.link(() => { throw new Error("Unexpected import") })
+    await module.evaluate()
+
+    const [gift] = module.namespace.applySavedGiftPriorities([{ id: 7, priority: "high" }])
+    assert.equal(gift.priority, "high")
+    assert.equal(values.get("wishlist.gift-priority.7"), "high")
+})

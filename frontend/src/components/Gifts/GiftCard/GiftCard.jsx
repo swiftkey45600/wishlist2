@@ -6,7 +6,7 @@ import { getGiftPriorityLabel } from "../giftPriority"
 
 function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit, hideReservationDetails = false,
     publicToken, isOwner = false, onGiftChange }) {
-    const hideStatus = hideReservationDetails
+    const hideStatus = hideReservationDetails && ["reserved", "bought"].includes(gift.status)
 
     return (
         <div className="gift-card">
@@ -64,6 +64,7 @@ function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit, hideRe
                 gift={gift}
                 publicToken={publicToken}
                 isOwner={isOwner}
+                hideContributionDetails={hideReservationDetails && isOwner}
                 onGiftChange={onGiftChange}
             />}
 

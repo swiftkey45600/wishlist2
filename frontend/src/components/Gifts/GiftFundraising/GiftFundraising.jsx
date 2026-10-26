@@ -6,7 +6,7 @@ function validSecretWord(value) {
     return Boolean(value.trim()) && new TextEncoder().encode(value).length <= 72
 }
 
-function GiftFundraising({ gift, publicToken, isOwner, onGiftChange }) {
+function GiftFundraising({ gift, publicToken, isOwner, hideContributionDetails = false, onGiftChange }) {
     const [isOpen, setIsOpen] = useState(false)
     const [entries, setEntries] = useState([])
     const [isLoading, setIsLoading] = useState(false)
@@ -27,6 +27,7 @@ function GiftFundraising({ gift, publicToken, isOwner, onGiftChange }) {
     const goal = gift.contribution_goal
     const remaining = Math.max(0, goal - total)
     const canContribute = !isOwner && publicToken && remaining > 0 && gift.status === "available"
+    const canViewContributions = !isOwner || !hideContributionDetails
 
     useEffect(() => {
         active.current = true
@@ -145,7 +146,8 @@ function GiftFundraising({ gift, publicToken, isOwner, onGiftChange }) {
                 <span>{remaining > 0 ? `Осталось ${remaining.toLocaleString("ru-RU")} ₽` : "Цель достигнута"}</span>
             </div>
             <progress value={Math.min(total, goal)} max={goal} aria-label="Прогресс сбора" />
-            <button type="button" className="gift-secondary-button" disabled={isLoading || isBusy}
+            <p className="fundraising-hint">Это учёт обещанных взносов: переводы и оплата через сайт не выполняются.</p>
+            {(canContribute || canViewContributions) && <button type="button" className="gift-secondary-button" disabled={isLoading || isBusy}
                 aria-expanded={isOpen}
                 onClick={() => {
                     if (isOpen) {
@@ -155,15 +157,15 @@ function GiftFundraising({ gift, publicToken, isOwner, onGiftChange }) {
                         setSecretWord("")
                     } else openContributions()
                 }}>
-                {isOpen ? "Скрыть взносы" : canContribute ? "Внести вклад / посмотреть взносы" : "Посмотреть взносы"}
-            </button>
-            {isOpen && <div className="fundraising-details">
+                {isOpen ? "Скрыть взносы" : canContribute ? "Скинуться / посмотреть взносы" : "Посмотреть взносы"}
+            </button>}
+            {isOpen && canViewContributions && <div className="fundraising-details">
                 <button type="button" className="gift-secondary-button" disabled={isBusy || isLoading} onClick={retryRefresh}>
                     Обновить сбор
                 </button>
                 {isLoading && <p role="status">Загружаем взносы...</p>}
-                {!isLoading && hasLoaded && entries.length === 0 && <p>Пока никто не внёс вклад.</p>}
-                {entries.length > 0 && <ul className="fundraising-entries">
+                {!isLoading && hasLoaded && canViewContributions && entries.length === 0 && <p>Пока никто не внёс вклад.</p>}
+                {canViewContributions && entries.length > 0 && <ul className="fundraising-entries">
                     {entries.map(entry => <li key={entry.id}>
                         <span>{entry.contributor_name || "Анонимно"} — {entry.amount.toLocaleString("ru-RU")} ₽</span>
                         {publicToken && entry.can_cancel && gift.status !== "bought" && <button type="button" className="gift-secondary-button"
