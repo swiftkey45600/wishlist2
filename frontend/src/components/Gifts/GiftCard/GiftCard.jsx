@@ -4,9 +4,19 @@ import { getGiftStatusLabel } from "../giftStatus"
 import GiftFundraising from "../GiftFundraising/GiftFundraising"
 import { getGiftPriorityLabel } from "../giftPriority"
 
+function marketplaceLink(value) {
+    try {
+        const url = new URL(value)
+        return ["http:", "https:"].includes(url.protocol) ? url.toString() : ""
+    } catch {
+        return ""
+    }
+}
+
 function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit, hideReservationDetails = false,
     publicToken, isOwner = false, onGiftChange }) {
     const hideStatus = hideReservationDetails && ["reserved", "bought"].includes(gift.status)
+    const productUrl = marketplaceLink(gift.marketplace_url)
 
     return (
         <div className="gift-card">
@@ -86,8 +96,8 @@ function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit, hideRe
             />}
 
             <div className="gift-card-footer">
-                {gift.marketplace_url && (
-                    <a className="gift-marketplace" href={gift.marketplace_url} target="_blank" rel="noopener noreferrer">Открыть товар ↗</a>
+                {productUrl && (
+                    <a className="gift-marketplace" href={productUrl} target="_blank" rel="noopener noreferrer">Открыть товар ↗</a>
                 )}
                 <div className="gift-actions">
                     {onEdit && <button className="gift-secondary-button" onClick={() => onEdit(gift)}>Изменить</button>}
