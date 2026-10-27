@@ -5,6 +5,7 @@ import EventPage from "./pages/EventPage/EventPage"
 import ProfilePage from "./pages/ProfilePage/ProfilePage";
 import AuthPage from "./pages/AuthPage/AuthPage"
 import PublicEventPage from "./pages/PublicEventPage/PublicEventPage"
+import PasswordRecoveryPage from "./components/AccountEmail/PasswordRecoveryPage"
 import PresentsPage from "./pages/PresentsPage/PresentsPage"
 
 function ProtectedRoute({ children }) {
@@ -17,6 +18,8 @@ function App() {
     
 
     <Routes>
+      <Route path="/forgot-password" element={<PasswordRecoveryPage />} />
+      <Route path="/reset-password" element={<PasswordRecoveryPage reset />} />
       <Route 
         path="/auth" 
         element={<AuthPage />} 

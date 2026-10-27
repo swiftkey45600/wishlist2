@@ -1,5 +1,6 @@
 import "./GiftCard.css"
 import GiftImage from "../GiftImage/GiftImage"
+import GiftQuestions from "../GiftQuestions/GiftQuestions"
 import { getGiftStatusLabel } from "../giftStatus"
 import GiftFundraising from "../GiftFundraising/GiftFundraising"
 import { getGiftPriorityLabel } from "../giftPriority"
@@ -94,6 +95,8 @@ function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit, hideRe
                 hideContributionDetails={hideReservationDetails && isOwner}
                 onGiftChange={onGiftChange}
             />}
+
+            {publicToken && <GiftQuestions token={publicToken} giftId={gift.id} isOwner={isOwner} />}
 
             <div className="gift-card-footer">
                 {productUrl && (
