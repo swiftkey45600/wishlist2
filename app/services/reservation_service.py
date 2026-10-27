@@ -42,6 +42,9 @@ class ReservationService:
     ) -> Reservation:
         self._check_guest_rate_limit(client_ip)
         gift = self._get_public_gift(public_token, gift_id)
+        event = self.event_repository.get_event_by_public_token(public_token)
+        if event is not None and event.status == "archived":
+            raise HTTPException(status_code=409, detail="Event is archived")
         if gift.status != "available" or gift.contribution_goal is not None:
             raise HTTPException(status_code=409, detail="Gift is not available for reservation")
         reservation = Reservation(gift_id=gift_id, is_anonymous=False, reserver_name=name)
@@ -75,6 +78,8 @@ class ReservationService:
         if gift is None:
             raise HTTPException(status_code=404, detail="Gift not found")
         event = self.event_repository.get_event_by_id(gift.event_id)
+        if event is not None and event.status == "archived":
+            raise HTTPException(status_code=409, detail="Event is archived")
         if event is not None and event.owner_id == reserver_id:
             raise HTTPException(status_code=403, detail="Event owner cannot reserve their own gift")
         if gift.status != "available" or gift.contribution_goal is not None:

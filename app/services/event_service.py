@@ -1,6 +1,9 @@
 import secrets
 
+from fastapi import HTTPException
+
 from app.models import Event
+from app.models.event import EventCopyRequest, EventStatus
 from app.repositories import EventRepository
 from app.repositories import GiftRepository
 
@@ -37,17 +40,36 @@ class EventService:
     def get_event(self, event_id: int) -> Event | None:
         return self.event_repository.get_event_by_id(event_id)
 
-    def get_user_events(self, owner_id: int) -> list[Event]:
-        return self.event_repository.get_events_by_user(owner_id)
+    def get_user_events(self, owner_id: int, status: EventStatus | None = None) -> list[Event]:
+        return self.event_repository.get_events_by_user(owner_id, status)
+
+    def _owned_event(self, event_id: int, owner_id: int) -> Event:
+        event = self.get_event(event_id)
+        if event is None:
+            raise HTTPException(status_code=404, detail="Event not found")
+        if event.owner_id != owner_id:
+            raise HTTPException(status_code=403, detail="Only the event owner can manage this event")
+        return event
+
+    def set_status(self, event_id: int, owner_id: int, status: EventStatus) -> Event:
+        self._owned_event(event_id, owner_id)
+        event = self.event_repository.set_status(event_id, owner_id, status)
+        if event is None:
+            raise HTTPException(status_code=404, detail="Event not found")
+        return event
+
+    def copy_event(self, event_id: int, owner_id: int, data: EventCopyRequest) -> Event:
+        self._owned_event(event_id, owner_id)
+        event = self.event_repository.copy_event(event_id, owner_id, data.title, data.event_date)
+        if event is None:
+            raise HTTPException(status_code=404, detail="Event not found")
+        return event
 
     def get_event_by_token(self, public_token: str) -> Event | None:
         return self.event_repository.get_event_by_public_token(public_token)
 
     def list_events(self) -> list[Event]:
         return self.event_repository.list_events()
-
-    def update_event(self, event_id: int, data: dict) -> Event | None:
-        return self.event_repository.update_event(event_id, data)
 
     def delete_event(self, event_id: int) -> bool:
         return self.event_repository.delete_event(event_id)

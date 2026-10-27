@@ -101,7 +101,10 @@ def delete_image(
         raise HTTPException(status_code=403, detail="Only the image uploader can delete it")
 
     image_path = Path(image.image_path)
-    deleted = image_repository.delete_image(image_id, current_user.id)
+    try:
+        deleted = image_repository.delete_image(image_id, current_user.id)
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
     if not deleted:
         raise HTTPException(status_code=404, detail="Image not found")
 

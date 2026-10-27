@@ -103,6 +103,9 @@ class ImageRepository:
             return False
 
         with get_connection() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            if connection.execute("SELECT 1 FROM gifts WHERE image_id = ? LIMIT 1", (image_id,)).fetchone():
+                raise ValueError("Image is still used by a gift; detach it before deleting")
             cursor = connection.execute(
                 """
                 DELETE FROM images

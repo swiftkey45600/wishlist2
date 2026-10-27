@@ -6,7 +6,43 @@ CREATE TABLE IF NOT EXISTS users (
     login TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     birthday TEXT,
-    gender INTEGER
+    gender INTEGER,
+    email TEXT COLLATE NOCASE,
+    email_verified INTEGER NOT NULL DEFAULT 0 CHECK (email_verified IN (0, 1)),
+    auth_version INTEGER NOT NULL DEFAULT 0 CHECK (auth_version >= 0)
+);
+
+CREATE TABLE IF NOT EXISTS email_verification_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    email TEXT NOT NULL,
+    token_hash TEXT NOT NULL UNIQUE,
+    expires_at INTEGER NOT NULL,
+    activated_at INTEGER,
+    used_at INTEGER,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS email_verification_user ON email_verification_tokens(user_id);
+
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    email TEXT NOT NULL,
+    auth_version INTEGER NOT NULL,
+    token_hash TEXT NOT NULL UNIQUE,
+    expires_at INTEGER NOT NULL,
+    activated_at INTEGER,
+    used_at INTEGER,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS password_reset_user ON password_reset_tokens(user_id);
+
+CREATE TABLE IF NOT EXISTS auth_mail_rate_limits (
+    key TEXT PRIMARY KEY,
+    attempts INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS events (
@@ -17,6 +53,7 @@ CREATE TABLE IF NOT EXISTS events (
     event_date TEXT,
     place TEXT,
     public_token TEXT UNIQUE,
+    status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'archived')),
     FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
 );
 

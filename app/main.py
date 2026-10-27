@@ -14,6 +14,8 @@ from app.routers import image_router
 from app.routers import marketplace_router
 from app.routers import tag_router
 from app.routers import contribution_router
+from app.routers import email_verification_router
+from app.routers import password_reset_router
 
 
 app = FastAPI()
@@ -42,6 +44,8 @@ app.include_router(image_router.router)
 app.include_router(marketplace_router.router)
 app.include_router(tag_router.router)
 app.include_router(contribution_router.router)
+app.include_router(email_verification_router.router)
+app.include_router(password_reset_router.router)
 
 
 @app.get("/")

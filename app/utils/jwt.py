@@ -24,12 +24,17 @@ def get_optional_user(credentials: HTTPAuthorizationCredentials | None = Depends
 
 def _user_from_payload(payload):
     user_id = payload.get("user_id")
+    user = None
     if isinstance(user_id, int) and not isinstance(user_id, bool) and 0 < user_id <= 9223372036854775807:
-        return _user_repository.get_user_by_id(user_id)
+        user = _user_repository.get_user_by_id(user_id)
     # Compatibility with tokens issued before user_id was included.
-    if user_id is None:
-        return _user_repository.get_user_by_login(payload.get("sub"))
-    return None
+    elif user_id is None:
+        user = _user_repository.get_user_by_login(payload.get("sub"))
+    # Legacy tokens without a version remain valid only until the first password change.
+    version = payload.get("auth_version", 0)
+    if user is None or not isinstance(version, int) or isinstance(version, bool) or version != user.auth_version:
+        return None
+    return user
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()

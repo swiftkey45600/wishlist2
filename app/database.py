@@ -40,6 +40,19 @@ def _column_exists(connection: sqlite3.Connection, table_name: str, column_name:
 
 
 def _run_migrations(connection: sqlite3.Connection) -> None:
+    if not _column_exists(connection, "users", "email"):
+        connection.execute("ALTER TABLE users ADD COLUMN email TEXT COLLATE NOCASE")
+    if not _column_exists(connection, "users", "email_verified"):
+        connection.execute("ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0 CHECK (email_verified IN (0, 1))")
+    if not _column_exists(connection, "users", "auth_version"):
+        connection.execute("ALTER TABLE users ADD COLUMN auth_version INTEGER NOT NULL DEFAULT 0 CHECK (auth_version >= 0)")
+    connection.execute("CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique ON users(email COLLATE NOCASE)")
+    if not _column_exists(connection, "events", "status"):
+        connection.execute(
+            "ALTER TABLE events ADD COLUMN status TEXT NOT NULL DEFAULT 'active' "
+            "CHECK (status IN ('active', 'archived'))"
+        )
+    connection.execute("CREATE INDEX IF NOT EXISTS events_owner_status ON events(owner_id, status)")
     if not _column_exists(connection, "gifts", "share_in_recommendations"):
         connection.execute("ALTER TABLE gifts ADD COLUMN share_in_recommendations INTEGER NOT NULL DEFAULT 0")
     if not _column_exists(connection, "gifts", "contribution_goal"):
