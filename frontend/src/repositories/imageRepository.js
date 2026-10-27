@@ -12,11 +12,12 @@ export function resolveImageUrl(imageId, imageUrl) {
     }
     if (!imageUrl) return ""
 
-    const apiBaseUrl = getApiBaseUrl()
     try {
-        return new URL(imageUrl).toString()
+        const url = new URL(imageUrl)
+        return ["http:", "https:"].includes(url.protocol) ? url.toString() : ""
     } catch {
-        return new URL(imageUrl.replace(/^\/+/, ""), apiBaseUrl).toString()
+        if (/^[a-z][a-z\d+.-]*:/i.test(imageUrl)) return ""
+        return new URL(imageUrl.replace(/^\/+/, ""), getApiBaseUrl()).toString()
     }
 }
 

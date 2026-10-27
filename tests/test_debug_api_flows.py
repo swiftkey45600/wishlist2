@@ -46,7 +46,7 @@ class DebugApiFlows(unittest.TestCase):
 
     def test_owner_cannot_reserve_own_gift_through_legacy_endpoint(self):
         gift = self.client.post('/gifts/', json={'event_id': self.event['id'], 'title': 'Gift', 'price': 100}).json()
-        response = self.client.post('/reservations/', json={'gift_id': gift['id'], 'is_anonymous': False})
+        response = self.client.post('/reservations/', json={'gift_id': gift['id'], 'is_anonymous': False, 'public_token': self.event['public_token']})
         self.assertEqual(response.status_code, 403, response.text)
         self.assertEqual(self.client.get(f'/gifts/{gift["id"]}?show_reservations=true').json()['status'], 'available')
 
@@ -58,7 +58,7 @@ class DebugApiFlows(unittest.TestCase):
             barrier.wait(timeout=10)
             return None
         def reserve(_):
-            return self.client.post('/reservations/', json={'gift_id': gift['id'], 'is_anonymous': False},
+            return self.client.post('/reservations/', json={'gift_id': gift['id'], 'is_anonymous': False, 'public_token': self.event['public_token']},
                 headers={'Authorization': 'Bearer ' + guest['access_token']}).status_code
         with patch('app.routers.reservation_router.reservation_service.reservation_repository.get_reservation_by_gift', side_effect=no_reservation):
             with ThreadPoolExecutor(max_workers=2) as executor:

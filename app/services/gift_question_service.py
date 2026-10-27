@@ -4,6 +4,7 @@ from app.models.user import User
 from app.repositories.event_repository import EventRepository
 from app.repositories.gift_repository import GiftRepository
 from app.repositories.gift_question_repository import GiftQuestionRepository
+from app.repositories.reservation_repository import ReservationRepository
 
 
 class GiftQuestionService:
@@ -30,8 +31,11 @@ class GiftQuestionService:
         self._check_public_gift(public_token, gift_id)
         return self.questions.get_questions(gift_id)
 
-    def create_question(self, public_token: str, gift_id: int, guest_name: str, text: str):
+    def create_question(self, public_token: str, gift_id: int, guest_name: str, text: str, client_ip: str):
         self._check_public_gift(public_token, gift_id)
+        retry_after = ReservationRepository().check_guest_rate_limit(f"question:{client_ip}")
+        if retry_after is not None:
+            raise HTTPException(status_code=429, detail="Too many questions", headers={"Retry-After": str(retry_after)})
         return self.questions.create_question(gift_id, guest_name, text)
 
     def answer_question(self, gift_id: int, question_id: int, answer: str, current_user: User):

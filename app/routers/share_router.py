@@ -64,7 +64,13 @@ def get_share_preview(public_token: str, request: Request):
         api_prefix = ""
 
     image_url = None
+    if event.cover_image_id is not None:
+        image = image_repository.get_image_by_id(event.cover_image_id)
+        if image is not None and Path(image.image_path).is_file():
+            image_url = f"{origin}{api_prefix}/images/{image.id}"
     for gift in gifts:
+        if image_url is not None:
+            break
         if gift.image_id is not None:
             image = image_repository.get_image_by_id(gift.image_id)
             if image is not None and Path(image.image_path).is_file():

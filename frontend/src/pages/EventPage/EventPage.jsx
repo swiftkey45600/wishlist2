@@ -30,16 +30,22 @@ function EventPage() {
         : window.location.href
 
     useEffect(() => {
+        let cancelled = false
         async function loadEvent() {
             setIsLoading(true)
 
             const eventById = await getEvent(id)
-            setEvent(eventById)
-
-            setIsLoading(false)
+            if (!cancelled) {
+                setEvent(eventById)
+                setIsLoading(false)
+                setIsEditModalOpen(false)
+                setIsDeleteModalOpen(false)
+                setIsShareModalOpen(false)
+            }
         }
 
         loadEvent()
+        return () => { cancelled = true }
     }, [id])
 
     useEffect(() => {

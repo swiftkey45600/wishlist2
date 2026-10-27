@@ -123,6 +123,8 @@ function GiftEditForm({ gift, tags, tagsDisabled = false, onTagsChange, onChange
 
             const saved = await onSave(imageId)
             if (!saved) setError("Не удалось сохранить подарок")
+        } catch {
+            setError("Не удалось сохранить подарок. Обновите данные и попробуйте снова.")
         } finally {
             setIsSaving(false)
         }

@@ -13,7 +13,7 @@ export function useGiftFilters(gifts, hideStatus = false) {
         search: searchParams.get("q") || searchParams.get("giftSearch") || "",
         status: hideStatus ? "" : searchParams.get("status") || searchParams.get("giftStatus") || "",
         tagIds: searchParams.getAll("tags").length
-            ? searchParams.getAll("tags").slice(0, 1)
+            ? searchParams.getAll("tags")
             : searchParams.get("giftTag")
                 ? [searchParams.get("giftTag")]
                 : [],
@@ -34,12 +34,18 @@ export function useGiftFilters(gifts, hideStatus = false) {
                 ? !gift.tags?.length
                 : gift.tags?.some((tag) => String(tag.id) === tagId))
         const price = Number(gift.price)
-        const matchesMinPrice = minPrice === null || price >= minPrice
-        const matchesMaxPrice = maxPrice === null || price <= maxPrice
+        const hasPrice = gift.price !== null && gift.price !== undefined && Number.isFinite(price)
+        const matchesMinPrice = minPrice === null || (hasPrice && price >= minPrice)
+        const matchesMaxPrice = maxPrice === null || (hasPrice && price <= maxPrice)
 
         return matchesSearch && matchesStatus && matchesTag && matchesMinPrice && matchesMaxPrice
     })
     const sortedGifts = [...filteredGifts].sort((left, right) => {
+        if (filters.sortBy === "price") {
+            const leftMissing = left.price === null || left.price === undefined
+            const rightMissing = right.price === null || right.price === undefined
+            if (leftMissing !== rightMissing) return leftMissing ? 1 : -1
+        }
         const comparison = filters.sortBy === "price"
             ? Number(left.price) - Number(right.price)
             : filters.sortBy === "title"
@@ -63,6 +69,9 @@ export function useGiftFilters(gifts, hideStatus = false) {
 
         setSearchParams((currentParams) => {
             const nextParams = new URLSearchParams(currentParams)
+            for (const [legacy, current] of [["giftSearch", "q"], ["giftStatus", "status"], ["giftTag", "tags"]]) {
+                if (!nextParams.has(current) && nextParams.has(legacy)) nextParams.set(current, nextParams.get(legacy))
+            }
             nextParams.delete("giftSearch")
             nextParams.delete("giftStatus")
             nextParams.delete("giftTag")

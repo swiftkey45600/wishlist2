@@ -1,4 +1,5 @@
 from typing import List
+from sqlite3 import IntegrityError
 
 from fastapi import HTTPException
 
@@ -68,7 +69,10 @@ class GiftService:
             raise HTTPException(status_code=404, detail="Image not found")
 
         self._validate_tag_ids(gift.event_id, tag_ids or [])
-        created_gift = self.gift_repository.create_gift(gift, tag_ids)
+        try:
+            created_gift = self.gift_repository.create_gift(gift, tag_ids)
+        except IntegrityError as error:
+            raise HTTPException(status_code=409, detail="Gift references changed; reload the event and try again") from error
         return self._prepare_gift_response(created_gift)
 
     def get_gift_by_id(self, gift_id: int) -> Gift:
@@ -119,6 +123,8 @@ class GiftService:
             updated_gift = self.gift_repository.update_gift(gift_id, data)
         except ValueError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
+        except IntegrityError as error:
+            raise HTTPException(status_code=409, detail="Gift references changed; reload the event and try again") from error
         if updated_gift is None:
             raise HTTPException(status_code=404, detail="Gift not found")
         return self._prepare_gift_response(updated_gift)
