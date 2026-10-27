@@ -12,13 +12,14 @@ class EventRepository:
             event_date=row["event_date"],
             place=row["place"],
             public_token=row["public_token"],
+            cover_image_id=row["cover_image_id"],
         )
 
     def create_event(self, event: Event) -> Event:
         with get_connection() as conn:
             cursor = conn.execute(
-                "INSERT INTO events (owner_id, title, description, event_date, place, public_token) VALUES (?, ?, ?, ?, ?, ?)",
-                (event.owner_id, event.title, event.description, event.event_date, event.place, event.public_token),
+                "INSERT INTO events (owner_id, title, description, event_date, place, public_token, cover_image_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (event.owner_id, event.title, event.description, event.event_date, event.place, event.public_token, event.cover_image_id),
             )
             event.id = cursor.lastrowid
         return event
@@ -47,19 +48,6 @@ class EventRepository:
             rows = conn.execute("SELECT * FROM events").fetchall()
         return [self._row_to_event(row) for row in rows]
 
-    def update_event(self, event_id: int, data: dict) -> Event | None:
-        if not data:
-            return self.get_event_by_id(event_id)
-
-        set_clause = ", ".join(f"{field} = ?" for field in data)
-        with get_connection() as conn:
-            conn.execute(
-                f"UPDATE events SET {set_clause} WHERE id = ?",
-                (*data.values(), event_id),
-            )
-
-        return self.get_event_by_id(event_id)
-
     def delete_event(self, event_id: int) -> bool:
         with get_connection() as conn:
             cursor = conn.execute("DELETE FROM events WHERE id = ?", (event_id,))
@@ -70,9 +58,9 @@ class EventRepository:
             conn.execute(
                 """
                 UPDATE events
-                SET title = ?, description = ?, event_date = ?, place = ?
+                SET title = ?, description = ?, event_date = ?, place = ?, cover_image_id = ?
                 WHERE id = ?
                 """,
-                (event.title, event.description, event.event_date, event.place, event_id),
+                (event.title, event.description, event.event_date, event.place, event.cover_image_id, event_id),
             )
         return self.get_event_by_id(event_id)

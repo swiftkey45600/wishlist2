@@ -1,4 +1,5 @@
 import hashlib
+from sqlite3 import IntegrityError
 
 from app.database import get_connection
 from app.models.image import Image
@@ -32,23 +33,28 @@ class ImageRepository:
             raise ValueError("Image already exists")
 
         with get_connection() as connection:
-            cursor = connection.execute(
-                """
-                INSERT INTO images (
-                    image_path,
-                    image_type,
-                    hash,
-                    owner_id
+            try:
+                cursor = connection.execute(
+                    """
+                    INSERT INTO images (
+                        image_path,
+                        image_type,
+                        hash,
+                        owner_id
+                    )
+                    VALUES (?, ?, ?, ?)
+                    """,
+                    (
+                        image.image_path,
+                        image.image_type,
+                        image_hash,
+                        image.owner_id,
+                    ),
                 )
-                VALUES (?, ?, ?, ?)
-                """,
-                (
-                    image.image_path,
-                    image.image_type,
-                    image_hash,
-                    image.owner_id,
-                ),
-            )
+            except IntegrityError as error:
+                if self.get_image_by_hash(image_hash) is None:
+                    raise
+                raise ValueError("Image already exists") from error
 
             connection.commit()
             image.id = cursor.lastrowid

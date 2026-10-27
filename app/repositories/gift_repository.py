@@ -164,7 +164,7 @@ class GiftRepository:
             "id": "gifts.id",
             "price": "gifts.price",
             "title": "casefold(gifts.title)",
-            "priority": "CASE gifts.priority WHEN 'high' THEN 0 WHEN 'normal' THEN 1 WHEN 'low' THEN 2 ELSE 1 END",
+            "priority": "CASE gifts.priority WHEN 'high' THEN 3 WHEN 'normal' THEN 2 WHEN 'low' THEN 1 ELSE 2 END",
         }
         sort_column = sort_columns[filters.sort_by]
         sort_direction = {"asc": "ASC", "desc": "DESC"}[filters.sort_order]

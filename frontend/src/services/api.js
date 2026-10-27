@@ -20,7 +20,8 @@ api.interceptors.response.use(
       localStorage.removeItem("user")
 
       if (window.location.pathname !== "/auth") {
-        window.location.href = "/auth"
+        if (window.location.pathname.startsWith("/share/")) window.location.reload()
+        else window.location.href = "/auth"
       }
     }
 

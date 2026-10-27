@@ -2,6 +2,7 @@ from app.models import User
 from app.repositories import UserRepository
 from app.models.user import UserRegisterRequest, UserLoginRequest
 from app.utils.security import hash_password, verify_password
+from sqlite3 import IntegrityError
 
 
 MIN_LOGIN_LENGTH = 3
@@ -41,7 +42,10 @@ class UserService:
         if self.user_repository.get_user_by_login(register_request.login):
             raise ValueError("Login already exists")
         
-        return self.user_repository.create_user(register_request)
+        try:
+            return self.user_repository.create_user(register_request)
+        except IntegrityError as error:
+            raise ValueError("Login already exists") from error
 
     def authenticate_user(self, login_request: UserLoginRequest) -> User:
         user = self.user_repository.get_user_by_login(login_request.login.strip())
@@ -63,7 +67,10 @@ class UserService:
             password = data.pop("password")
             validate_password(password)
             data["password_hash"] = hash_password(password)
-        return self.user_repository.update_user(user_id, data)
+        try:
+            return self.user_repository.update_user(user_id, data)
+        except IntegrityError as error:
+            raise ValueError("Login already exists") from error
 
     def list_users(self) -> list[User]:
         return self.user_repository.list_users()

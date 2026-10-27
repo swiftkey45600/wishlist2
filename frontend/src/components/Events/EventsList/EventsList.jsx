@@ -7,20 +7,26 @@ import { applySavedGiftPriorities } from "../../../application/giftPriorityAppli
 
 function EventsList({ events, onOpenEvent, onGiftsLoaded }) {
     const [giftsByEvent, setGiftsByEvent] = useState({})
+    const [error, setError] = useState("")
 
     useEffect(() => {
         let isCurrent = true
 
         async function loadGifts() {
-            const giftEntries = await Promise.all(events.map(async (event) => {
-                const gifts = await getGiftsByEvent(event.id)
-                return [event.id, Array.isArray(gifts) ? applySavedGiftPriorities(gifts) : []]
-            }))
+            try {
+                const giftEntries = await Promise.all(events.map(async (event) => {
+                    const gifts = await getGiftsByEvent(event.id)
+                    return [event.id, Array.isArray(gifts) ? applySavedGiftPriorities(gifts) : []]
+                }))
 
-            if (isCurrent) {
-                const loadedGiftsByEvent = Object.fromEntries(giftEntries)
-                setGiftsByEvent(loadedGiftsByEvent)
-                onGiftsLoaded?.(loadedGiftsByEvent)
+                if (isCurrent) {
+                    setError("")
+                    const loadedGiftsByEvent = Object.fromEntries(giftEntries)
+                    setGiftsByEvent(loadedGiftsByEvent)
+                    onGiftsLoaded?.(loadedGiftsByEvent)
+                }
+            } catch {
+                if (isCurrent) setError("Не удалось загрузить подарки событий. Обновите страницу.")
             }
         }
 
@@ -31,7 +37,8 @@ function EventsList({ events, onOpenEvent, onGiftsLoaded }) {
     return (
         <div className="events-list">
             <h2>События</h2>
-            {events.map((event) => <EventCard key={event.id} event={event} gifts={giftsByEvent[event.id] || []} onOpenEvent={onOpenEvent} />)}
+            {error && <p role="alert">{error}</p>}
+            {!error && events.map((event) => <EventCard key={event.id} event={event} gifts={giftsByEvent[event.id] || []} onOpenEvent={onOpenEvent} />)}
         </div>
     )
 }

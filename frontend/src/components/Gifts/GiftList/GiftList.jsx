@@ -37,6 +37,7 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
     const [gifts, setGifts] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(null)
+    const [actionError, setActionError] = useState(null)
     const [fieldErrors, setFieldErrors] = useState({})
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [title, setTitle] = useState("")
@@ -238,11 +239,12 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
     }
 
     async function handleToggleStatus(gift) {
+        setActionError(null)
         let result
         if (isOwner) {
             result = await editGift(gift.id, { status: "available" })
         } else if (gift.status === "available") {
-            result = await reserveGift(gift.id)
+            result = await reserveGift(gift.id, false, publicToken)
         } else if (gift.status === "bought") {
             result = await editGift(gift.id, { status: "available" })
         } else {
@@ -250,19 +252,9 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
         }
 
         if (result) {
-            const updatedGifts = await getGiftsByEvent(eventId, showReservations)
-            setGifts(previousGifts => Array.isArray(updatedGifts)
-                ? applySavedGiftPriorities(updatedGifts).map(updatedGift => {
-                    const previousGift = previousGifts.find(gift => gift.id === updatedGift.id)
-                    return {
-                        ...updatedGift,
-                        priority: updatedGift.priority || previousGift?.priority || "normal",
-                        tags: updatedGift.tags || previousGift?.tags || []
-                    }
-                })
-                : [])
+            await reloadChangedGifts()
         } else {
-            setError("Не удалось изменить бронь подарка")
+            setActionError("Не удалось изменить бронь подарка")
         }
     }
 
@@ -272,9 +264,18 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
         onGiftDataChange?.()
     }
 
+    async function reloadChangedGifts() {
+        try {
+            await handleFundraisingChange()
+        } catch {
+            setActionError("Изменение сохранено, но список не обновился. Обновите страницу.")
+        }
+    }
+
     async function handleDeleteGift() {
+        setActionError(null)
         if (!await deleteGift(giftToDelete.id)) {
-            setError("Не удалось удалить подарок")
+            setActionError("Не удалось удалить подарок")
             return false
         }
         removeSavedGiftPriority(giftToDelete.id)
@@ -285,14 +286,17 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
     }
 
     async function handleMarkBought(giftId) {
+        setActionError(null)
         const updated = await editGift(giftId, { status: "bought" })
         if (updated) {
-            const updatedGifts = await getGiftsByEvent(eventId, showReservations)
-            setGifts(Array.isArray(updatedGifts) ? applySavedGiftPriorities(updatedGifts) : [])
+            await reloadChangedGifts()
+        } else {
+            setActionError("Не удалось отметить подарок купленным")
         }
     }
 
     async function handleEditGift(giftId, data) {
+        setActionError(null)
         const updated = await editGift(giftId, data)
         if (updated) {
             saveGiftPriority(giftId, data.priority || updated.priority || "normal")
@@ -305,8 +309,7 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
                 }
                 : g))
             if (showReservations) {
-                const refreshedGifts = await getGiftsByEvent(eventId, true)
-                setGifts(Array.isArray(refreshedGifts) ? applySavedGiftPriorities(refreshedGifts) : [])
+                await reloadChangedGifts()
             }
             setEditingGift(null)
             onGiftDataChange?.()
@@ -565,6 +568,8 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
                 <p className="gift-list-status error">{error}</p>
             )}
 
+            {actionError && <p className="gift-list-status error" role="alert">{actionError}</p>}
+
             {!isLoading && !error && gifts.length === 0 && (
                 <p className="gift-list-status">Подарки не найдены.</p>
             )}
@@ -582,7 +587,7 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
                             publicToken={publicToken}
                             isOwner={isOwner}
                             onGiftChange={handleFundraisingChange}
-                            onToggleStatus={!isOwner || showReservations || gift.status === "available"
+                            onToggleStatus={!isOwner || (showReservations && gift.status !== "available")
                                 ? handleToggleStatus
                                 : undefined}
                             onDelete={isOwner ? (giftId) => setGiftToDelete(gifts.find(item => item.id === giftId)) : undefined}

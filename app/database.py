@@ -40,6 +40,8 @@ def _column_exists(connection: sqlite3.Connection, table_name: str, column_name:
 
 
 def _run_migrations(connection: sqlite3.Connection) -> None:
+    if not _column_exists(connection, "events", "cover_image_id"):
+        connection.execute("ALTER TABLE events ADD COLUMN cover_image_id INTEGER REFERENCES images(id) ON DELETE SET NULL")
     if not _column_exists(connection, "gifts", "share_in_recommendations"):
         connection.execute("ALTER TABLE gifts ADD COLUMN share_in_recommendations INTEGER NOT NULL DEFAULT 0")
     if not _column_exists(connection, "gifts", "contribution_goal"):
