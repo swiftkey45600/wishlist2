@@ -12,13 +12,14 @@ class EventRepository:
             event_date=row["event_date"],
             place=row["place"],
             public_token=row["public_token"],
+            cover_image_id=row["cover_image_id"] if "cover_image_id" in row.keys() else None,
         )
 
     def create_event(self, event: Event) -> Event:
         with get_connection() as conn:
             cursor = conn.execute(
-                "INSERT INTO events (owner_id, title, description, event_date, place, public_token) VALUES (?, ?, ?, ?, ?, ?)",
-                (event.owner_id, event.title, event.description, event.event_date, event.place, event.public_token),
+                "INSERT INTO events (owner_id, title, description, event_date, place, public_token, cover_image_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (event.owner_id, event.title, event.description, event.event_date, event.place, event.public_token, event.cover_image_id),
             )
             event.id = cursor.lastrowid
         return event
@@ -70,9 +71,9 @@ class EventRepository:
             conn.execute(
                 """
                 UPDATE events
-                SET title = ?, description = ?, event_date = ?, place = ?
+                SET title = ?, description = ?, event_date = ?, place = ?, cover_image_id = ?
                 WHERE id = ?
                 """,
-                (event.title, event.description, event.event_date, event.place, event_id),
+                (event.title, event.description, event.event_date, event.place, event.cover_image_id, event_id),
             )
         return self.get_event_by_id(event_id)

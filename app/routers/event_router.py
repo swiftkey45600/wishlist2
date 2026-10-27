@@ -86,6 +86,7 @@ async def create_event(event_request: EventCreateRequest, current_user: User = D
         description=event_request.description,
         event_date=event_request.event_date,
         place=event_request.place,
+        cover_image_id=event_request.cover_image_id,
     )
     if not event:
         raise HTTPException(status_code=400, detail="Event cannot be created")

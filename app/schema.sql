@@ -17,7 +17,9 @@ CREATE TABLE IF NOT EXISTS events (
     event_date TEXT,
     place TEXT,
     public_token TEXT UNIQUE,
-    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
+    cover_image_id INTEGER,
+    FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (cover_image_id) REFERENCES images(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS gifts (

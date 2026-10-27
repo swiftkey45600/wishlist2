@@ -1,8 +1,11 @@
 import secrets
 
+from fastapi import HTTPException
+
 from app.models import Event
 from app.repositories import EventRepository
 from app.repositories import GiftRepository
+from app.repositories.image_repository import ImageRepository
 
 
 class EventService:
@@ -13,6 +16,7 @@ class EventService:
     ):
         self.event_repository = event_repository
         self.gift_repository = gift_repository
+        self.image_repository = ImageRepository()
 
     def create_event(
         self,
@@ -21,7 +25,11 @@ class EventService:
         description: str | None = None,
         event_date: str | None = None,
         place: str | None = None,
+        cover_image_id: int | None = None,
     ) -> Event:
+        if cover_image_id is not None and self.image_repository.get_image_by_id(cover_image_id) is None:
+            raise HTTPException(status_code=404, detail="Cover image not found")
+
         new_event = Event(
             owner_id=owner_id,
             title=title,
@@ -29,6 +37,7 @@ class EventService:
             event_date=event_date,
             place=place,
             public_token=secrets.token_urlsafe(16),
+            cover_image_id=cover_image_id,
         )
 
         return self.event_repository.create_event(new_event)
@@ -53,6 +62,8 @@ class EventService:
         return self.event_repository.delete_event(event_id)
 
     def update_event(self, event_id: int, event: Event) -> Event | None:
+        if event.cover_image_id is not None and self.image_repository.get_image_by_id(event.cover_image_id) is None:
+            raise HTTPException(status_code=404, detail="Cover image not found")
         return self.event_repository.update_event(event_id, event)
 
     def get_price_statistics(self, event_id: int) -> dict:
