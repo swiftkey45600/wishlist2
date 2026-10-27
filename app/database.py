@@ -46,6 +46,11 @@ def _run_migrations(connection: sqlite3.Connection) -> None:
         connection.execute("ALTER TABLE gifts ADD COLUMN contribution_goal INTEGER CHECK (contribution_goal > 0)")
     if not _column_exists(connection, "reservations", "is_fundraising"):
         connection.execute("ALTER TABLE reservations ADD COLUMN is_fundraising INTEGER NOT NULL DEFAULT 0")
+    if not _column_exists(connection, "gifts", "priority"):
+        connection.execute(
+            "ALTER TABLE gifts ADD COLUMN priority TEXT NOT NULL DEFAULT 'normal' "
+            "CHECK (priority IN ('high', 'normal', 'low'))"
+        )
     if not _column_exists(connection, "reservations", "secret_word_hash"):
         connection.execute("ALTER TABLE reservations ADD COLUMN secret_word_hash TEXT")
     if not _column_exists(connection, "gifts", "image_id"):

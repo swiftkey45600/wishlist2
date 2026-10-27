@@ -10,6 +10,7 @@ class Gift:
     title: str
     price: int | None
     status: str = "available"
+    priority: Literal["high", "normal", "low"] = "normal"
     id: int | None = None
     description: str | None = None
     picture_url: str | None = None
@@ -31,6 +32,7 @@ class GiftCreateRequest(Gift):
     title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
     price: Annotated[int, Field(gt=0, le=9223372036854775807)]
     status: Literal["available"] = "available"
+    priority: Literal["high", "normal", "low"] = "normal"
     tag_ids: list[int] = field(default_factory=list)
     contribution_goal: Annotated[int, Field(gt=0, le=9223372036854775807)] | None = None
 
@@ -41,7 +43,7 @@ class GiftFilters(BaseModel):
     tags: list[Annotated[int, Field(gt=0)] | Literal["untagged"]] = Field(default_factory=list)
     q: str | None = None
     status: Literal["available", "reserved", "bought"] | None = None
-    sort_by: Literal["id", "price", "title"] = "id"
+    sort_by: Literal["id", "price", "title", "priority"] = "id"
     sort_order: Literal["asc", "desc"] = "asc"
     show_reservations: bool = False
 

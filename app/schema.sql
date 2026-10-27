@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS gifts (
     price INTEGER,
     status TEXT NOT NULL DEFAULT 'available'
     CHECK (status IN ('available', 'reserved', 'bought')),
+    priority TEXT NOT NULL DEFAULT 'normal'
+    CHECK (priority IN ('high', 'normal', 'low')),
     description TEXT,
     picture_url TEXT,
     marketplace_url TEXT,
@@ -53,6 +55,19 @@ CREATE TABLE IF NOT EXISTS gift_tags (
     FOREIGN KEY (gift_id) REFERENCES gifts(id) ON DELETE CASCADE,
     FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS gift_questions (
+    id INTEGER PRIMARY KEY,
+    gift_id INTEGER NOT NULL,
+    guest_name TEXT NOT NULL CHECK (length(trim(guest_name)) BETWEEN 1 AND 100),
+    text TEXT NOT NULL CHECK (length(trim(text)) BETWEEN 1 AND 2000),
+    created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+    answer TEXT CHECK (answer IS NULL OR length(trim(answer)) BETWEEN 1 AND 2000),
+    answered_at TEXT,
+    FOREIGN KEY (gift_id) REFERENCES gifts(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS gift_questions_gift_id ON gift_questions(gift_id, id);
 
 CREATE TABLE IF NOT EXISTS reservations (
     id INTEGER PRIMARY KEY,

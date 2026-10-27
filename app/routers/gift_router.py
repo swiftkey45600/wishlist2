@@ -97,16 +97,17 @@ class GiftUpdateRequest(BaseModel):
     category_id: Optional[int] = None
     image_id: Optional[int] = None
     status: Optional[Literal["available", "bought"]] = None
+    priority: Optional[Literal["high", "normal", "low"]] = None
     is_reserved: Optional[bool] = None
     tag_ids: list[int] = Field(default_factory=list)
     contribution_goal: int | None = Field(default=None, gt=0, le=9223372036854775807)
     share_in_recommendations: bool | None = None
 
-    @field_validator("title", "price", "status", "share_in_recommendations")
+    @field_validator("title", "price", "status", "share_in_recommendations", "priority")
     @classmethod
     def validate_required_fields(cls, value):
         if value is None:
-            raise ValueError("Title, price, status and sharing preference cannot be null")
+            raise ValueError("Title, price, status, sharing preference and priority cannot be null")
         return value
 
 

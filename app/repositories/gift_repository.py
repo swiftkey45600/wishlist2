@@ -31,6 +31,7 @@ class GiftRepository:
             title=row["title"],
             price=row["price"],
             status=row["status"],
+            priority=row["priority"] if "priority" in row.keys() else "normal",
             description=row["description"],
             picture_url=row["picture_url"],
             marketplace_url=row["marketplace_url"],
@@ -54,6 +55,7 @@ class GiftRepository:
                     title,
                     price,
                     status,
+                    priority,
                     description,
                     picture_url,
                     marketplace_url,
@@ -62,13 +64,14 @@ class GiftRepository:
                     contribution_goal,
                     share_in_recommendations
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     gift.event_id,
                     gift.title,
                     gift.price,
                     gift.status,
+                    gift.priority,
                     gift.description,
                     gift.picture_url,
                     gift.marketplace_url,
@@ -97,6 +100,7 @@ class GiftRepository:
                     gifts.title,
                     gifts.price,
                     gifts.status,
+                    gifts.priority,
                     gifts.description,
                     gifts.picture_url,
                     gifts.marketplace_url,
@@ -160,6 +164,7 @@ class GiftRepository:
             "id": "gifts.id",
             "price": "gifts.price",
             "title": "casefold(gifts.title)",
+            "priority": "CASE gifts.priority WHEN 'high' THEN 0 WHEN 'normal' THEN 1 WHEN 'low' THEN 2 ELSE 1 END",
         }
         sort_column = sort_columns[filters.sort_by]
         sort_direction = {"asc": "ASC", "desc": "DESC"}[filters.sort_order]
@@ -177,6 +182,7 @@ class GiftRepository:
                     gifts.title,
                     gifts.price,
                     gifts.status,
+                    gifts.priority,
                     gifts.description,
                     gifts.picture_url,
                     gifts.marketplace_url,
