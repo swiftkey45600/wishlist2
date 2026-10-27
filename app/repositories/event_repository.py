@@ -12,7 +12,7 @@ class EventRepository:
             event_date=row["event_date"],
             place=row["place"],
             public_token=row["public_token"],
-            cover_image_id=row["cover_image_id"],
+            cover_image_id=row["cover_image_id"] if "cover_image_id" in row.keys() else None,
         )
 
     def create_event(self, event: Event) -> Event:

@@ -1,5 +1,6 @@
 import secrets
 from sqlite3 import IntegrityError
+
 from fastapi import HTTPException
 
 from app.models import Event
@@ -16,6 +17,7 @@ class EventService:
     ):
         self.event_repository = event_repository
         self.gift_repository = gift_repository
+        self.image_repository = ImageRepository()
 
     def create_event(
         self,
@@ -66,8 +68,8 @@ class EventService:
             raise HTTPException(status_code=409, detail="Event references changed; reload and try again") from error
 
     def _validate_cover(self, image_id: int | None) -> None:
-        if image_id is not None and ImageRepository().get_image_by_id(image_id) is None:
-            raise HTTPException(status_code=404, detail="Image not found")
+        if image_id is not None and self.image_repository.get_image_by_id(image_id) is None:
+            raise HTTPException(status_code=404, detail="Cover image not found")
 
     def get_price_statistics(self, event_id: int) -> dict:
         if self.gift_repository is None:
