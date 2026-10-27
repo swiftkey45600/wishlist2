@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { answerQuestion, createQuestion, fetchQuestions } from "../../../repositories/giftQuestionRepository"
+import { answerQuestion, createQuestion, deleteQuestion, fetchQuestions, questionDeletionEnabled } from "../../../repositories/giftQuestionRepository"
 import "./GiftQuestions.css"
 
 function GiftQuestions({ token, giftId, isOwner }) {
@@ -58,6 +58,20 @@ function GiftQuestions({ token, giftId, isOwner }) {
         }
     }
 
+    async function removeQuestion(questionId) {
+        if (busy) return
+        setBusy(true)
+        setError("")
+        try {
+            await deleteQuestion(giftId, questionId)
+            setQuestions(current => current.filter(item => item.id !== questionId))
+        } catch {
+            setError("Не удалось удалить вопрос.")
+        } finally {
+            setBusy(false)
+        }
+    }
+
     return <section className="gift-questions">
         <button type="button" className="gift-secondary-button" aria-expanded={open} onClick={() => setOpen(value => !value)}>
             Вопросы о подарке{questions && ` (${questions.length})`}
@@ -72,6 +86,7 @@ function GiftQuestions({ token, giftId, isOwner }) {
                     <strong>{question.guest_name}</strong>
                     <p>{question.text}</p>
                     {question.answer && <p><strong>Ответ владельца:</strong> {question.answer}</p>}
+                    {isOwner && questionDeletionEnabled && <button className="gift-danger-button" type="button" disabled={busy} onClick={() => removeQuestion(question.id)}>Удалить вопрос</button>}
                     {isOwner && <form onSubmit={event => submitAnswer(event, question)}>
                         <label>Ваш ответ
                             <textarea value={answers[question.id] ?? question.answer ?? ""} onChange={event => setAnswers(current => ({ ...current, [question.id]: event.target.value }))} maxLength={2000} required />
