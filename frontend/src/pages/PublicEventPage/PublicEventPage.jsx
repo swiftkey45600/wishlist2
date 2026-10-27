@@ -5,6 +5,7 @@ import "../../styles/common.css"
 import { useNavigate, useParams } from "react-router-dom"
 
 import api from "../../services/api"
+import Header from "../../components/Header/Header"
 import Sidebar from "../../components/Sidebar/Sidebar"
 import EventDetailsCard from "../../components/Events/EventDetailsCard/EventDetailsCard"
 import GiftCard from "../../components/Gifts/GiftCard/GiftCard"
@@ -95,77 +96,81 @@ function PublicEventPage() {
     }, [data?.event?.title])
 
     return (
-        <div className="page-layout">
-            <Sidebar />
+        <div className="event-shell">
+            <Header />
+            <div className="page-layout event-layout">
+                <Sidebar activeSection="events" />
 
-            <div className="page-content">
-                <div className="event-page-actions">
-                    <button className="back-button" onClick={() => navigate("/")}>
-                        ← Назад к событиям
-                    </button>
-                    <span className="event-page-note">
-                        {isOwner
-                            ? "Это ваше событие"
-                            : isAuthenticated
-                                ? "Вы можете забронировать подарок"
-                                : "Вы можете забронировать подарок без регистрации"}
-                    </span>
-                </div>
+                <main className="page-content event-content public-event-content">
+                    <div className="public-event-actions">
+                        <button className="event-back" onClick={() => navigate(-1)}>
+                            ← Назад
+                        </button>
+                        <span className="event-page-note">
+                            {isOwner
+                                ? "Это ваше событие"
+                                : isAuthenticated
+                                    ? "Вы можете забронировать подарок"
+                                    : "Вы можете забронировать подарок без регистрации"}
+                        </span>
+                    </div>
 
-                {isLoading && (
-                    <p className="event-page-status">Загружаем информацию о событии...</p>
-                )}
+                    {isLoading && (
+                        <p className="event-page-status">Загружаем информацию о событии...</p>
+                    )}
 
-                {!isLoading && !data && (
-                    <p className="event-page-status">Событие не найдено или ссылка недействительна.</p>
-                )}
+                    {!isLoading && !data && (
+                        <p className="event-page-status">Событие не найдено или ссылка недействительна.</p>
+                    )}
 
-                {!isLoading && data && (
-                    <>
-                        <EventDetailsCard event={data.event} />
+                    {!isLoading && data && (
+                        <>
+                            <EventDetailsCard event={data.event} />
 
-                        <div className="gift-list">
-                            <div className="gift-list-header">
-                                <h2>Подарки • {filteredGifts.length} из {gifts.length}</h2>
-                            </div>
-
-                            <GiftFilters
-                                hideStatus={isOwner}
-                                tags={tags}
-                                filters={filters}
-                                onFilterChange={updateFilter}
-                            />
-
-                            {!gifts.length && (
-                                <p className="gift-list-status">Пока нет подарков для этого события.</p>
-                            )}
-
-                            {gifts.length > 0 && filteredGifts.length === 0 && (
-                                <p className="gift-list-status">Подарки по заданным фильтрам не найдены.</p>
-                            )}
-
-                            {reservationError && (
-                                <p className="gift-list-status error">{reservationError}</p>
-                            )}
-
-                            {filteredGifts.length > 0 && (
-                                <div className="gift-grid">
-                                    {filteredGifts.map((gift) => (
-                                        <GiftCard
-                                            key={gift.id}
-                                            gift={gift}
-                                            publicToken={token}
-                                            isOwner={isOwner}
-                                            onGiftChange={handleFundraisingChange}
-                                            hideReservationDetails={isOwner}
-                                            onToggleStatus={!isOwner && gift.status !== "bought" ? handleToggleStatus : undefined}
-                                        />
-                                    ))}
+                            <div className="gift-list">
+                                <div className="public-gift-list-header">
+                                    <h2>Подарки</h2>
+                                    <span>{filteredGifts.length} из {gifts.length}</span>
                                 </div>
-                            )}
-                        </div>
-                    </>
-                )}
+
+                                <GiftFilters
+                                    hideStatus={isOwner}
+                                    tags={tags}
+                                    filters={filters}
+                                    onFilterChange={updateFilter}
+                                />
+
+                                {!gifts.length && (
+                                    <p className="gift-list-status">Пока нет подарков для этого события.</p>
+                                )}
+
+                                {gifts.length > 0 && filteredGifts.length === 0 && (
+                                    <p className="gift-list-status">Подарки по заданным фильтрам не найдены.</p>
+                                )}
+
+                                {reservationError && (
+                                    <p className="gift-list-status error">{reservationError}</p>
+                                )}
+
+                                {filteredGifts.length > 0 && (
+                                    <div className="gift-grid">
+                                        {filteredGifts.map((gift) => (
+                                            <GiftCard
+                                                key={gift.id}
+                                                gift={gift}
+                                                publicToken={token}
+                                                isOwner={isOwner}
+                                                onGiftChange={handleFundraisingChange}
+                                                hideReservationDetails={isOwner}
+                                                onToggleStatus={!isOwner && gift.status !== "bought" ? handleToggleStatus : undefined}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    )}
+                </main>
             </div>
             {selectedGift?.token === token && !isLoading && <GuestReservationModal
                 key={`${token}:${selectedGift.gift.id}`}

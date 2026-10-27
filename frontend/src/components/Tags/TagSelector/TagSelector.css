@@ -16,8 +16,14 @@
     gap: 7px;
 }
 
+.tag-selector-item {
+    position: relative;
+    display: inline-flex;
+    padding-top: 3px;
+}
+
 .tag-selector-chip {
-    padding: 7px 11px;
+    padding: 7px 20px 7px 11px;
     border: 1px solid var(--line);
     border-radius: 999px;
     background: #fff;
@@ -26,6 +32,35 @@
     font-weight: 700;
     cursor: pointer;
     transition: var(--transition-fast);
+}
+
+.tag-selector-delete {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    display: grid;
+    width: 17px;
+    height: 17px;
+    place-items: center;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: #fff;
+    color: #777d89;
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.tag-selector-delete:hover {
+    border-color: var(--danger);
+    background: var(--danger);
+    color: #fff;
+}
+
+.tag-selector-delete:disabled {
+    cursor: wait;
+    opacity: .65;
 }
 
 .tag-selector-chip:hover {

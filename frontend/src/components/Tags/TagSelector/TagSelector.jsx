@@ -1,11 +1,12 @@
 import { useState } from "react"
-import { createTag } from "../../../application/tagApplication"
+import { createTag, deleteTag } from "../../../application/tagApplication"
 import "./TagSelector.css"
 
 function TagSelector({ eventId, tags, selectedTagIds, onTagsChange, onChange, disabled = false }) {
     const [newTagName, setNewTagName] = useState("")
     const [error, setError] = useState("")
     const [isCreating, setIsCreating] = useState(false)
+    const [deletingTagId, setDeletingTagId] = useState(null)
 
     function toggleTag(tagId) {
         const nextTagIds = selectedTagIds.includes(tagId)
@@ -16,7 +17,7 @@ function TagSelector({ eventId, tags, selectedTagIds, onTagsChange, onChange, di
     }
 
     async function handleCreateTag() {
-        if (isCreating || disabled) return
+        if (isCreating || deletingTagId !== null || disabled) return
         const name = newTagName.trim()
 
         if (!name) {
@@ -45,6 +46,22 @@ function TagSelector({ eventId, tags, selectedTagIds, onTagsChange, onChange, di
         }
     }
 
+    async function handleDeleteTag(tagId) {
+        if (deletingTagId !== null || isCreating || disabled) return
+
+        setError("")
+        setDeletingTagId(tagId)
+        try {
+            await deleteTag(eventId, tagId)
+            onTagsChange(tags.filter(tag => tag.id !== tagId))
+            onChange(selectedTagIds.filter(id => id !== tagId))
+        } catch {
+            setError("Не удалось удалить тег. Попробуйте ещё раз.")
+        } finally {
+            setDeletingTagId(null)
+        }
+    }
+
     function handleKeyDown(event) {
         if (event.key === "Enter") {
             event.preventDefault()
@@ -58,16 +75,27 @@ function TagSelector({ eventId, tags, selectedTagIds, onTagsChange, onChange, di
 
             <div className="tag-selector-list">
                 {tags.map(tag => (
-                    <button
-                        key={tag.id}
-                        type="button"
-                        className={`tag-selector-chip ${selectedTagIds.includes(tag.id) ? "selected" : ""}`}
-                        disabled={disabled || isCreating}
-                        aria-pressed={selectedTagIds.includes(tag.id)}
-                        onClick={() => toggleTag(tag.id)}
-                    >
-                        {tag.name}
-                    </button>
+                    <span className="tag-selector-item" key={tag.id}>
+                        <button
+                            type="button"
+                            className={`tag-selector-chip ${selectedTagIds.includes(tag.id) ? "selected" : ""}`}
+                            disabled={disabled || isCreating || deletingTagId !== null}
+                            aria-pressed={selectedTagIds.includes(tag.id)}
+                            onClick={() => toggleTag(tag.id)}
+                        >
+                            {tag.name}
+                        </button>
+                        <button
+                            type="button"
+                            className="tag-selector-delete"
+                            aria-label={`Удалить тег «${tag.name}»`}
+                            title={`Удалить тег «${tag.name}»`}
+                            disabled={disabled || isCreating || deletingTagId !== null}
+                            onClick={() => handleDeleteTag(tag.id)}
+                        >
+                            ×
+                        </button>
+                    </span>
                 ))}
                 {tags.length === 0 && (
                     <span className="tag-selector-empty">Тегов пока нет</span>
@@ -76,7 +104,7 @@ function TagSelector({ eventId, tags, selectedTagIds, onTagsChange, onChange, di
 
             <div className="tag-create-row">
                 <input
-                    disabled={disabled || isCreating}
+                    disabled={disabled || isCreating || deletingTagId !== null}
                     value={newTagName}
                     onChange={event => setNewTagName(event.target.value)}
                     onKeyDown={handleKeyDown}
@@ -87,7 +115,7 @@ function TagSelector({ eventId, tags, selectedTagIds, onTagsChange, onChange, di
                     type="button"
                     className="tag-create-button"
                     onClick={handleCreateTag}
-                    disabled={disabled || isCreating}
+                    disabled={disabled || isCreating || deletingTagId !== null}
                 >
                     {isCreating ? "Создаём..." : "+ Создать"}
                 </button>
