@@ -4,17 +4,15 @@
     padding: 25px 17px;
 }
 
-.label {
-    font-size: 10px;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: #a0a4af;
-    margin: 9px 12px;
-}
-
 .nav {
     display: grid;
     gap: 4px;
+}
+
+.nav + .nav {
+    margin-top: 27px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
 }
 
 .sidebar-link {
@@ -38,17 +36,6 @@
 
 .sidebar-link:hover {
     background: #f0efff;
-}
-
-.sidebar-link.future::after {
-    content: "будущее";
-    float: right;
-    margin-top: 1px;
-    padding: 2px 4px;
-    border-radius: 4px;
-    background: #eceaff;
-    color: var(--primary-color);
-    font-size: 8px;
 }
 
 @media (max-width: 800px) {

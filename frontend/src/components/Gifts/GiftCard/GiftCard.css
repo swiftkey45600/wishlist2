@@ -40,7 +40,11 @@
 }
 
 .gift-card-title h3 {
-    margin-bottom: 5px;
+    margin-bottom: 0;
+}
+
+.gift-card-title .gift-tag-list {
+    margin: 0;
 }
 
 .gift-priority-badge {
@@ -62,7 +66,6 @@
     display: flex;
     flex-wrap: wrap;
     gap: 5px;
-    margin: 0 0 9px;
 }
 
 .gift-tag {
@@ -72,6 +75,56 @@
     color: var(--primary);
     font-size: 11px;
     font-weight: 700;
+}
+
+.gift-tag-more {
+    border: 0;
+    background: #eef0f4;
+    color: var(--muted);
+    white-space: nowrap;
+    cursor: help;
+}
+
+.gift-tag-overflow {
+    position: relative;
+    display: inline-flex;
+}
+
+.gift-hidden-tags {
+    position: absolute;
+    bottom: calc(100% + 7px);
+    left: 50%;
+    z-index: 20;
+    display: flex;
+    gap: 5px;
+    width: max-content;
+    max-width: min(80vw, 600px);
+    overflow-x: auto;
+    padding: 7px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: var(--shadow);
+    transform: translateX(-50%);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-fast), visibility var(--transition-fast);
+}
+
+.gift-tag-overflow:hover .gift-hidden-tags,
+.gift-tag-overflow:focus-within .gift-hidden-tags {
+    opacity: 1;
+    visibility: visible;
+}
+
+.gift-hidden-tag {
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #eef0f4;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
 }
 
 .gift-card-info strong {
@@ -128,6 +181,7 @@
     justify-content: flex-end;
     gap: 7px;
     flex-wrap: wrap;
+    margin-left: auto;
 }
 
 @media (max-width: 900px) {
@@ -154,5 +208,6 @@
 
     .gift-actions {
         justify-content: flex-start;
+        margin-left: 0;
     }
 }
