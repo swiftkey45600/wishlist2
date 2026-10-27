@@ -21,7 +21,7 @@ class EventRepository:
 
     def create_event(self, event: Event) -> Event:
         with get_connection() as conn:
-                cursor = conn.execute(
+            cursor = conn.execute(
                 """
                 INSERT INTO events (
                     owner_id, title, description, event_date,
@@ -89,7 +89,7 @@ class EventRepository:
             ).fetchone()
             if source is None:
                 return None
-            сursor = conn.execute(
+            cursor = conn.execute(
                 """
                 INSERT INTO events (
                     owner_id, title, description, event_date,
@@ -116,10 +116,10 @@ class EventRepository:
             for gift in conn.execute("SELECT * FROM gifts WHERE event_id = ? ORDER BY id", (event_id,)).fetchall():
                 new_gift_id = conn.execute(
                     """INSERT INTO gifts (
-                        event_id, title, price, status, description, picture_url,
+                        event_id, title, price, status, priority, description, picture_url,
                         marketplace_url, category_id, image_id, contribution_goal, share_in_recommendations
-                    ) VALUES (?, ?, ?, 'available', ?, ?, ?, ?, ?, ?, 0)""",
-                    (new_id, gift["title"], gift["price"], gift["description"], gift["picture_url"],
+                    ) VALUES (?, ?, ?, 'available', ?, ?, ?, ?, ?, ?, ?, 0)""",
+                    (new_id, gift["title"], gift["price"], gift["priority"], gift["description"], gift["picture_url"],
                      gift["marketplace_url"], gift["category_id"], gift["image_id"], gift["contribution_goal"]),
                 ).lastrowid
                 links = conn.execute("SELECT tag_id FROM gift_tags WHERE gift_id = ?", (gift["id"],)).fetchall()

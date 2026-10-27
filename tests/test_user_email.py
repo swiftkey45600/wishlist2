@@ -76,8 +76,8 @@ class UserEmailTests(unittest.TestCase):
     def test_email_is_private_and_cannot_be_set_for_another_user(self):
         self.save("private@example.com")
         response = self.client.get("/users/1", headers=self.other)
-        self.assertEqual(response.status_code, 200)
-        self.assertNotIn("email", response.json()["user"])
+        self.assertEqual(response.status_code, 403)
+        self.assertNotIn("private@example.com", response.text)
         self.assertEqual(self.client.get(self.url, headers=self.other).json(), {"email": None, "email_verified": False})
         response = self.client.post(self.url, json={"email": "stolen@example.com", "user_id": 1}, headers=self.other)
         self.assertEqual(response.status_code, 422)
@@ -146,7 +146,11 @@ class UserEmailTests(unittest.TestCase):
             self.assertEqual(user.password, "original-hash")
             self.assertEqual(user.login, "johndoe")
             self.assertIsNone(user.email)
-            self.assertEqual(self.save("migrated@example.com").status_code, 200)
+            # A token for a different password hash must not authenticate against
+            # the migrated database, even when user ID and auth_version match.
+            self.assertEqual(self.client.get(self.url, headers=self.owner).status_code, 401)
+            headers = {"Authorization": "Bearer " + create_access_token({"user_id": 1, "sub": "johndoe"})}
+            self.assertEqual(self.save("migrated@example.com", headers=headers).status_code, 200)
 
 
 if __name__ == "__main__":

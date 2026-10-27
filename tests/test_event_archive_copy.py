@@ -103,7 +103,7 @@ class EventLifecycleTests(unittest.TestCase):
     def test_archived_events_block_all_new_reservation_endpoints(self):
         self.archive()
         cases = (
-            ("POST", "/reservations/", {"gift_id": self.gift.id, "is_anonymous": False}, self.guest),
+            ("POST", "/reservations/", {"gift_id": self.gift.id, "is_anonymous": False, "public_token": self.event.public_token}, self.guest),
             ("POST", f"/events/public/original-token/gifts/{self.gift.id}/reservation", {"name": "Guest", "secret_word": "snowflake"}, {}),
             ("PATCH", f"/events/public/original-token/gifts/{self.gift.id}/reservation", {"is_reserved": True}, self.guest),
             ("PATCH", f"/gifts/{self.gift.id}", {"is_reserved": True}, self.guest),
@@ -116,7 +116,7 @@ class EventLifecycleTests(unittest.TestCase):
         self.assertIsNone(self.reservations.get_reservation_by_gift(self.gift.id))
         self.assertEqual(self.gifts.get_gift_by_id(self.gift.id).status, "available")
         self.client.patch(f"/events/{self.event.id}/restore", headers=self.owner)
-        response = self.client.post("/reservations/", json={"gift_id": self.gift.id, "is_anonymous": False}, headers=self.guest)
+        response = self.client.post("/reservations/", json={"gift_id": self.gift.id, "is_anonymous": False, "public_token": self.event.public_token}, headers=self.guest)
         self.assertEqual(response.status_code, 200, response.text)
 
     def test_guest_can_cancel_existing_reservation_in_archive(self):
@@ -209,6 +209,23 @@ class EventLifecycleTests(unittest.TestCase):
         response = self.client.post(f"/events/{empty.id}/copy", json={"title": "New"}, headers=self.owner)
         self.assertEqual(response.status_code, 201)
         self.assertEqual(self.gifts.get_gifts_by_event(response.json()["event"]["id"]), [])
+
+    def test_copy_preserves_cover_and_gift_priorities(self):
+        with get_connection() as conn:
+            image_id = conn.execute(
+                "INSERT INTO images (image_path, image_type, hash, owner_id) VALUES ('cover.png', 'image/png', 'cover-hash', 1)"
+            ).lastrowid
+            conn.execute("UPDATE events SET cover_image_id = ? WHERE id = ?", (image_id, self.event.id))
+        self.gifts.update_gift(self.gift.id, {"priority": "high"})
+        self.gifts.create_gift(Gift(event_id=self.event.id, title="Low priority", price=100, priority="low"))
+        response = self.copy()
+        self.assertEqual(response.status_code, 201, response.text)
+        event = response.json()["event"]
+        self.assertEqual(event["cover_image_id"], image_id)
+        self.assertEqual(
+            {gift.title: gift.priority for gift in self.gifts.get_gifts_by_event(event["id"])},
+            {"Book": "high", "Low priority": "low"},
+        )
 
     def test_copy_validates_title_and_date(self):
         for data in ({}, {"title": " "}, {"title": None}, {"title": "New", "event_date": "2027-02-30"}):

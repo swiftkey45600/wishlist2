@@ -84,7 +84,10 @@ class EmailVerificationTests(unittest.TestCase):
             response = self.client.get(path, headers=self.owner)
             payload = response.json().get("user", response.json())
             self.assertTrue(payload["email_verified"])
-        self.assertNotIn("email_verified", self.client.get("/users/1", headers=self.other).json()["user"])
+        forbidden = self.client.get("/users/1", headers=self.other)
+        self.assertEqual(forbidden.status_code, 403)
+        self.assertNotIn("email_verified", forbidden.text)
+        self.assertNotIn("kirill@example.com", forbidden.text)
         self.assertEqual(self.client.get("/events/", headers=self.owner).status_code, 200)
 
     def test_request_requires_auth_and_only_uses_current_users_email(self):

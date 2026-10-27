@@ -377,7 +377,10 @@ class PasswordResetTests(unittest.TestCase):
             self.assertEqual(user.auth_version, 0)
             self.assertEqual(user.password, "original-hash")
             self.assertTrue(user.email_verified)
-            self.assertEqual(self.client.get("/users/me", headers=self.owner).status_code, 200)
+            # self.owner was issued for another password hash in the setup DB.
+            self.assertEqual(self.client.get("/users/me", headers=self.owner).status_code, 401)
+            headers = {"Authorization": "Bearer " + create_access_token({"user_id": 1, "auth_version": 0})}
+            self.assertEqual(self.client.get("/users/me", headers=headers).status_code, 200)
 
 
 if __name__ == "__main__":
