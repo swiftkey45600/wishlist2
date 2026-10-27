@@ -31,7 +31,7 @@ class ContributionService:
         return gift
 
     def _check_rate_limit(self, client_ip: str, gift_id: int | None = None) -> None:
-        retry_after = self.reservation_repository.check_guest_rate_limit(f"contribution:{client_ip}", gift_id)
+        retry_after = self.reservation_repository.check_guest_rate_limit(f"contribution:{client_ip}", gift_id, namespace="contribution")
         if retry_after is not None:
             raise HTTPException(status_code=429, detail="Too many contribution attempts", headers={"Retry-After": str(retry_after)})
 

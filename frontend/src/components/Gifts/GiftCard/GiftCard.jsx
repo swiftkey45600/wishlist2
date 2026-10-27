@@ -4,9 +4,19 @@ import { getGiftStatusLabel } from "../giftStatus"
 import GiftFundraising from "../GiftFundraising/GiftFundraising"
 import { getGiftPriorityLabel } from "../giftPriority"
 
+function marketplaceLink(value) {
+    try {
+        const url = new URL(value)
+        return ["http:", "https:"].includes(url.protocol) ? url.toString() : ""
+    } catch {
+        return ""
+    }
+}
+
 function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit, hideReservationDetails = false,
     publicToken, isOwner = false, onGiftChange }) {
     const hideStatus = hideReservationDetails && ["reserved", "bought"].includes(gift.status)
+    const productUrl = marketplaceLink(gift.marketplace_url)
 
     return (
         <div className="gift-card">
@@ -22,15 +32,32 @@ function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit, hideRe
                         {gift.priority === "high" && (
                             <span className="gift-priority-badge">{getGiftPriorityLabel(gift.priority)}</span>
                         )}
+                        {gift.tags?.length > 0 && (
+                            <div className="gift-tag-list">
+                                {gift.tags.slice(0, 3).map(tag => (
+                                    <span className="gift-tag" key={tag.id}>{tag.name}</span>
+                                ))}
+                                {gift.tags.length > 3 && (
+                                    <span className="gift-tag-overflow">
+                                        <button
+                                            type="button"
+                                            className="gift-tag gift-tag-more"
+                                            aria-label={`${gift.tags.length - 3} скрытых тегов`}
+                                            aria-describedby={`gift-hidden-tags-${gift.id}`}
+                                        >
+                                            +{gift.tags.length - 3}
+                                        </button>
+                                        <span className="gift-hidden-tags" id={`gift-hidden-tags-${gift.id}`} role="tooltip">
+                                            {gift.tags.slice(3).map(tag => (
+                                                <span className="gift-hidden-tag" key={tag.id}>{tag.name}</span>
+                                            ))}
+                                        </span>
+                                    </span>
+                                )}
+                            </div>
+                        )}
                     </div>
                     <p className="gift-description">{gift.description || "Описание подарка пока не добавлено."}</p>
-                    {gift.tags?.length > 0 && (
-                        <div className="gift-tag-list">
-                            {gift.tags.map(tag => (
-                                <span className="gift-tag" key={tag.id}>{tag.name}</span>
-                            ))}
-                        </div>
-                    )}
                     <strong>{gift.price} ₽</strong>
                 </div>
                 <div className="gift-card-right">
@@ -69,9 +96,9 @@ function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit, hideRe
             />}
 
             <div className="gift-card-footer">
-                {gift.marketplace_url ? (
-                    <a className="gift-marketplace" href={gift.marketplace_url} target="_blank" rel="noopener noreferrer">Открыть товар ↗</a>
-                ) : <span className="gift-marketplace">Маркетплейс не указан</span>}
+                {productUrl && (
+                    <a className="gift-marketplace" href={productUrl} target="_blank" rel="noopener noreferrer">Открыть товар ↗</a>
+                )}
                 <div className="gift-actions">
                     {onEdit && <button className="gift-secondary-button" onClick={() => onEdit(gift)}>Изменить</button>}
                     {onDelete && <button className="gift-danger-button" onClick={() => onDelete(gift.id)}>Удалить</button>}

@@ -57,7 +57,7 @@ class UserRepository:
             conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
 
     def update_user(self, user_id: int, data: dict) -> User | None:
-        fields = {key: value for key, value in data.items() if value is not None}
+        fields = data.copy()
         if not fields:
             return self.get_user_by_id(user_id)
 

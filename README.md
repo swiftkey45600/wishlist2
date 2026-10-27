@@ -154,7 +154,7 @@ python -c "import secrets; print(secrets.token_urlsafe(48))"
 | `POST` | `/auth/login` | — | вход, возвращает `access_token` |
 | `GET` | `/users/me` | JWT | текущий пользователь |
 | `PATCH` | `/users/me` | JWT | обновить профиль |
-| `GET` | `/users/` · `/users/{id}` | JWT | список / карточка пользователя |
+| `GET` | `/users/{id}` | JWT | собственный профиль; список пользователей закрыт |
 | `DELETE` | `/users/{id}` | JWT | удалить пользователя |
 | `GET` `POST` | `/events/` | JWT | список своих событий / создать событие |
 | `GET` | `/events/{id}` | JWT | событие по id |
@@ -165,7 +165,7 @@ python -c "import secrets; print(secrets.token_urlsafe(48))"
 | `POST` | `/gifts/` | JWT | добавить подарок |
 | `GET` `PATCH` `DELETE` | `/gifts/{id}` | JWT | получить / изменить / удалить подарок |
 | `PATCH` | `/gifts/{id}/status` | JWT | сменить статус подарка |
-| `POST` | `/reservations/` | JWT | забронировать подарок |
+| `POST` | `/reservations/` | JWT + `public_token` | забронировать подарок |
 | `GET` `DELETE` | `/reservations/{id}` | JWT | получить / снять бронь |
 | `POST` | `/images` | — | загрузить картинку (multipart) |
 | `GET` `DELETE` | `/images/{id}` | — | получить / удалить картинку |

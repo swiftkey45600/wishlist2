@@ -147,7 +147,9 @@
 }
 
 .presents-gift-card {
-    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
     border: 1px solid var(--line);
     border-radius: var(--r);
     background: #fff;
@@ -182,9 +184,22 @@
     font-size: 48px;
 }
 
-.presents-gift-top h3 {
-    margin: 2px 0 7px;
+.presents-gift-title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-bottom: 7px;
+}
+
+.presents-gift-title h3 {
+    margin: 2px 0 0;
     font-size: 17px;
+}
+
+.presents-gift-title .gift-priority-badge {
+    margin-bottom: 0;
+    transform: translateY(2px);
 }
 
 .presents-gift-top .gift-priority-badge {
@@ -207,6 +222,71 @@
     font-weight: 650;
     cursor: pointer;
     text-align: left;
+}
+
+.presents-gift-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.presents-gift-tag {
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: var(--primary-color-soft);
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.presents-gift-tag-more {
+    border: 0;
+    background: #eef0f4;
+    color: var(--muted);
+    white-space: nowrap;
+    cursor: help;
+}
+
+.presents-tag-overflow {
+    position: relative;
+    display: inline-flex;
+}
+
+.presents-hidden-tags {
+    position: absolute;
+    bottom: calc(100% + 7px);
+    left: 50%;
+    z-index: 20;
+    display: flex;
+    gap: 5px;
+    width: max-content;
+    max-width: min(80vw, 600px);
+    overflow-x: auto;
+    padding: 7px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: var(--shadow);
+    transform: translateX(-50%);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-fast), visibility var(--transition-fast);
+}
+
+.presents-tag-overflow:hover .presents-hidden-tags,
+.presents-tag-overflow:focus-within .presents-hidden-tags {
+    opacity: 1;
+    visibility: visible;
+}
+
+.presents-hidden-tag {
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #eef0f4;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
 }
 
 .presents-description {
@@ -266,6 +346,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
+    margin-top: auto;
     padding: 12px 17px;
     border-top: 1px solid var(--line);
 }
@@ -282,6 +363,7 @@
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: 7px;
+    margin-left: auto;
 }
 
 .presents-manage-actions {
@@ -345,5 +427,6 @@
 
     .presents-actions {
         justify-content: flex-start;
+        margin-left: 0;
     }
 }

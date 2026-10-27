@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.models.user import User, UserEmailRequest, UserEmailResponse, UserUpdateRequest
 from app.services.user_service import UserConflictError, UserService, validate_login
 from app.repositories.user_repository import UserRepository
-from app.utils.jwt import get_current_user
+from app.utils.jwt import create_access_token, get_current_user
+from app.models.identifiers import DatabaseId
 
 router = APIRouter(
     prefix="/users",
@@ -61,23 +62,25 @@ async def update_my_profile(
         if existing_user and existing_user.id != current_user.id:
             raise HTTPException(status_code=409, detail="Login already exists")
 
+    data = user_request.model_dump(exclude_unset=True, mode="json")
+    if "login" in data:
+        data["login"] = normalized_login
     try:
         updated_user = users_service.update_user(
             current_user.id,
-            {
-                "name": user_request.name.strip() if user_request.name is not None else None,
-                "login": normalized_login,
-                "password": user_request.password,
-                "birthday": user_request.birthday,
-                "gender": user_request.gender,
-                "email": str(user_request.email).casefold() if user_request.email is not None else None,
-            },
+            data,
         )
     except UserConflictError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
     except ValueError as error:
-        raise HTTPException(status_code=400, detail=str(error)) from error
+        raise HTTPException(status_code=409 if str(error) == "Login already exists" else 400, detail=str(error)) from error
     return {
+        "access_token": create_access_token({
+            "sub": updated_user.login,
+            "user_id": updated_user.id,
+            "auth_version": updated_user.auth_version,
+        }),
+        "token_type": "bearer",
         "user": {
             "id": updated_user.id,
             "name": updated_user.name,
@@ -91,7 +94,9 @@ async def update_my_profile(
 
 
 @router.get("/{user_id}")
-async def get_user(user_id: int, current_user: User = Depends(get_current_user)):
+async def get_user(user_id: DatabaseId, current_user: User = Depends(get_current_user)):
+    if user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="You can only view your own profile")
     user = users_service.get_user(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -108,7 +113,7 @@ async def get_user(user_id: int, current_user: User = Depends(get_current_user))
 
 
 @router.delete("/{user_id}")
-async def delete_user(user_id: int, current_user: User = Depends(get_current_user)):
+async def delete_user(user_id: DatabaseId, current_user: User = Depends(get_current_user)):
     if current_user.id != user_id:
         raise HTTPException(status_code=403, detail="Forbidden: You can only delete your own account")
 

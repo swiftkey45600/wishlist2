@@ -1,4 +1,7 @@
 import secrets
+from sqlite3 import IntegrityError
+
+from fastapi import HTTPException
 
 from fastapi import HTTPException
 
@@ -6,6 +9,7 @@ from app.models import Event
 from app.models.event import EventCopyRequest, EventStatus
 from app.repositories import EventRepository
 from app.repositories import GiftRepository
+from app.repositories.image_repository import ImageRepository
 
 
 class EventService:
@@ -16,6 +20,7 @@ class EventService:
     ):
         self.event_repository = event_repository
         self.gift_repository = gift_repository
+        self.image_repository = ImageRepository()
 
     def create_event(
         self,
@@ -24,7 +29,9 @@ class EventService:
         description: str | None = None,
         event_date: str | None = None,
         place: str | None = None,
+        cover_image_id: int | None = None,
     ) -> Event:
+        self._validate_cover(cover_image_id)
         new_event = Event(
             owner_id=owner_id,
             title=title,
@@ -32,9 +39,13 @@ class EventService:
             event_date=event_date,
             place=place,
             public_token=secrets.token_urlsafe(16),
+            cover_image_id=cover_image_id,
         )
 
-        return self.event_repository.create_event(new_event)
+        try:
+            return self.event_repository.create_event(new_event)
+        except IntegrityError as error:
+            raise HTTPException(status_code=409, detail="Event references changed; reload and try again") from error
 
     #TODO фалйловая база данных - использование словарей для кеширования (айди и токены)
     def get_event(self, event_id: int) -> Event | None:
@@ -75,7 +86,15 @@ class EventService:
         return self.event_repository.delete_event(event_id)
 
     def update_event(self, event_id: int, event: Event) -> Event | None:
-        return self.event_repository.update_event(event_id, event)
+        self._validate_cover(event.cover_image_id)
+        try:
+            return self.event_repository.update_event(event_id, event)
+        except IntegrityError as error:
+            raise HTTPException(status_code=409, detail="Event references changed; reload and try again") from error
+
+    def _validate_cover(self, image_id: int | None) -> None:
+        if image_id is not None and self.image_repository.get_image_by_id(image_id) is None:
+            raise HTTPException(status_code=404, detail="Cover image not found")
 
     def get_price_statistics(self, event_id: int) -> dict:
         if self.gift_repository is None:

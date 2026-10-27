@@ -9,12 +9,7 @@ import {
 } from "../repositories/eventRepository"
 
 export async function getEvents() {
-    try {
-        return await fetchEvents()
-    } catch (error) {
-        console.error(error)
-        return []
-    }
+    return fetchEvents()
 }
 
 export async function createEvent(eventData) {

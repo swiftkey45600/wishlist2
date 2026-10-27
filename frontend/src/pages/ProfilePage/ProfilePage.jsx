@@ -157,17 +157,6 @@ function ProfilePage() {
                                     </div>
                                 </div>
 
-                                <div className="profile-section">
-                                    <div className="profile-section-head">
-                                        <h2>Аккаунт</h2>
-                                    </div>
-                                    <div className="profile-info-list">
-                                        <div><span>Статус</span><strong>Авторизован</strong></div>
-                                        <div><span>Авторизация</span><strong>JWT access token</strong></div>
-                                        <div><span>Публичный профиль</span><strong>Не используется</strong></div>
-                                    </div>
-                                </div>
-
                                 <ProfileActions />
                             </section>
                         </>

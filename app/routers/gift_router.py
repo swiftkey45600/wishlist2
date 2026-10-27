@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field, StringConstraints, field_validator
 from typing import Annotated, List, Optional, Literal
 
+from app.models.identifiers import DatabaseId
 from app.models.gift import Gift, GiftCreateRequest, GiftFilters
 from app.models.reservation import PublicGiftReservationRequest
 from app.models.user import User
@@ -50,7 +51,7 @@ def create_gift(gift: GiftCreateRequest, current_user: User = Depends(get_curren
 
 @router.get("/events/{event_id}/recommendations")
 def get_recommendations(
-    event_id: int,
+    event_id: DatabaseId,
     current_user: User = Depends(get_current_user),
     limit: int = Query(default=6, ge=1, le=20),
 ):
@@ -63,7 +64,7 @@ def get_recommendations(
 
 
 @router.get("/gifts/{gift_id}", response_model=Gift)
-def get_gift(gift_id: int, current_user: User = Depends(get_current_user), show_reservations: bool = False):
+def get_gift(gift_id: DatabaseId, current_user: User = Depends(get_current_user), show_reservations: bool = False):
     gift = gift_service.get_gift_by_id(gift_id)
     event = event_repo.get_event_by_id(gift.event_id)
     if event is None:
@@ -75,7 +76,7 @@ def get_gift(gift_id: int, current_user: User = Depends(get_current_user), show_
 
 @router.get("/events/{event_id}/gifts", response_model=List[Gift])
 def get_gifts_by_event(
-    event_id: int,
+    event_id: DatabaseId,
     filters: Annotated[GiftFilters, Query()],
     current_user: User = Depends(get_current_user),
 ):
@@ -94,24 +95,25 @@ class GiftUpdateRequest(BaseModel):
     description: Optional[str] = None
     picture_url: Optional[str] = None
     marketplace_url: Optional[str] = None
-    category_id: Optional[int] = None
-    image_id: Optional[int] = None
+    category_id: DatabaseId | None = None
+    image_id: DatabaseId | None = None
     status: Optional[Literal["available", "bought"]] = None
+    priority: Optional[Literal["high", "normal", "low"]] = None
     is_reserved: Optional[bool] = None
-    tag_ids: list[int] = Field(default_factory=list)
+    tag_ids: list[DatabaseId] = Field(default_factory=list)
     contribution_goal: int | None = Field(default=None, gt=0, le=9223372036854775807)
     share_in_recommendations: bool | None = None
 
-    @field_validator("title", "price", "status", "share_in_recommendations")
+    @field_validator("title", "price", "status", "share_in_recommendations", "priority")
     @classmethod
     def validate_required_fields(cls, value):
         if value is None:
-            raise ValueError("Title, price, status and sharing preference cannot be null")
+            raise ValueError("Title, price, status, sharing preference and priority cannot be null")
         return value
 
 
 @router.patch("/gifts/{gift_id}/status", response_model=Gift)
-def update_gift_status(gift_id: int, status: str, current_user: User = Depends(get_current_user)):
+def update_gift_status(gift_id: DatabaseId, status: str, current_user: User = Depends(get_current_user)):
     gift = gift_service.get_gift_by_id(gift_id)
     event = event_repo.get_event_by_id(gift.event_id)
     if event is None or event.owner_id != current_user.id:
@@ -121,7 +123,7 @@ def update_gift_status(gift_id: int, status: str, current_user: User = Depends(g
 
 @router.patch("/gifts/{gift_id}", response_model=Gift)
 def update_gift(
-    gift_id: int,
+    gift_id: DatabaseId,
     data: GiftUpdateRequest,
     current_user: User = Depends(get_current_user),
 ):
@@ -131,7 +133,7 @@ def update_gift(
 @router.patch("/events/public/{public_token}/gifts/{gift_id}/reservation", response_model=Gift)
 def update_public_gift_reservation(
     public_token: str,
-    gift_id: int,
+    gift_id: DatabaseId,
     data: PublicGiftReservationRequest,
     current_user: User = Depends(get_current_user),
 ):
@@ -139,7 +141,7 @@ def update_public_gift_reservation(
 
 
 @router.delete("/gifts/{gift_id}")
-def delete_gift(gift_id: int, current_user: User = Depends(get_current_user)):
+def delete_gift(gift_id: DatabaseId, current_user: User = Depends(get_current_user)):
     gift = gift_service.get_gift_by_id(gift_id)
     event = event_repo.get_event_by_id(gift.event_id)
     if event is None or event.owner_id != current_user.id:

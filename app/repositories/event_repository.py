@@ -16,13 +16,29 @@ class EventRepository:
             place=row["place"],
             public_token=row["public_token"],
             status=row["status"],
+            cover_image_id=row["cover_image_id"] if "cover_image_id" in row.keys() else None,
         )
 
     def create_event(self, event: Event) -> Event:
         with get_connection() as conn:
-            cursor = conn.execute(
-                "INSERT INTO events (owner_id, title, description, event_date, place, public_token, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (event.owner_id, event.title, event.description, event.event_date, event.place, event.public_token, event.status),
+                cursor = conn.execute(
+                """
+                INSERT INTO events (
+                    owner_id, title, description, event_date,
+                    place, public_token, status, cover_image_id
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    event.owner_id,
+                    event.title,
+                    event.description,
+                    event.event_date,
+                    event.place,
+                    event.public_token,
+                    event.status,
+                    event.cover_image_id,
+                ),
             )
             event.id = cursor.lastrowid
         return event
@@ -73,10 +89,23 @@ class EventRepository:
             ).fetchone()
             if source is None:
                 return None
-            cursor = conn.execute(
-                """INSERT INTO events (owner_id, title, description, event_date, place, public_token, status)
-                   VALUES (?, ?, ?, ?, ?, ?, 'active')""",
-                (owner_id, title, source["description"], event_date, source["place"], secrets.token_urlsafe(16)),
+            сursor = conn.execute(
+                """
+                INSERT INTO events (
+                    owner_id, title, description, event_date,
+                    place, public_token, status, cover_image_id
+                )
+                VALUES (?, ?, ?, ?, ?, ?, 'active', ?)
+                """,
+                (
+                    owner_id,
+                    title,
+                    source["description"],
+                    event_date,
+                    source["place"],
+                    secrets.token_urlsafe(16),
+                    source["cover_image_id"],
+                ),
             )
             new_id = cursor.lastrowid
             tag_ids = {}
@@ -110,9 +139,9 @@ class EventRepository:
             conn.execute(
                 """
                 UPDATE events
-                SET title = ?, description = ?, event_date = ?, place = ?
+                SET title = ?, description = ?, event_date = ?, place = ?, cover_image_id = ?
                 WHERE id = ?
                 """,
-                (event.title, event.description, event.event_date, event.place, event_id),
+                (event.title, event.description, event.event_date, event.place, event.cover_image_id, event_id),
             )
         return self.get_event_by_id(event_id)

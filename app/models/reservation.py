@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from app.models.identifiers import DatabaseId
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 
@@ -12,8 +13,9 @@ class Reservation:
 
 @dataclass
 class ReservationCreateRequest:
-    gift_id: int
+    gift_id: DatabaseId
     is_anonymous: bool
+    public_token: str
     reserver_name: str | None = None
 
 

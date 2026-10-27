@@ -2,6 +2,46 @@
 .event-back { margin-bottom: 22px; padding: 0; background: transparent; color: var(--muted); font-weight: 650; cursor: pointer; }
 .event-page-status { color: var(--muted); }
 
+.public-event-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.public-event-actions .event-back {
+    margin-bottom: 18px;
+}
+
+.event-page-note {
+    margin-bottom: 18px;
+    padding: 8px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.public-gift-list-header {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+    margin: 27px 0 14px;
+}
+
+.public-gift-list-header h2 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.public-gift-list-header span {
+    color: var(--muted);
+    font-size: 13px;
+}
+
 .event-edit-modal {
     position: fixed;
     inset: 0;
@@ -19,4 +59,17 @@
     border-radius: var(--r);
     background: var(--card);
     box-shadow: 0 18px 45px rgba(30, 34, 55, .2);
+}
+
+@media (max-width: 600px) {
+    .public-event-actions {
+        align-items: flex-start;
+        flex-direction: column-reverse;
+        gap: 0;
+    }
+
+    .event-page-note {
+        max-width: 100%;
+        border-radius: 12px;
+    }
 }

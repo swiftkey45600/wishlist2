@@ -4,6 +4,7 @@ from app.models import User
 from app.repositories import UserRepository
 from app.models.user import UserRegisterRequest, UserLoginRequest
 from app.utils.security import hash_password, verify_password
+from sqlite3 import IntegrityError
 
 
 class UserConflictError(ValueError):

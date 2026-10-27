@@ -5,7 +5,6 @@ import "./Sidebar.css"
 function Sidebar({ activeSection }) {
   return (
     <aside className="sidebar">
-      <div className="label">Навигация</div>
       <div className="nav">
         <NavLink
           to='/'
@@ -25,16 +24,9 @@ function Sidebar({ activeSection }) {
         >
           Мои подарки
         </NavLink>
-
-        <button type="button" className="sidebar-link future" disabled>
-          Публичные события
-        </button>
-
       </div>
 
-      <div className="label" style={{ marginTop: "27px" }}>Аккаунт</div>
       <div className="nav">
-
         <NavLink
           to='/profile'
           className={({ isActive }) =>
@@ -45,11 +37,6 @@ function Sidebar({ activeSection }) {
         >
           Профиль
         </NavLink>
-
-        <button type="button" className="sidebar-link future" disabled>
-          Настройки
-        </button>
-
       </div>
     </aside>
   )

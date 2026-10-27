@@ -13,19 +13,19 @@ class TagService:
         self.tag_repository = tag_repository
         self.event_repository = event_repository
 
-    def _check_event(self, event_id: int, current_user: User | None = None) -> None:
+    def _check_event(self, event_id: int, current_user: User) -> None:
         event = self.event_repository.get_event_by_id(event_id)
         if event is None:
             raise HTTPException(status_code=404, detail="Event not found")
-        if current_user is not None and event.owner_id != current_user.id:
-            raise HTTPException(status_code=403, detail="Only the event owner can edit tags")
+        if event.owner_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Only the event owner can access tags by event ID")
 
-    def get_tags_by_event(self, event_id: int) -> list[Tag]:
-        self._check_event(event_id)
+    def get_tags_by_event(self, event_id: int, current_user: User) -> list[Tag]:
+        self._check_event(event_id, current_user)
         return self.tag_repository.get_tags_by_event(event_id)
 
-    def get_tag_by_id(self, event_id: int, tag_id: int) -> Tag:
-        self._check_event(event_id)
+    def get_tag_by_id(self, event_id: int, tag_id: int, current_user: User) -> Tag:
+        self._check_event(event_id, current_user)
         tag = self.tag_repository.get_tag_by_id(event_id, tag_id)
         if tag is None:
             raise HTTPException(status_code=404, detail="Tag not found")
@@ -40,7 +40,7 @@ class TagService:
 
     def update_tag(self, event_id: int, tag_id: int, name: str, current_user: User) -> Tag:
         self._check_event(event_id, current_user)
-        tag = self.get_tag_by_id(event_id, tag_id)
+        tag = self.get_tag_by_id(event_id, tag_id, current_user)
         tag.name = name
         try:
             return self.tag_repository.update_tag(tag)

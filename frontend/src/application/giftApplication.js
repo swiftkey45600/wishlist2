@@ -10,21 +10,11 @@ import {
 } from "../repositories/giftRepository"
 
 export async function getGift(giftId) {
-  try {
-    return await fetchGift(giftId)
-  } catch (error) {
-    console.error(error)
-    return []
-  }
+  return fetchGift(giftId)
 }
 
 export async function getGiftsByEvent(eventId, showReservations = false) {
-  try {
-    return await fetchGiftsByEvent(eventId, showReservations)
-  } catch (error) {
-    console.error(error)
-    return []
-  }
+  return fetchGiftsByEvent(eventId, showReservations)
 }
 
 export async function createGift(giftData) {
@@ -45,9 +35,9 @@ export async function editGift(giftId, data) {
   }
 }
 
-export async function reserveGift(giftId, isAnonymous = false) {
+export async function reserveGift(giftId, isAnonymous = false, publicToken) {
   try {
-    return await reserveGiftRepository(giftId, isAnonymous)
+    return await reserveGiftRepository(giftId, isAnonymous, publicToken)
   } catch (error) {
     console.error(error)
     return null

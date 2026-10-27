@@ -19,12 +19,18 @@ function HomePage() {
   const [error, setError] = useState(null)
 
   useEffect(() => {
+    let cancelled = false
     async function loadEvents() {
-      const data = await getEvents()
-      setEvents(data)
+      try {
+        const data = await getEvents()
+        if (!cancelled) setEvents(data)
+      } catch {
+        if (!cancelled) setError("Не удалось загрузить события. Обновите страницу.")
+      }
     }
 
     loadEvents()
+    return () => { cancelled = true }
   }, [])
 
 

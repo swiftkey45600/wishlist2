@@ -53,12 +53,21 @@ def _run_migrations(connection: sqlite3.Connection) -> None:
             "CHECK (status IN ('active', 'archived'))"
         )
     connection.execute("CREATE INDEX IF NOT EXISTS events_owner_status ON events(owner_id, status)")
+    if not _column_exists(connection, "events", "cover_image_id"):
+        connection.execute(
+            "ALTER TABLE events ADD COLUMN cover_image_id INTEGER REFERENCES images(id) ON DELETE SET NULL"
+        )
     if not _column_exists(connection, "gifts", "share_in_recommendations"):
         connection.execute("ALTER TABLE gifts ADD COLUMN share_in_recommendations INTEGER NOT NULL DEFAULT 0")
     if not _column_exists(connection, "gifts", "contribution_goal"):
         connection.execute("ALTER TABLE gifts ADD COLUMN contribution_goal INTEGER CHECK (contribution_goal > 0)")
     if not _column_exists(connection, "reservations", "is_fundraising"):
         connection.execute("ALTER TABLE reservations ADD COLUMN is_fundraising INTEGER NOT NULL DEFAULT 0")
+    if not _column_exists(connection, "gifts", "priority"):
+        connection.execute(
+            "ALTER TABLE gifts ADD COLUMN priority TEXT NOT NULL DEFAULT 'normal' "
+            "CHECK (priority IN ('high', 'normal', 'low'))"
+        )
     if not _column_exists(connection, "reservations", "secret_word_hash"):
         connection.execute("ALTER TABLE reservations ADD COLUMN secret_word_hash TEXT")
     if not _column_exists(connection, "gifts", "image_id"):
