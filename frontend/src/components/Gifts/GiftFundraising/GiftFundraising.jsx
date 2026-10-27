@@ -6,7 +6,7 @@ function validSecretWord(value) {
     return Boolean(value.trim()) && new TextEncoder().encode(value).length <= 72
 }
 
-function GiftFundraising({ gift, publicToken, isOwner, hideContributionDetails = false, onGiftChange }) {
+function GiftFundraising({ gift, publicToken, isOwner, archived = false, hideContributionDetails = false, onGiftChange }) {
     const [isOpen, setIsOpen] = useState(false)
     const [entries, setEntries] = useState([])
     const [isLoading, setIsLoading] = useState(false)
@@ -26,7 +26,7 @@ function GiftFundraising({ gift, publicToken, isOwner, hideContributionDetails =
     const total = gift.contribution_total || 0
     const goal = gift.contribution_goal
     const remaining = Math.max(0, goal - total)
-    const canContribute = !isOwner && publicToken && remaining > 0 && gift.status === "available"
+    const canContribute = !archived && !isOwner && publicToken && remaining > 0 && gift.status === "available"
     const canViewContributions = !isOwner || !hideContributionDetails
 
     useEffect(() => {

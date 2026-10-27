@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom"
 import "./HomePage.css"
 import "../../styles/common.css"
 
+import { eventArchiveEnabled } from "../../repositories/eventArchiveRepository"
 import { getEvents, createEvent } from "../../application/eventApplication"
 
 import Header from "../../components/Header/Header"
@@ -14,6 +15,7 @@ import EventsList from "../../components/Events/EventsList/EventsList"
 function HomePage() {
   const navigate = useNavigate()
   const [events, setEvents] = useState([])
+  const [archiveTab, setArchiveTab] = useState(false)
   const [giftStats, setGiftStats] = useState({ total: 0, reserved: 0 })
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [error, setError] = useState(null)
@@ -47,6 +49,8 @@ function HomePage() {
       return false
     }
   }
+
+  const visibleEvents = eventArchiveEnabled ? events.filter(event => (event.status === "archived") === archiveTab) : events
 
   function handleOpenEvent(eventId) {
     navigate(`/events/${eventId}`)
@@ -104,8 +108,13 @@ function HomePage() {
             <span className="muted">Ваши события</span>
           </div>
 
+          {eventArchiveEnabled && <div className="event-archive-tabs">
+            <button className="btn secondary" type="button" aria-pressed={!archiveTab} onClick={() => setArchiveTab(false)}>Активные</button>
+            <button className="btn secondary" type="button" aria-pressed={archiveTab} onClick={() => setArchiveTab(true)}>Архив</button>
+          </div>}
+          {eventArchiveEnabled && visibleEvents.length === 0 && <p>{archiveTab ? "В архиве пока нет событий." : "Активных событий пока нет."}</p>}
           <EventsList
-            events={events}
+            events={visibleEvents}
             onOpenEvent={handleOpenEvent}
             onGiftsLoaded={handleGiftsLoaded}
           />
