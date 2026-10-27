@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 
@@ -16,6 +17,13 @@ def env_path(name: str, default: str) -> Path:
 
 DATABASE_PATH = env_path("DATABASE_PATH", "wishlist.db")
 UPLOAD_DIR = env_path("UPLOAD_DIR", "uploads/images")
+if UPLOAD_DIR.is_dir() and not os.access(UPLOAD_DIR, os.W_OK):
+    # Keep new uploads persistent when a deployed directory is owned by root.
+    fallback_dir = DATABASE_PATH.parent / "images"
+    logging.getLogger(__name__).warning(
+        "Upload directory %s is not writable; using %s", UPLOAD_DIR, fallback_dir
+    )
+    UPLOAD_DIR = fallback_dir
 
 CORS_ORIGINS = [
     origin.strip()
