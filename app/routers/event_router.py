@@ -2,6 +2,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel
+from app.models.identifiers import DatabaseId
 from app.models.event import EventCreateRequest, EventUpdateRequest
 from app.models.gift import GiftFilters
 from app.models.user import User
@@ -27,7 +28,7 @@ async def get_events(current_user: User = Depends(get_current_user)):
 
 
 @router.get("/user/{owner_id}")
-async def get_user_events(owner_id: int, current_user: User = Depends(get_current_user)):
+async def get_user_events(owner_id: DatabaseId, current_user: User = Depends(get_current_user)):
     if owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="You can only view your own events")
     events = event_service.get_user_events(owner_id)
@@ -53,7 +54,7 @@ async def get_public_event(
 
 
 @router.get("/{event_id}")
-async def get_event(event_id: int, current_user: User = Depends(get_current_user)):
+async def get_event(event_id: DatabaseId, current_user: User = Depends(get_current_user)):
     event = event_service.get_event(event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
@@ -64,7 +65,7 @@ async def get_event(event_id: int, current_user: User = Depends(get_current_user
 
 @router.get("/{event_id}/statistics")
 async def get_event_statistics(
-    event_id: int,
+    event_id: DatabaseId,
     current_user: User = Depends(get_current_user),
 ):
     event = event_service.get_event(event_id)
@@ -86,6 +87,7 @@ async def create_event(event_request: EventCreateRequest, current_user: User = D
         description=event_request.description,
         event_date=event_request.event_date,
         place=event_request.place,
+        cover_image_id=event_request.cover_image_id,
     )
     if not event:
         raise HTTPException(status_code=400, detail="Event cannot be created")
@@ -94,7 +96,7 @@ async def create_event(event_request: EventCreateRequest, current_user: User = D
 
 @router.patch("/{event_id}")
 async def update_event(
-    event_id: int,
+    event_id: DatabaseId,
     event_request: EventUpdateRequest,
     current_user: User = Depends(get_current_user),
 ):
@@ -111,7 +113,7 @@ async def update_event(
 
 
 @router.delete("/{event_id}")
-async def delete_event(event_id: int, current_user: User = Depends(get_current_user)):
+async def delete_event(event_id: DatabaseId, current_user: User = Depends(get_current_user)):
     event = event_service.get_event(event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")

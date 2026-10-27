@@ -3,6 +3,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, Field, StringConstraints, model_validator
 from app.models.marketplace import Marketplace
 from app.models.tag import Tag
+from app.models.identifiers import DatabaseId, SQLITE_MAX_INTEGER
 
 @dataclass
 class Gift:
@@ -10,6 +11,7 @@ class Gift:
     title: str
     price: int | None
     status: str = "available"
+    priority: Literal["high", "normal", "low"] = "normal"
     id: int | None = None
     description: str | None = None
     picture_url: str | None = None
@@ -28,20 +30,24 @@ class Gift:
 
 @dataclass
 class GiftCreateRequest(Gift):
+    event_id: DatabaseId
+    image_id: DatabaseId | None = None
+    category_id: DatabaseId | None = None
     title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
     price: Annotated[int, Field(gt=0, le=9223372036854775807)]
     status: Literal["available"] = "available"
-    tag_ids: list[int] = field(default_factory=list)
+    priority: Literal["high", "normal", "low"] = "normal"
+    tag_ids: list[DatabaseId] = field(default_factory=list)
     contribution_goal: Annotated[int, Field(gt=0, le=9223372036854775807)] | None = None
 
 
 class GiftFilters(BaseModel):
-    min_price: int | None = Field(default=None, ge=0)
-    max_price: int | None = Field(default=None, ge=0)
-    tags: list[Annotated[int, Field(gt=0)] | Literal["untagged"]] = Field(default_factory=list)
+    min_price: int | None = Field(default=None, ge=0, le=SQLITE_MAX_INTEGER)
+    max_price: int | None = Field(default=None, ge=0, le=SQLITE_MAX_INTEGER)
+    tags: list[DatabaseId | Literal["untagged"]] = Field(default_factory=list)
     q: str | None = None
     status: Literal["available", "reserved", "bought"] | None = None
-    sort_by: Literal["id", "price", "title"] = "id"
+    sort_by: Literal["id", "price", "title", "priority"] = "id"
     sort_order: Literal["asc", "desc"] = "asc"
     show_reservations: bool = False
 

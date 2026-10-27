@@ -73,11 +73,35 @@ jobs:
           cp requirements.txt "$staging/"
           cp -a frontend/dist/. "$staging/frontend/"
 
+          # The server's wishlist-activate helper must install nginx-share.conf
+          # as /etc/nginx/snippets/wishlist-share.conf, run nginx -t and reload.
+          # The HTTPS server block must include that snippet.
+          cat > "$staging/nginx-share.conf" <<'NGINX'
+          location ^~ /share/ {
+              error_page 418 = @wishlist_share_preview;
+              if ($http_user_agent ~* "(TelegramBot|vkShare|vkbot)") {
+                  return 418;
+              }
+              try_files /index.html =404;
+              add_header Vary User-Agent always;
+          }
+
+          location @wishlist_share_preview {
+              proxy_pass http://127.0.0.1:8000;
+              proxy_set_header Host $host;
+              proxy_set_header X-Forwarded-Proto $scheme;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Prefix /api;
+              proxy_cache off;
+              add_header Vary User-Agent always;
+          }
+          NGINX
+
           tar \
             --exclude='__pycache__' \
             --exclude='*.pyc' \
             -czf "$RUNNER_TEMP/wishlist-release.tar.gz" \
-            -C "$staging" app requirements.txt frontend
+            -C "$staging" app requirements.txt frontend nginx-share.conf
 
       - name: Upload and activate release
         env:

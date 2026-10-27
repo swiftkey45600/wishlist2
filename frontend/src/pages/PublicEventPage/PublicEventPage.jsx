@@ -51,12 +51,12 @@ function PublicEventPage() {
             return
         }
 
-        setData(previous => ({
+        setData(previous => previous?.event?.public_token === token ? ({
             ...previous,
             gifts: previous.gifts.map(item => item.id === gift.id
                 ? applySavedGiftPriorities([{ ...updatedGift, priority: updatedGift.priority || item.priority }])[0]
                 : item)
-        }))
+        }) : previous)
     }
 
     async function handleFundraisingChange() {
@@ -156,7 +156,7 @@ function PublicEventPage() {
                                     <div className="gift-grid">
                                         {filteredGifts.map((gift) => (
                                             <GiftCard
-                                                key={gift.id}
+                                                key={`${token}:${gift.id}`}
                                                 gift={gift}
                                                 publicToken={token}
                                                 isOwner={isOwner}
@@ -178,7 +178,7 @@ function PublicEventPage() {
                 gift={selectedGift.gift}
                 onCancel={() => setSelectedGift(null)}
                 onSuccess={updatedGift => {
-                    setData(previous => ({
+                    setData(previous => previous?.event?.public_token === token ? ({
                         ...previous,
                         gifts: previous.gifts.map(gift => gift.id === updatedGift.id
                             ? applySavedGiftPriorities([{
@@ -186,7 +186,7 @@ function PublicEventPage() {
                                 priority: updatedGift.priority || gift.priority
                             }])[0]
                             : gift)
-                    }))
+                    }) : previous)
                     setSelectedGift(null)
                 }}
             />}

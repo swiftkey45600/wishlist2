@@ -6,11 +6,11 @@ from app.database import get_connection
 
 
 class ReservationRepository:
-    def check_guest_rate_limit(self, client_ip: str, gift_id: int | None = None) -> int | None:
+    def check_guest_rate_limit(self, client_ip: str, gift_id: int | None = None, namespace: str = "reservation") -> int | None:
         now = int(time.time())
         limits = [(f"create:ip:{client_ip}", 10)] if gift_id is None else [
             (f"cancel:ip:{client_ip}", 5),
-            (f"cancel:gift:{gift_id}", 5),
+            (f"cancel:{namespace}:gift:{gift_id}", 5),
         ]
         with get_connection() as connection:
             connection.execute("BEGIN IMMEDIATE")
@@ -162,10 +162,17 @@ class ReservationRepository:
                 return None
             return self._row_to_reservation(row)
 
-    def unreserve_by_id(self, reservation_id: int) -> bool:
+    def unreserve_by_id(self, reservation_id: int, reserver_id: int | None = None) -> bool:
         with get_connection() as connection:
-            cursor = connection.execute(
-                "DELETE FROM reservations WHERE id = ?", (reservation_id,)
+            connection.execute("BEGIN IMMEDIATE")
+            reservation = connection.execute(
+                "SELECT gift_id, reserver_id FROM reservations WHERE id = ?", (reservation_id,)
+            ).fetchone()
+            if reservation is None or (reserver_id is not None and reservation["reserver_id"] != reserver_id):
+                return False
+            connection.execute("DELETE FROM reservations WHERE id = ?", (reservation_id,))
+            connection.execute(
+                "UPDATE gifts SET status = 'available' WHERE id = ? AND status = 'reserved'",
+                (reservation["gift_id"],),
             )
-            connection.commit()
-            return cursor.rowcount > 0
+        return True

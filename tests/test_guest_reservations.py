@@ -135,7 +135,7 @@ class GuestReservationTests(unittest.TestCase):
             connection.execute("INSERT INTO users(name, login, password_hash) VALUES ('Guest', 'registered-guest', 'unused')")
         token = create_access_token({"sub": "registered-guest"})
         status, reservation, _ = self.request(
-            "POST", path="/reservations/", data={"gift_id": self.gift.id, "is_anonymous": False}, token=token
+            "POST", path="/reservations/", data={"gift_id": self.gift.id, "is_anonymous": False, "public_token": self.event.public_token}, token=token
         )
         self.assertEqual(status, 200)
         self.assertEqual(self.request("DELETE", data={"secret_word": "snowflake"})[0], 403)

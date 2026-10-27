@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Body, Depends, Request
 
+from app.models.identifiers import DatabaseId
 from app.models.contribution import ContributionCreateRequest, ContributionResponse
 from app.models.reservation import GuestReservationCancelRequest
 from app.models.user import User
@@ -13,18 +14,18 @@ contribution_service = ContributionService(ContributionRepository())
 
 
 @router.get("/gifts/{gift_id}/contributions", response_model=list[ContributionResponse])
-def get_owner_contributions(gift_id: int, current_user: User = Depends(get_current_user)):
+def get_owner_contributions(gift_id: DatabaseId, current_user: User = Depends(get_current_user)):
     return contribution_service.get_owner_contributions(gift_id, current_user)
 
 
 @router.get("/events/public/{public_token}/gifts/{gift_id}/contributions", response_model=list[ContributionResponse])
-def get_public_contributions(public_token: str, gift_id: int, current_user: User | None = Depends(get_optional_user)):
+def get_public_contributions(public_token: str, gift_id: DatabaseId, current_user: User | None = Depends(get_optional_user)):
     return contribution_service.get_gift_contributions(public_token, gift_id, current_user)
 
 
 @router.post("/events/public/{public_token}/gifts/{gift_id}/contributions", response_model=ContributionResponse)
 def add_contribution(
-    public_token: str, gift_id: int, data: ContributionCreateRequest, request: Request,
+    public_token: str, gift_id: DatabaseId, data: ContributionCreateRequest, request: Request,
     current_user: User | None = Depends(get_optional_user),
 ):
     return contribution_service.add_contribution(
@@ -34,7 +35,7 @@ def add_contribution(
 
 @router.delete("/events/public/{public_token}/gifts/{gift_id}/contributions/{contribution_id}")
 def delete_contribution(
-    public_token: str, gift_id: int, contribution_id: int, request: Request,
+    public_token: str, gift_id: DatabaseId, contribution_id: DatabaseId, request: Request,
     data: GuestReservationCancelRequest | None = Body(default=None),
     current_user: User | None = Depends(get_optional_user),
 ):

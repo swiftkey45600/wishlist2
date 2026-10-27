@@ -27,9 +27,10 @@ export async function updatePublicGiftReservation(token, giftId, isReserved) {
   return response.data
 }
 
-export async function reserveGift(giftId, isAnonymous = false) {
+export async function reserveGift(giftId, isAnonymous = false, publicToken) {
   const response = await api.post("/reservations/", {
     gift_id: giftId,
+    public_token: publicToken,
     is_anonymous: isAnonymous
   })
   return response.data

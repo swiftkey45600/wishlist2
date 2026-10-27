@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 
+from app.models.identifiers import DatabaseId
 from app.models.tag import Tag, TagRequest
 from app.models.user import User
 from app.repositories.event_repository import EventRepository
@@ -13,37 +14,37 @@ tag_service = TagService(TagRepository(), EventRepository())
 
 
 @router.get("/events/{event_id}/tags", response_model=list[Tag])
-def get_tags_by_event(event_id: int):
-    return tag_service.get_tags_by_event(event_id)
+def get_tags_by_event(event_id: DatabaseId, current_user: User = Depends(get_current_user)):
+    return tag_service.get_tags_by_event(event_id, current_user)
 
 
 @router.get("/events/{event_id}/tags/{tag_id}", response_model=Tag)
-def get_tag(event_id: int, tag_id: int):
-    return tag_service.get_tag_by_id(event_id, tag_id)
+def get_tag(event_id: DatabaseId, tag_id: DatabaseId, current_user: User = Depends(get_current_user)):
+    return tag_service.get_tag_by_id(event_id, tag_id, current_user)
 
 
 @router.post("/events/{event_id}/tags", response_model=Tag)
-def create_tag(event_id: int, data: TagRequest, current_user: User = Depends(get_current_user)):
+def create_tag(event_id: DatabaseId, data: TagRequest, current_user: User = Depends(get_current_user)):
     return tag_service.create_tag(event_id, data.name, current_user)
 
 
 @router.patch("/events/{event_id}/tags/{tag_id}", response_model=Tag)
-def update_tag(event_id: int, tag_id: int, data: TagRequest, current_user: User = Depends(get_current_user)):
+def update_tag(event_id: DatabaseId, tag_id: DatabaseId, data: TagRequest, current_user: User = Depends(get_current_user)):
     return tag_service.update_tag(event_id, tag_id, data.name, current_user)
 
 
 @router.delete("/events/{event_id}/tags/{tag_id}")
-def delete_tag(event_id: int, tag_id: int, current_user: User = Depends(get_current_user)):
+def delete_tag(event_id: DatabaseId, tag_id: DatabaseId, current_user: User = Depends(get_current_user)):
     tag_service.delete_tag(event_id, tag_id, current_user)
     return {"message": "Tag deleted"}
 
 
 @router.patch("/tags/{tag_id}", response_model=Tag)
-def update_tag_by_id(tag_id: int, data: TagRequest, current_user: User = Depends(get_current_user)):
+def update_tag_by_id(tag_id: DatabaseId, data: TagRequest, current_user: User = Depends(get_current_user)):
     return tag_service.update_tag_by_id(tag_id, data.name, current_user)
 
 
 @router.delete("/tags/{tag_id}")
-def delete_tag_by_id(tag_id: int, current_user: User = Depends(get_current_user)):
+def delete_tag_by_id(tag_id: DatabaseId, current_user: User = Depends(get_current_user)):
     tag_service.delete_tag_by_id(tag_id, current_user)
     return {"message": "Tag deleted"}

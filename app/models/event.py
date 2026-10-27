@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Annotated
 
-from pydantic import BaseModel, StringConstraints, field_validator
+from pydantic import BaseModel, Field, StringConstraints, field_validator
 
 
 @dataclass
@@ -14,6 +14,7 @@ class Event:
     event_date: str | None = None
     place: str | None = None
     public_token: str | None = None
+    cover_image_id: int | None = None
 
 
 class EventCreateRequest(BaseModel):
@@ -22,6 +23,7 @@ class EventCreateRequest(BaseModel):
     description: str | None = None
     event_date: str | None = None
     place: str | None = None
+    cover_image_id: int | None = Field(default=None, gt=0, le=9223372036854775807)
 
 
 class EventUpdateRequest(BaseModel):
@@ -29,6 +31,7 @@ class EventUpdateRequest(BaseModel):
     description: str | None = None
     event_date: str | None = None
     place: str | None = None
+    cover_image_id: int | None = Field(default=None, gt=0, le=9223372036854775807)
 
     @field_validator("title")
     @classmethod

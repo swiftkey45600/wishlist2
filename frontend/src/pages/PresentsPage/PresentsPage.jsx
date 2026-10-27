@@ -18,6 +18,8 @@ import {
     removeSavedGiftPriority,
     saveGiftPriority
 } from "../../application/giftPriorityApplication"
+import { getEventTags } from "../../application/tagApplication"
+import { parseContributionGoal } from "../../application/contributionApplication"
 
 function getGiftCountLabel(count) {
     if (count % 10 === 1 && count % 100 !== 11) return "подарок"
@@ -32,6 +34,30 @@ function PresentsPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(null)
     const [editingGift, setEditingGift] = useState(null)
+    const [tags, setTags] = useState([])
+    const [tagsLoading, setTagsLoading] = useState(false)
+    const [tagsError, setTagsError] = useState("")
+    const editingEventId = editingGift?.event_id
+
+    useEffect(() => {
+        if (!editingEventId) return
+        let cancelled = false
+        async function loadTags() {
+            setTagsLoading(true)
+            setTagsError("")
+            setTags([])
+            try {
+                const data = await getEventTags(editingEventId)
+                if (!cancelled) setTags(data)
+            } catch {
+                if (!cancelled) setTagsError("Не удалось загрузить теги события.")
+            } finally {
+                if (!cancelled) setTagsLoading(false)
+            }
+        }
+        loadTags()
+        return () => { cancelled = true }
+    }, [editingEventId])
 
     useEffect(() => {
         async function loadGifts() {
@@ -213,7 +239,7 @@ function PresentsPage() {
                                             <div className="presents-manage-actions">
                                                 <button className="presents-button secondary" onClick={(event) => {
                                                     event.stopPropagation()
-                                                    setEditingGift(gift)
+                                                    setEditingGift({ ...gift, tag_ids: gift.tags?.map(tag => tag.id) || [] })
                                                 }}>
                                                     Изменить
                                                 </button>
@@ -237,12 +263,19 @@ function PresentsPage() {
                             if (event.target === event.currentTarget) setEditingGift(null)
                         }}>
                             <div className="presents-edit-dialog">
+                                {tagsError && <p role="alert">{tagsError}</p>}
                                 <GiftEditForm
                                     gift={editingGift}
+                                    tags={tags}
+                                    tagsDisabled={tagsLoading || Boolean(tagsError)}
+                                    onTagsChange={setTags}
                                     onChange={setEditingGift}
                                     onSave={(imageId) => handleEdit(editingGift.id, {
                                         title: editingGift.title.trim(),
                                         price: Number(editingGift.price),
+                                        contribution_goal: parseContributionGoal(editingGift.contribution_goal, editingGift.contribution_total),
+                                        share_in_recommendations: Boolean(editingGift.share_in_recommendations),
+                                        tag_ids: editingGift.tag_ids,
                                         description: editingGift.description?.trim() || null,
                                         picture_url: editingGift.picture_url?.trim() || null,
                                         marketplace_url: editingGift.marketplace_url?.trim() || null,

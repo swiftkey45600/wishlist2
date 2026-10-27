@@ -5,6 +5,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse
 
+from app.models.identifiers import DatabaseId
 from app.config import UPLOAD_DIR
 from app.models.image import Image, ImageResponse
 from app.models.user import User
@@ -78,7 +79,7 @@ async def upload_image(
 
 
 @router.get("/images/{image_id}")
-def get_image(image_id: int):
+def get_image(image_id: DatabaseId):
     image = image_repository.get_image_by_id(image_id)
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
@@ -90,7 +91,7 @@ def get_image(image_id: int):
 
 @router.delete("/images/{image_id}")
 def delete_image(
-    image_id: int,
+    image_id: DatabaseId,
     current_user: User = Depends(get_current_user),
 ):
     image = image_repository.get_image_by_id(image_id)

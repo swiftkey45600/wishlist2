@@ -70,7 +70,10 @@ class ReservationService:
             reserver_name: str | None = None,
             is_anonymous: bool = False,
             reserver_id: int | None = None,
+            public_token: str | None = None,
     ) -> Reservation:
+        if public_token is not None:
+            self._get_public_gift(public_token, gift_id)
         gift = self.gift_repository.get_gift_by_id(gift_id)
         if gift is None:
             raise HTTPException(status_code=404, detail="Gift not found")
@@ -97,17 +100,14 @@ class ReservationService:
         except IntegrityError as error:
             raise HTTPException(status_code=409, detail="Gift is not available for reservation") from error
 
-    def unreserve_gift(self, reservation_id: int) -> None:
+    def unreserve_gift(self, reservation_id: int, user_id: int | None = None) -> None:
         reservation = self.get_reservation(reservation_id)
         if reservation is None:
             raise HTTPException(status_code=404, detail="Reservation not found")
 
-        deleted = self.reservation_repository.unreserve_by_id(reservation_id)
+        deleted = self.reservation_repository.unreserve_by_id(reservation_id, user_id)
         if not deleted:
             raise HTTPException(status_code=404, detail="Reservation not found")
-        gift = self.gift_repository.get_gift_by_id(reservation.gift_id)
-        if gift is not None and gift.status != "bought":
-            self.gift_repository.update_gift_status(reservation.gift_id, "available")
 
     def unreserve_gift_by_user(self, gift_id: int, user_id: int) -> None:
         reservation = self.reservation_repository.get_reservation_by_gift(gift_id)
@@ -116,10 +116,8 @@ class ReservationService:
         if reservation.reserver_id != user_id:
             raise HTTPException(status_code=403, detail="You can only cancel your own reservation")
 
-        self.reservation_repository.unreserve_by_id(reservation.id)
-        gift = self.gift_repository.get_gift_by_id(gift_id)
-        if gift is not None and gift.status != "bought":
-            self.gift_repository.update_gift_status(gift_id, "available")
+        if not self.reservation_repository.unreserve_by_id(reservation.id, user_id):
+            raise HTTPException(status_code=404, detail="Reservation not found")
 
     def clear_reservation_for_gift(self, gift_id: int) -> None:
         reservation = self.reservation_repository.get_reservation_by_gift(gift_id)

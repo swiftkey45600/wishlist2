@@ -27,5 +27,6 @@ export async function deleteUser(userId) {
 
 export async function updateMe(userData) {
     const response = await api.patch("/users/me", userData, { headers: getAuthHeaders() })
+    if (response.data.access_token) localStorage.setItem("accessToken", response.data.access_token)
     return response.data.user
 }
