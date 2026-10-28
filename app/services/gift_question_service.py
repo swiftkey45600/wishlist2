@@ -36,7 +36,10 @@ class GiftQuestionService:
         retry_after = ReservationRepository().check_guest_rate_limit(f"question:{client_ip}")
         if retry_after is not None:
             raise HTTPException(status_code=429, detail="Too many questions", headers={"Retry-After": str(retry_after)})
-        return self.questions.create_question(gift_id, guest_name, text)
+        try:
+            return self.questions.create_question(gift_id, guest_name, text)
+        except ValueError as error:
+            raise HTTPException(status_code=409, detail=str(error)) from error
 
     def answer_question(self, gift_id: int, question_id: int, answer: str, current_user: User):
         self._check_owner(gift_id, current_user)
@@ -44,3 +47,8 @@ class GiftQuestionService:
         if question is None:
             raise HTTPException(status_code=404, detail="Question not found")
         return question
+
+    def delete_question(self, gift_id: int, question_id: int, current_user: User) -> None:
+        self._check_owner(gift_id, current_user)
+        if not self.questions.delete_question(gift_id, question_id):
+            raise HTTPException(status_code=404, detail="Question not found")

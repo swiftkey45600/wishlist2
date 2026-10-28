@@ -1,0 +1,10 @@
+.gift-questions { margin: 12px 0; }
+.gift-questions-content { margin-top: 12px; display: grid; gap: 12px; }
+.gift-question { border-top: 1px solid #e6e7ef; padding-top: 12px; overflow-wrap: anywhere; }
+.gift-question p { margin: 6px 0; white-space: pre-wrap; }
+.gift-questions form { display: grid; gap: 8px; }
+.gift-questions label { display: grid; gap: 4px; }
+.gift-questions input, .gift-questions textarea { width: 100%; padding: 8px; border: 1px solid #d9dbe5; border-radius: 8px; font: inherit; }
+.gift-questions textarea { min-height: 64px; resize: vertical; }
+.gift-questions form button { justify-self: start; }
+.gift-questions-error { color: #bd3434; }
