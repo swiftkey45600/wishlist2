@@ -22,7 +22,8 @@ async def login(user_request: UserLoginRequest):
 
     token = create_access_token(data={
         "sub": user.login,
-        "user_id": user.id
+        "user_id": user.id,
+        "auth_version": user.auth_version,
     })
 
     return {
@@ -45,7 +46,8 @@ async def register(user_request: UserRegisterRequest):
 
     token = create_access_token(data={
         "sub": user.login,
-        "user_id": user.id
+        "user_id": user.id,
+        "auth_version": user.auth_version,
     })
 
     return {

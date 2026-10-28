@@ -39,7 +39,9 @@ class ReservationRepository:
         with get_connection() as connection:
             connection.execute("BEGIN IMMEDIATE")
             cursor = connection.execute(
-                "UPDATE gifts SET status = 'reserved' WHERE id = ? AND status = 'available' AND contribution_goal IS NULL",
+                """UPDATE gifts SET status = 'reserved'
+                   WHERE id = ? AND status = 'available' AND contribution_goal IS NULL
+                     AND EXISTS (SELECT 1 FROM events WHERE events.id = gifts.event_id AND events.status = 'active')""",
                 (reservation.gift_id,),
             )
             if not cursor.rowcount:
@@ -89,7 +91,9 @@ class ReservationRepository:
         with get_connection() as connection:
             connection.execute("BEGIN IMMEDIATE")
             changed = connection.execute(
-                "UPDATE gifts SET status = 'reserved' WHERE id = ? AND status = 'available' AND contribution_goal IS NULL",
+                """UPDATE gifts SET status = 'reserved'
+                   WHERE id = ? AND status = 'available' AND contribution_goal IS NULL
+                     AND EXISTS (SELECT 1 FROM events WHERE events.id = gifts.event_id AND events.status = 'active')""",
                 (reservation.gift_id,),
             )
             if not changed.rowcount:
