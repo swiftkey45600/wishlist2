@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import "./ProfilePage.css"
 import "../../styles/common.css"
 
+import { emailFeaturesEnabled, requestEmailVerification } from "../../repositories/accountEmailRepository"
 import Header from "../../components/Header/Header"
 import Sidebar from "../../components/Sidebar/Sidebar"
 import ProfileCard from "../../components/Profile/ProfileCard/ProfileCard"
@@ -20,6 +21,8 @@ function ProfilePage() {
     const [user, setUser] = useState(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
+    const [email, setEmail] = useState("")
+    const [emailMessage, setEmailMessage] = useState("")
     const [name, setName] = useState("")
     const [login, setLogin] = useState("")
     const [password, setPassword] = useState("")
@@ -39,6 +42,7 @@ function ProfilePage() {
                 setError("Не удалось загрузить профиль")
             } else {
                 setUser(profile)
+                setEmail(profile.email || "")
                 setName(profile.name || "")
                 setLogin(profile.login || "")
             }
@@ -50,6 +54,7 @@ function ProfilePage() {
     }, [])
 
     function openEdit() {
+        setEmail(user?.email || "")
         setName(user?.name || "")
         setLogin(user?.login || "")
         setPassword("")
@@ -98,6 +103,7 @@ function ProfilePage() {
         const updatedUser = await editMe({
             name: name.trim(),
             login: login.trim(),
+            ...(emailFeaturesEnabled ? { email: email.trim() || null } : {}),
             ...(password ? { password } : {})
         })
         setIsSaving(false)
@@ -154,9 +160,16 @@ function ProfilePage() {
                                     <div className="profile-info-list">
                                         <div><span>Имя</span><strong>{user.name}</strong></div>
                                         <div><span>Логин</span><strong>{user.login}</strong></div>
+                                        {emailFeaturesEnabled && <div><span>Почта</span><strong>{user.email || "Не указана"} {user.email && (user.email_verified ? "— подтверждена" : "— не подтверждена")}</strong></div>}
                                     </div>
                                 </div>
 
+                                {emailFeaturesEnabled && user.email && !user.email_verified && <button type="button" className="profile-button secondary" onClick={async () => {
+                                    setEmailMessage("")
+                                    try { await requestEmailVerification(); setEmailMessage("Запрос принят. Если отправка писем настроена, письмо придёт на вашу почту.") }
+                                    catch { setEmailMessage("Не удалось запросить письмо. Попробуйте позже.") }
+                                }}>Отправить письмо повторно</button>}
+                                {emailMessage && <p role="status">{emailMessage}</p>}
                                 <ProfileActions />
                             </section>
                         </>
@@ -207,6 +220,7 @@ function ProfilePage() {
                                     autoComplete="username"
                                 />
                             </label>
+                            {emailFeaturesEnabled && <label className="profile-field"><span>Электронная почта</span><input type="email" value={email} onChange={event => setEmail(event.target.value)} autoComplete="email" /></label>}
                             <label className="profile-field">
                                 <span>Новый пароль</span>
                                 <input

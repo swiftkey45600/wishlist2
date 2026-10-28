@@ -1,5 +1,6 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
+import { emailFeaturesEnabled } from "../../repositories/accountEmailRepository"
 
 import {
     login,
@@ -18,6 +19,7 @@ function isRepeatedCharacter(value) {
 
 function AuthPage() {
     const [isLogin, setIsLogin] = useState(true)
+    const [email, setEmail] = useState("")
     const [name, setName] = useState("")
     const [loginValue, setLoginValue] = useState("")
     const [password, setPassword] = useState("")
@@ -68,7 +70,7 @@ function AuthPage() {
         try {
             const response = isLogin
                 ? await login({ login: loginValue.trim(), password })
-                : await register({ name, login: loginValue.trim(), password })
+                : await register({ name, login: loginValue.trim(), password, ...(emailFeaturesEnabled ? { email: email.trim() } : {}) })
 
             if (!response?.access_token) {
                 setError("Не удалось подтвердить авторизацию")
@@ -132,6 +134,8 @@ function AuthPage() {
                         />
                     }
 
+                    {!isLogin && emailFeaturesEnabled && <input type="email" placeholder="Электронная почта" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} required />}
+
                     <input
                         type="text"
                         placeholder="Логин"
@@ -156,6 +160,7 @@ function AuthPage() {
                         />
                     }
 
+                    {isLogin && emailFeaturesEnabled && <Link to="/forgot-password">Забыли пароль?</Link>}
                     {error && <p className="auth-error">{error}</p>}
 
                     <button

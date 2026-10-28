@@ -13,7 +13,8 @@ export async function registerUser(userData) {
     const response = await api.post("/auth/register", {
         name: userData.name,
         login: userData.login,
-        password: userData.password
+        password: userData.password,
+        ...(userData.email ? { email: userData.email } : {})
     })
 
     return response.data

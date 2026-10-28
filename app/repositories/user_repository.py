@@ -66,7 +66,7 @@ class UserRepository:
             user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
             if user is None:
                 return None
-            if "email" in fields:
+            if "email" in fields and fields["email"] is not None:
                 fields["email"] = str(fields["email"]).casefold()
             changed_email = "email" in fields and fields["email"] != user["email"]
             if changed_email:

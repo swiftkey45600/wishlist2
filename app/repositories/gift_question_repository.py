@@ -12,6 +12,12 @@ class GiftQuestionRepository:
 
     def create_question(self, gift_id: int, guest_name: str, text: str) -> GiftQuestion:
         with get_connection() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            status = connection.execute(
+                "SELECT events.status FROM events JOIN gifts ON gifts.event_id = events.id WHERE gifts.id = ?", (gift_id,)
+            ).fetchone()
+            if status is None or status["status"] != "active":
+                raise ValueError("Event is archived")
             cursor = connection.execute(
                 "INSERT INTO gift_questions (gift_id, guest_name, text) VALUES (?, ?, ?)",
                 (gift_id, guest_name, text),
@@ -32,3 +38,8 @@ class GiftQuestionRepository:
                 "SELECT * FROM gift_questions WHERE id = ? AND gift_id = ?", (question_id, gift_id)
             ).fetchone()
         return GiftQuestion(**dict(row)) if row is not None else None
+
+    def delete_question(self, gift_id: int, question_id: int) -> bool:
+        with get_connection() as connection:
+            cursor = connection.execute("DELETE FROM gift_questions WHERE id = ? AND gift_id = ?", (question_id, gift_id))
+            return cursor.rowcount > 0
