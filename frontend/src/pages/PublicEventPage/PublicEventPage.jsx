@@ -4,6 +4,7 @@ import "../../styles/common.css"
 
 import { useNavigate, useParams } from "react-router-dom"
 
+import { eventArchiveEnabled } from "../../repositories/eventArchiveRepository"
 import api from "../../services/api"
 import Header from "../../components/Header/Header"
 import Sidebar from "../../components/Sidebar/Sidebar"
@@ -27,6 +28,7 @@ function PublicEventPage() {
     const isAuthenticated = Boolean(localStorage.getItem("accessToken"))
     const isOwner = isAuthenticated && user?.id === data?.event?.owner_id
     const gifts = data?.gifts || []
+    const archived = eventArchiveEnabled && data?.event?.status === "archived"
     const tags = []
     gifts.forEach((gift) => {
         gift.tags?.forEach((tag) => {
@@ -36,7 +38,7 @@ function PublicEventPage() {
     const { filters, filteredGifts, updateFilter } = useGiftFilters(gifts, isOwner)
 
     async function handleToggleStatus(gift) {
-        if (gift.status === "bought") return
+        if (gift.status === "bought" || (archived && gift.status === "available")) return
         if (!isAuthenticated) {
             setReservationError(null)
             setSelectedGift({ gift, token })
@@ -47,7 +49,8 @@ function PublicEventPage() {
         const updatedGift = await updatePublicGiftReservation(token, gift.id, gift.status === "available")
 
         if (!updatedGift) {
-            setReservationError("Не удалось изменить бронь. Возможно, подарок уже заняли.")
+            try { await handleFundraisingChange() } catch { /* Keep the previous data if refresh fails. */ }
+            setReservationError("Не удалось изменить бронь. Событие могло завершиться или подарок уже заняли.")
             return
         }
 
@@ -107,7 +110,9 @@ function PublicEventPage() {
                             ← Назад
                         </button>
                         <span className="event-page-note">
-                            {isOwner
+                            {archived
+                                ? "Событие завершено"
+                                : isOwner
                                 ? "Это ваше событие"
                                 : isAuthenticated
                                     ? "Вы можете забронировать подарок"
@@ -126,6 +131,7 @@ function PublicEventPage() {
                     {!isLoading && data && (
                         <>
                             <EventDetailsCard event={data.event} />
+                            {archived && <p role="status">Событие завершено. Новые брони недоступны.</p>}
 
                             <div className="gift-list">
                                 <div className="public-gift-list-header">
@@ -160,9 +166,10 @@ function PublicEventPage() {
                                                 gift={gift}
                                                 publicToken={token}
                                                 isOwner={isOwner}
+                                                archived={archived}
                                                 onGiftChange={handleFundraisingChange}
                                                 hideReservationDetails={isOwner}
-                                                onToggleStatus={!isOwner && gift.status !== "bought" ? handleToggleStatus : undefined}
+                                                onToggleStatus={!isOwner && gift.status !== "bought" && (!archived || gift.status !== "available") ? handleToggleStatus : undefined}
                                             />
                                         ))}
                                     </div>
@@ -177,6 +184,11 @@ function PublicEventPage() {
                 token={token}
                 gift={selectedGift.gift}
                 onCancel={() => setSelectedGift(null)}
+                onConflict={async () => {
+                    try { await handleFundraisingChange() } catch { /* Keep the previous data if refresh fails. */ }
+                    setSelectedGift(null)
+                    setReservationError("Не удалось создать бронь. Событие могло завершиться или подарок уже заняли.")
+                }}
                 onSuccess={updatedGift => {
                     setData(previous => previous?.event?.public_token === token ? ({
                         ...previous,

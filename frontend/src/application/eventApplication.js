@@ -8,8 +8,8 @@ import {
     updateEvent as updateEventRepository
 } from "../repositories/eventRepository"
 
-export async function getEvents() {
-    return fetchEvents()
+export async function getEvents(status) {
+    return fetchEvents(status)
 }
 
 export async function createEvent(eventData) {

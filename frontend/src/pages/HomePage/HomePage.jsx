@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom"
 import "./HomePage.css"
 import "../../styles/common.css"
 
+import { eventArchiveEnabled } from "../../repositories/eventArchiveRepository"
 import { getEvents, createEvent } from "../../application/eventApplication"
 
 import Header from "../../components/Header/Header"
@@ -14,24 +15,30 @@ import EventsList from "../../components/Events/EventsList/EventsList"
 function HomePage() {
   const navigate = useNavigate()
   const [events, setEvents] = useState([])
+  const [archiveTab, setArchiveTab] = useState(false)
   const [giftStats, setGiftStats] = useState({ total: 0, reserved: 0 })
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [error, setError] = useState(null)
+  const [eventsLoading, setEventsLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
     async function loadEvents() {
+      setEventsLoading(true)
+      setError(null)
       try {
-        const data = await getEvents()
+        const data = await getEvents(eventArchiveEnabled ? (archiveTab ? "archived" : "active") : undefined)
         if (!cancelled) setEvents(data)
       } catch {
         if (!cancelled) setError("Не удалось загрузить события. Обновите страницу.")
+      } finally {
+        if (!cancelled) setEventsLoading(false)
       }
     }
 
     loadEvents()
     return () => { cancelled = true }
-  }, [])
+  }, [archiveTab])
 
 
   async function handleCreateEvent(eventData) {
@@ -39,7 +46,8 @@ function HomePage() {
     const createdEvent = await createEvent(eventData)
 
     if (createdEvent) {
-      setEvents((currentEvents) => [...currentEvents, createdEvent])
+      if (eventArchiveEnabled && archiveTab) setArchiveTab(false)
+      else setEvents((currentEvents) => [...currentEvents, createdEvent])
       setIsCreateOpen(false)
       return true
     } else {
@@ -47,6 +55,8 @@ function HomePage() {
       return false
     }
   }
+
+  const visibleEvents = events
 
   function handleOpenEvent(eventId) {
     navigate(`/events/${eventId}`)
@@ -104,11 +114,17 @@ function HomePage() {
             <span className="muted">Ваши события</span>
           </div>
 
-          <EventsList
-            events={events}
+          {eventArchiveEnabled && <div className="event-archive-tabs">
+            <button className="btn secondary" type="button" aria-pressed={!archiveTab} onClick={() => setArchiveTab(false)}>Активные</button>
+            <button className="btn secondary" type="button" aria-pressed={archiveTab} onClick={() => setArchiveTab(true)}>Архив</button>
+          </div>}
+          {eventsLoading && <p role="status">Загружаем события...</p>}
+          {eventArchiveEnabled && !eventsLoading && !error && visibleEvents.length === 0 && <p>{archiveTab ? "В архиве пока нет событий." : "Активных событий пока нет."}</p>}
+          {!eventsLoading && !error && <EventsList
+            events={visibleEvents}
             onOpenEvent={handleOpenEvent}
             onGiftsLoaded={handleGiftsLoaded}
-          />
+          />}
           {error && <p className="error-text">{error}</p>}
         </main>
       </div>

@@ -88,6 +88,15 @@ class EventLifecycleTests(unittest.TestCase):
         self.events.set_status(active.id, 1, "archived")
         self.assertEqual(self.client.get("/events/user/1?status=active", headers=self.owner).json(), {"events": []})
 
+    def test_invalid_event_ids_are_rejected_before_database_access(self):
+        for event_id in ("0", "-1", "9223372036854775808"):
+            for action in ("archive", "restore", "copy"):
+                with self.subTest(event_id=event_id, action=action):
+                    url = f"/events/{event_id}/{action}"
+                    response = (self.client.post(url, json={"title": "Copy"}, headers=self.owner)
+                                if action == "copy" else self.client.patch(url, headers=self.owner))
+                    self.assertEqual(response.status_code, 422)
+
     def test_only_owner_can_archive_restore_and_copy(self):
         for action, method in (("archive", "patch"), ("restore", "patch"), ("copy", "post")):
             request = getattr(self.client, method)

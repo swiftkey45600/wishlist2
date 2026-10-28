@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { changeGuestReservation } from "../../../application/guestReservationApplication"
 import "./GuestReservationModal.css"
 
-function GuestReservationModal({ token, gift, onSuccess, onCancel }) {
+function GuestReservationModal({ token, gift, onSuccess, onCancel, onConflict }) {
     const dialogRef = useRef(null)
     const [name, setName] = useState("")
     const [secretWord, setSecretWord] = useState("")
@@ -34,6 +34,10 @@ function GuestReservationModal({ token, gift, onSuccess, onCancel }) {
             const updatedGift = await changeGuestReservation(token, gift, { name, secretWord })
             onSuccess(updatedGift)
         } catch (requestError) {
+            if (!isCancelling && requestError.cause?.response?.status === 409 && onConflict) {
+                await onConflict()
+                return
+            }
             setError(requestError.message || "Не удалось изменить бронь. Попробуйте ещё раз.")
         } finally {
             setIsSubmitting(false)

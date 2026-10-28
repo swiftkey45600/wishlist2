@@ -113,17 +113,17 @@ async def update_event(
 
 
 @router.patch("/{event_id}/archive")
-async def archive_event(event_id: int, current_user: User = Depends(get_current_user)):
+async def archive_event(event_id: DatabaseId, current_user: User = Depends(get_current_user)):
     return {"event": event_service.set_status(event_id, current_user.id, "archived")}
 
 
 @router.patch("/{event_id}/restore")
-async def restore_event(event_id: int, current_user: User = Depends(get_current_user)):
+async def restore_event(event_id: DatabaseId, current_user: User = Depends(get_current_user)):
     return {"event": event_service.set_status(event_id, current_user.id, "active")}
 
 
 @router.post("/{event_id}/copy", status_code=201)
-async def copy_event(event_id: int, data: EventCopyRequest, current_user: User = Depends(get_current_user)):
+async def copy_event(event_id: DatabaseId, data: EventCopyRequest, current_user: User = Depends(get_current_user)):
     return {"event": event_service.copy_event(event_id, current_user.id, data)}
 
 
