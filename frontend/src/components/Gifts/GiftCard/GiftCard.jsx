@@ -15,7 +15,7 @@ function marketplaceLink(value) {
 }
 
 function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit, hideReservationDetails = false,
-    publicToken, isOwner = false, onGiftChange }) {
+    publicToken, isOwner = false, archived = false, onGiftChange }) {
     const hideStatus = hideReservationDetails && ["reserved", "bought"].includes(gift.status)
     const productUrl = marketplaceLink(gift.marketplace_url)
 
@@ -96,7 +96,7 @@ function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit, hideRe
                 onGiftChange={onGiftChange}
             />}
 
-            {publicToken && <GiftQuestions token={publicToken} giftId={gift.id} isOwner={isOwner} />}
+            {publicToken && <GiftQuestions token={publicToken} giftId={gift.id} isOwner={isOwner} archived={archived} />}
 
             <div className="gift-card-footer">
                 {productUrl && (

@@ -73,6 +73,14 @@ class UserEmailTests(unittest.TestCase):
         self.assertEqual(self.client.post(self.url, json={}, headers=self.owner).status_code, 422)
         self.assertEqual(self.client.get(self.url, headers=self.owner).json(), {"email": "valid@example.com", "email_verified": False})
 
+    def test_profile_can_clear_email_without_storing_none_string(self):
+        self.assertEqual(self.save("valid@example.com").status_code, 200)
+        response = self.client.patch("/users/me", json={"email": None}, headers=self.owner)
+        self.assertEqual(response.status_code, 200)
+        self.assertIsNone(response.json()["user"]["email"])
+        self.assertIsNone(UserRepository().get_user_by_id(1).email)
+        self.assertEqual(self.client.patch("/users/me", json={"email": None}, headers=self.other).status_code, 200)
+
     def test_email_is_private_and_cannot_be_set_for_another_user(self):
         self.save("private@example.com")
         response = self.client.get("/users/1", headers=self.other)

@@ -29,10 +29,16 @@ test("questions use public token for guest requests and owner route for answers"
     assert.equal(calls[1][2].text, "Какой цвет?")
     assert.equal(calls[2][1], "/gifts/7/questions/2/answer")
     assert.equal(calls[2][2].answer, "Синий")
-    assert.equal(questions.questionDeletionEnabled, false)
+    assert.equal(questions.questionDeletionEnabled, true)
 })
 
-test("email features remain disabled unless explicitly enabled", async () => {
-    const email = await repository("accountEmailRepository", {})
-    assert.equal(email.emailFeaturesEnabled, false)
+test("email features use the implemented API", async () => {
+    const calls = []
+    const email = await repository("accountEmailRepository", { post: async (path, body) => { calls.push([path, body]) } })
+    assert.equal(email.emailFeaturesEnabled, true)
+    await email.resetPassword("token", "password")
+    await email.requestEmailVerification()
+    assert.equal(calls[0][0], "/auth/password-reset/confirm")
+    assert.equal(calls[0][1].new_password, "password")
+    assert.equal(calls[1][0], "/auth/email/verification/request")
 })

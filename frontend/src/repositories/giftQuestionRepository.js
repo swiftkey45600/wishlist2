@@ -19,8 +19,7 @@ export async function answerQuestion(giftId, questionId, answer) {
     return response.data
 }
 
-// Proposed endpoint, disabled until implemented by the backend.
-export const questionDeletionEnabled = import.meta.env.VITE_QUESTION_DELETE_ENABLED === "true"
+export const questionDeletionEnabled = true
 
 export async function deleteQuestion(giftId, questionId) {
     await api.delete(`/gifts/${giftId}/questions/${questionId}`)

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { answerQuestion, createQuestion, deleteQuestion, fetchQuestions, questionDeletionEnabled } from "../../../repositories/giftQuestionRepository"
 import "./GiftQuestions.css"
 
-function GiftQuestions({ token, giftId, isOwner }) {
+function GiftQuestions({ token, giftId, isOwner, archived = false }) {
     const [questions, setQuestions] = useState(null)
     const [open, setOpen] = useState(false)
     const [name, setName] = useState("")
@@ -35,7 +35,7 @@ function GiftQuestions({ token, giftId, isOwner }) {
             setQuestions(current => [...current, question])
             setText("")
         } catch (err) {
-            setError(err.response?.status === 429 ? "Слишком много вопросов. Попробуйте позже." : "Не удалось отправить вопрос.")
+            setError(err.response?.status === 429 ? "Слишком много вопросов. Попробуйте позже." : err.response?.status === 409 ? "Событие завершено. Новые вопросы недоступны." : "Не удалось отправить вопрос.")
         } finally {
             setBusy(false)
         }
@@ -94,7 +94,7 @@ function GiftQuestions({ token, giftId, isOwner }) {
                         <button className="gift-secondary-button" type="submit" disabled={busy}>Сохранить ответ</button>
                     </form>}
                 </div>)}
-                {!isOwner && <form onSubmit={submitQuestion}>
+                {!isOwner && !archived && <form onSubmit={submitQuestion}>
                     <label>Ваше имя<input value={name} onChange={event => setName(event.target.value)} maxLength={100} required /></label>
                     <label>Вопрос<textarea value={text} onChange={event => setText(event.target.value)} maxLength={2000} placeholder="Какой размер, цвет или модель?" required /></label>
                     <button className="gift-secondary-button" type="submit" disabled={busy}>Задать вопрос</button>

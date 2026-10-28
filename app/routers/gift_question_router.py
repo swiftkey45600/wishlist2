@@ -30,3 +30,9 @@ def answer_question(
     current_user: User = Depends(get_current_user),
 ):
     return service.answer_question(gift_id, question_id, data.answer, current_user)
+
+
+@router.delete("/gifts/{gift_id}/questions/{question_id}")
+def delete_question(gift_id: DatabaseId, question_id: DatabaseId, current_user: User = Depends(get_current_user)):
+    service.delete_question(gift_id, question_id, current_user)
+    return {"deleted": True}

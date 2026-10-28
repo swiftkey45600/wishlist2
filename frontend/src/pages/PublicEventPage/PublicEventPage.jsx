@@ -160,6 +160,7 @@ function PublicEventPage() {
                                                 gift={gift}
                                                 publicToken={token}
                                                 isOwner={isOwner}
+                                                archived={data.event.status === "archived"}
                                                 onGiftChange={handleFundraisingChange}
                                                 hideReservationDetails={isOwner}
                                                 onToggleStatus={!isOwner && gift.status !== "bought" ? handleToggleStatus : undefined}
