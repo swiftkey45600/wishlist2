@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from app.models.identifiers import DatabaseId
-from app.models.user import User, UserUpdateRequest
-from app.services.user_service import UserService, validate_login
+from app.models.user import User, UserEmailRequest, UserEmailResponse, UserUpdateRequest
+from app.services.user_service import UserConflictError, UserService, validate_login
 from app.repositories.user_repository import UserRepository
 from app.utils.jwt import create_access_token, get_current_user
+from app.models.identifiers import DatabaseId
 
 router = APIRouter(
     prefix="/users",
@@ -22,9 +22,27 @@ async def get_my_profile(current_user: User = Depends(get_current_user)):
             "name": current_user.name,
             "login": current_user.login,
             "birthday": current_user.birthday,
-            "gender": current_user.gender
+            "gender": current_user.gender,
+            "email": current_user.email,
+            "email_verified": current_user.email_verified,
         }
     }
+
+
+@router.get("/me/email", response_model=UserEmailResponse)
+def get_my_email(current_user: User = Depends(get_current_user)):
+    return {"email": current_user.email, "email_verified": current_user.email_verified}
+
+
+@router.post("/me/email", response_model=UserEmailResponse)
+def save_my_email(data: UserEmailRequest, current_user: User = Depends(get_current_user)):
+    try:
+        user = users_service.set_email(current_user.id, str(data.email))
+    except ValueError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"email": user.email, "email_verified": user.email_verified}
 
 
 @router.patch("/me")
@@ -52,10 +70,16 @@ async def update_my_profile(
             current_user.id,
             data,
         )
+    except UserConflictError as error:
+        raise HTTPException(status_code=409, detail=str(error)) from error
     except ValueError as error:
         raise HTTPException(status_code=409 if str(error) == "Login already exists" else 400, detail=str(error)) from error
     return {
-        "access_token": create_access_token({"sub": updated_user.login, "user_id": updated_user.id}),
+        "access_token": create_access_token({
+            "sub": updated_user.login,
+            "user_id": updated_user.id,
+            "auth_version": updated_user.auth_version,
+        }),
         "token_type": "bearer",
         "user": {
             "id": updated_user.id,
@@ -63,6 +87,8 @@ async def update_my_profile(
             "login": updated_user.login,
             "birthday": updated_user.birthday,
             "gender": updated_user.gender,
+            "email": updated_user.email,
+            "email_verified": updated_user.email_verified,
         }
     }
 

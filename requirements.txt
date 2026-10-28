@@ -6,3 +6,4 @@ bcrypt
 python-dotenv
 Pillow
 httpx
+email-validator

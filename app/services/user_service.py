@@ -1,8 +1,14 @@
+from sqlite3 import IntegrityError
+
 from app.models import User
 from app.repositories import UserRepository
 from app.models.user import UserRegisterRequest, UserLoginRequest
 from app.utils.security import hash_password, verify_password
 from sqlite3 import IntegrityError
+
+
+class UserConflictError(ValueError):
+    pass
 
 
 MIN_LOGIN_LENGTH = 3
@@ -41,11 +47,14 @@ class UserService:
 
         if self.user_repository.get_user_by_login(register_request.login):
             raise ValueError("Login already exists")
-        
+        if register_request.email is not None:
+            register_request.email = str(register_request.email).casefold()
         try:
             return self.user_repository.create_user(register_request)
         except IntegrityError as error:
-            raise ValueError("Login already exists") from error
+            if error.sqlite_errorname == "SQLITE_CONSTRAINT_UNIQUE":
+                raise UserConflictError("Login or email already in use") from error
+            raise
 
     def authenticate_user(self, login_request: UserLoginRequest) -> User:
         user = self.user_repository.get_user_by_login(login_request.login.strip())
@@ -59,10 +68,19 @@ class UserService:
     def get_user(self, user_id: int) -> User | None:
         return self.user_repository.get_user_by_id(user_id)
 
+    def set_email(self, user_id: int, email: str) -> User | None:
+        try:
+            return self.user_repository.set_email(user_id, email)
+        except IntegrityError as error:
+            if error.sqlite_errorname == "SQLITE_CONSTRAINT_UNIQUE":
+                raise ValueError("Email already in use") from error
+            raise
+
     def delete_user(self, user_id: int) -> None:
         self.user_repository.delete_user(user_id)
 
     def update_user(self, user_id: int, data: dict) -> User | None:
+        data = data.copy()
         if data.get("password") is not None:
             password = data.pop("password")
             validate_password(password)
@@ -70,7 +88,9 @@ class UserService:
         try:
             return self.user_repository.update_user(user_id, data)
         except IntegrityError as error:
-            raise ValueError("Login already exists") from error
+            if error.sqlite_errorname == "SQLITE_CONSTRAINT_UNIQUE":
+                raise UserConflictError("Login or email already in use") from error
+            raise
 
     def list_users(self) -> list[User]:
         return self.user_repository.list_users()

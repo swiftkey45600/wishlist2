@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException, Depends, Query
 from pydantic import BaseModel
 from app.models.identifiers import DatabaseId
-from app.models.event import EventCreateRequest, EventUpdateRequest
+from app.models.event import EventCopyRequest, EventCreateRequest, EventStatus, EventUpdateRequest
 from app.models.gift import GiftFilters
 from app.models.user import User
 from app.services.event_service import EventService
@@ -22,17 +22,17 @@ gift_repository = GiftRepository()
 event_service = EventService(event_repository, gift_repository)
 
 @router.get("/")
-async def get_events(current_user: User = Depends(get_current_user)):
-    return {"events": event_service.get_user_events(current_user.id)}
+async def get_events(current_user: User = Depends(get_current_user), status: EventStatus | None = None):
+    return {"events": event_service.get_user_events(current_user.id, status)}
 
 
 
 @router.get("/user/{owner_id}")
-async def get_user_events(owner_id: DatabaseId, current_user: User = Depends(get_current_user)):
+async def get_user_events(owner_id: DatabaseId, current_user: User = Depends(get_current_user), status: EventStatus | None = None):
     if owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="You can only view your own events")
-    events = event_service.get_user_events(owner_id)
-    if not events:
+    events = event_service.get_user_events(owner_id, status)
+    if not events and status is None:
         raise HTTPException(status_code=404, detail="Owner has no events")
     return {"events": events}
 
@@ -110,6 +110,21 @@ async def update_event(
         setattr(event, field_name, value)
 
     return {"event": event_service.update_event(event_id, event)}
+
+
+@router.patch("/{event_id}/archive")
+async def archive_event(event_id: int, current_user: User = Depends(get_current_user)):
+    return {"event": event_service.set_status(event_id, current_user.id, "archived")}
+
+
+@router.patch("/{event_id}/restore")
+async def restore_event(event_id: int, current_user: User = Depends(get_current_user)):
+    return {"event": event_service.set_status(event_id, current_user.id, "active")}
+
+
+@router.post("/{event_id}/copy", status_code=201)
+async def copy_event(event_id: int, data: EventCopyRequest, current_user: User = Depends(get_current_user)):
+    return {"event": event_service.copy_event(event_id, current_user.id, data)}
 
 
 @router.delete("/{event_id}")
