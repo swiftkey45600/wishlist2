@@ -99,6 +99,9 @@ function GiftFundraising({ gift, publicToken, isOwner, archived = false, hideCon
             setNotice("Взнос добавлен.")
             await refresh(true)
         } catch (requestError) {
+            if (!saved && requestError.cause?.response?.status === 409) {
+                try { await onGiftChange?.() } catch { /* Keep the previous data if refresh fails. */ }
+            }
             if (active.current) setError(saved
                 ? "Взнос сохранён. Не удалось обновить данные — нажмите «Обновить сбор»."
                 : requestError.message)

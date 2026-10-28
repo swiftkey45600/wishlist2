@@ -1,21 +1,24 @@
-import { useState } from "react"
+import { useRef, useState } from "react"
 
 function CopyEventForm({ event, onCopy, onCancel }) {
     const [title, setTitle] = useState(event.title || "")
     const [date, setDate] = useState("")
     const [busy, setBusy] = useState(false)
+    const pending = useRef(false)
     const [error, setError] = useState("")
 
     async function submit(formEvent) {
         formEvent.preventDefault()
-        if (!title.trim() || busy) return
+        if (!title.trim() || pending.current) return
+        pending.current = true
         setBusy(true)
         setError("")
         try {
             await onCopy(title.trim(), date)
         } catch {
-            setError("Не удалось создать событие. Попробуйте ещё раз.")
+            setError("Не удалось подтвердить создание. Проверьте список событий перед повторной попыткой.")
         } finally {
+            pending.current = false
             setBusy(false)
         }
     }

@@ -49,7 +49,8 @@ function PublicEventPage() {
         const updatedGift = await updatePublicGiftReservation(token, gift.id, gift.status === "available")
 
         if (!updatedGift) {
-            setReservationError("Не удалось изменить бронь. Возможно, подарок уже заняли.")
+            try { await handleFundraisingChange() } catch { /* Keep the previous data if refresh fails. */ }
+            setReservationError("Не удалось изменить бронь. Событие могло завершиться или подарок уже заняли.")
             return
         }
 
@@ -109,7 +110,9 @@ function PublicEventPage() {
                             ← Назад
                         </button>
                         <span className="event-page-note">
-                            {isOwner
+                            {archived
+                                ? "Событие завершено"
+                                : isOwner
                                 ? "Это ваше событие"
                                 : isAuthenticated
                                     ? "Вы можете забронировать подарок"
@@ -181,6 +184,11 @@ function PublicEventPage() {
                 token={token}
                 gift={selectedGift.gift}
                 onCancel={() => setSelectedGift(null)}
+                onConflict={async () => {
+                    try { await handleFundraisingChange() } catch { /* Keep the previous data if refresh fails. */ }
+                    setSelectedGift(null)
+                    setReservationError("Не удалось создать бронь. Событие могло завершиться или подарок уже заняли.")
+                }}
                 onSuccess={updatedGift => {
                     setData(previous => previous?.event?.public_token === token ? ({
                         ...previous,

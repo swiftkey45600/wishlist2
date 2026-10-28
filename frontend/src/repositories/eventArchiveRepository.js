@@ -1,10 +1,10 @@
 import api from "../services/api"
 
-// Proposed API; enable only after the backend implements this contract.
+// Enable when the S8.2 backend is available.
 export const eventArchiveEnabled = import.meta.env.VITE_EVENT_ARCHIVE_ENABLED === "true"
 
 export async function changeEventArchive(eventId, archived) {
-    const response = await api.patch(`/events/${eventId}/archive`, { archived })
+    const response = await api.patch(`/events/${eventId}/${archived ? "archive" : "restore"}`)
     return response.data.event
 }
 

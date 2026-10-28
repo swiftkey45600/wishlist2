@@ -126,6 +126,7 @@ function EventPage() {
                                     <CopyEventForm event={event} onCancel={() => setCopyOpen(false)} onCopy={async (title, date) => {
                                         const copied = await copyEvent(id, title, date)
                                         if (!copied?.id) throw new Error("Missing copied event")
+                                        setCopyOpen(false)
                                         navigate(`/events/${copied.id}`)
                                     }} />
                                 </div></div>}

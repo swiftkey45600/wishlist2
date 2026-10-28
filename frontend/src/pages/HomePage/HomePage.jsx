@@ -19,21 +19,26 @@ function HomePage() {
   const [giftStats, setGiftStats] = useState({ total: 0, reserved: 0 })
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [error, setError] = useState(null)
+  const [eventsLoading, setEventsLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
     async function loadEvents() {
+      setEventsLoading(true)
+      setError(null)
       try {
-        const data = await getEvents()
+        const data = await getEvents(eventArchiveEnabled ? (archiveTab ? "archived" : "active") : undefined)
         if (!cancelled) setEvents(data)
       } catch {
         if (!cancelled) setError("Не удалось загрузить события. Обновите страницу.")
+      } finally {
+        if (!cancelled) setEventsLoading(false)
       }
     }
 
     loadEvents()
     return () => { cancelled = true }
-  }, [])
+  }, [archiveTab])
 
 
   async function handleCreateEvent(eventData) {
@@ -41,7 +46,8 @@ function HomePage() {
     const createdEvent = await createEvent(eventData)
 
     if (createdEvent) {
-      setEvents((currentEvents) => [...currentEvents, createdEvent])
+      if (eventArchiveEnabled && archiveTab) setArchiveTab(false)
+      else setEvents((currentEvents) => [...currentEvents, createdEvent])
       setIsCreateOpen(false)
       return true
     } else {
@@ -50,7 +56,7 @@ function HomePage() {
     }
   }
 
-  const visibleEvents = eventArchiveEnabled ? events.filter(event => (event.status === "archived") === archiveTab) : events
+  const visibleEvents = events
 
   function handleOpenEvent(eventId) {
     navigate(`/events/${eventId}`)
@@ -112,12 +118,13 @@ function HomePage() {
             <button className="btn secondary" type="button" aria-pressed={!archiveTab} onClick={() => setArchiveTab(false)}>Активные</button>
             <button className="btn secondary" type="button" aria-pressed={archiveTab} onClick={() => setArchiveTab(true)}>Архив</button>
           </div>}
-          {eventArchiveEnabled && visibleEvents.length === 0 && <p>{archiveTab ? "В архиве пока нет событий." : "Активных событий пока нет."}</p>}
-          <EventsList
+          {eventsLoading && <p role="status">Загружаем события...</p>}
+          {eventArchiveEnabled && !eventsLoading && !error && visibleEvents.length === 0 && <p>{archiveTab ? "В архиве пока нет событий." : "Активных событий пока нет."}</p>}
+          {!eventsLoading && !error && <EventsList
             events={visibleEvents}
             onOpenEvent={handleOpenEvent}
             onGiftsLoaded={handleGiftsLoaded}
-          />
+          />}
           {error && <p className="error-text">{error}</p>}
         </main>
       </div>
