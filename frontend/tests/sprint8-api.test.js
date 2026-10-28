@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises"
 import test from "node:test"
 import vm from "node:vm"
 
-test("archive controls are disabled until the backend is connected", async () => {
+test("archive and restore use the backend routes", async () => {
     const calls = []
     const api = {
         patch: async (path, body) => { calls.push([path, body]); return { data: { event: { id: 12, status: "archived" } } } },
@@ -15,7 +15,7 @@ test("archive controls are disabled until the backend is connected", async () =>
     const module = new vm.SourceTextModule(source, { context, initializeImportMeta(meta) { meta.env = {} } })
     await module.link(() => dependency)
     await module.evaluate()
-    assert.equal(module.namespace.eventArchiveEnabled, false)
+    assert.equal(module.namespace.eventArchiveEnabled, true)
     assert.equal((await module.namespace.changeEventArchive(12, true)).status, "archived")
     assert.equal((await module.namespace.copyEvent(12, "День рождения", "")).id, 13)
     assert.equal(calls[0][0], "/events/12/archive")
