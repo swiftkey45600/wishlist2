@@ -1,7 +1,7 @@
 import api from "../services/api"
 
-export async function fetchEvents() {
-    const response = await api.get("/events/")
+export async function fetchEvents(status) {
+    const response = await api.get("/events/", status ? { params: { status } } : undefined)
 
     return response.data.events
 }

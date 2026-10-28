@@ -162,3 +162,5 @@ h1 {
     --shadow:0 12px 34px rgba(30,34,55,.07);
     --r:18px
 }
+.event-archive-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.event-archive-tabs button[aria-pressed="true"] { border-color: var(--primary-color); color: var(--primary-color); }

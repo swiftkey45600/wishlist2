@@ -5,6 +5,8 @@ import "../../styles/common.css"
 import { useNavigate, useParams } from "react-router-dom"
 import { deleteEvent, editEvent, getEvent } from "../../application/eventApplication"
 
+import { changeEventArchive, copyEvent, eventArchiveEnabled } from "../../repositories/eventArchiveRepository"
+import CopyEventForm from "../../components/Events/CopyEventForm/CopyEventForm"
 import Header from "../../components/Header/Header"
 import Sidebar from "../../components/Sidebar/Sidebar"
 import EventDetailsCard from "../../components/Events/EventDetailsCard/EventDetailsCard"
@@ -17,6 +19,9 @@ import ShareEventModal from "../../components/Events/ShareEventModal/ShareEventM
 function EventPage() {
 	const navigate = useNavigate()
     const { id } = useParams()
+    const [copyOpen, setCopyOpen] = useState(false)
+    const [archiveError, setArchiveError] = useState("")
+    const [archiveBusy, setArchiveBusy] = useState(false)
     const [event, setEvent] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
@@ -106,6 +111,25 @@ function EventPage() {
                                     onEdit={isOwner ? () => setIsEditModalOpen(true) : undefined}
                                     onDelete={isOwner ? () => setIsDeleteModalOpen(true) : undefined}
                                 />
+                                {isOwner && eventArchiveEnabled && <div className="event-archive-actions">
+                                    <button className="event-secondary" type="button" disabled={archiveBusy} onClick={async () => {
+                                        setArchiveBusy(true)
+                                        setArchiveError("")
+                                        try { setEvent(await changeEventArchive(id, event.status !== "archived")) }
+                                        catch { setArchiveError("Не удалось изменить статус события.") }
+                                        finally { setArchiveBusy(false) }
+                                    }}>{event.status === "archived" ? "Вернуть из архива" : "В архив"}</button>
+                                    <button className="event-secondary" type="button" onClick={() => setCopyOpen(true)}>Создать на основе этого</button>
+                                    {archiveError && <p role="alert">{archiveError}</p>}
+                                </div>}
+                                {copyOpen && <div className="event-edit-modal"><div className="event-edit-dialog">
+                                    <CopyEventForm event={event} onCancel={() => setCopyOpen(false)} onCopy={async (title, date) => {
+                                        const copied = await copyEvent(id, title, date)
+                                        if (!copied?.id) throw new Error("Missing copied event")
+                                        setCopyOpen(false)
+                                        navigate(`/events/${copied.id}`)
+                                    }} />
+                                </div></div>}
                                 {isOwner && (
                                     <GiftPriceWidget eventId={id} refreshKey={statisticsRefreshKey} />
                                 )}

@@ -92,6 +92,7 @@ function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit, hideRe
                 gift={gift}
                 publicToken={publicToken}
                 isOwner={isOwner}
+                archived={archived}
                 hideContributionDetails={hideReservationDetails && isOwner}
                 onGiftChange={onGiftChange}
             />}

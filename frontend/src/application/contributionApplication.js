@@ -22,7 +22,8 @@ function contributionError(error) {
         "Fundraising is not enabled for this gift": "Сбор на этот подарок отключён.",
         "Name and secret word are required for guest contributions": "Введите имя и секретное слово. Если сессия закончилась, войдите снова."
     }
-    if (messages[detail]) return new Error(messages[detail])
+    if (messages[detail]) return new Error(messages[detail], { cause: error })
+    if (status === 409) return new Error("Не удалось добавить взнос. Событие могло завершиться или сбор изменился.", { cause: error })
     if (status === 404) return new Error("Подарок или взнос не найден. Обновите страницу.")
     if (status === 403) return new Error("Нет доступа к этому сбору.")
     if (status === 422) return new Error("Проверьте сумму, имя и секретное слово.")
