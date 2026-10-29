@@ -88,23 +88,6 @@
     flex: 1;
 }
 
-.tag-create-button {
-    padding: 10px 13px;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    background: #fff;
-    color: var(--primary);
-    font-size: 13px;
-    font-weight: 700;
-    white-space: nowrap;
-    cursor: pointer;
-}
-
-.tag-create-button:disabled {
-    cursor: wait;
-    opacity: .65;
-}
-
 .tag-selector-error {
     color: var(--danger);
     font-size: 12px;

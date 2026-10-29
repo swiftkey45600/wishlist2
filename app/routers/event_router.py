@@ -50,6 +50,8 @@ async def get_public_event(
     gifts = gift_repository.get_gifts_by_event(event.id, owner_gift_filters(filters) if is_owner else filters)
     if is_owner:
         gifts = [owner_gift_response(gift, filters.show_reservations) for gift in gifts]
+    else:
+        gifts = [gift for gift in gifts if not gift.received]
     return {"event": event, "gifts": gifts}
 
 
@@ -86,6 +88,7 @@ async def create_event(event_request: EventCreateRequest, current_user: User = D
         title=event_request.title,
         description=event_request.description,
         event_date=event_request.event_date,
+        end_date=event_request.end_date,
         place=event_request.place,
         cover_image_id=event_request.cover_image_id,
     )
@@ -128,11 +131,11 @@ async def copy_event(event_id: DatabaseId, data: EventCopyRequest, current_user:
 
 
 @router.delete("/{event_id}")
-async def delete_event(event_id: DatabaseId, current_user: User = Depends(get_current_user)):
+async def delete_event(event_id: DatabaseId, keep_gifts: bool = False, current_user: User = Depends(get_current_user)):
     event = event_service.get_event(event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
     if event.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Forbidden: you can only delete your own events")
-    event_service.delete_event(event_id)
+    event_service.delete_event(event_id, current_user.id, keep_gifts)
     return {"deleted": True}

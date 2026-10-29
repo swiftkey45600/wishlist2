@@ -60,8 +60,8 @@ function EventPage() {
         return () => { document.title = previousTitle }
     }, [event?.title])
 
-    async function handleDeleteEvent() {
-        if (!await deleteEvent(id)) return false
+    async function handleDeleteEvent(keepGifts) {
+        if (!await deleteEvent(id, keepGifts)) return false
         navigate("/")
         return true
     }
@@ -116,7 +116,7 @@ function EventPage() {
                                         setArchiveBusy(true)
                                         setArchiveError("")
                                         try { setEvent(await changeEventArchive(id, event.status !== "archived")) }
-                                        catch { setArchiveError("Не удалось изменить статус события.") }
+                                        catch (error) { setArchiveError(error.response?.status === 409 ? "Чтобы вернуть событие, сначала выберите сегодняшнюю или будущую дату." : "Не удалось изменить статус события.") }
                                         finally { setArchiveBusy(false) }
                                     }}>{event.status === "archived" ? "Вернуть из архива" : "В архив"}</button>
                                     <button className="event-secondary" type="button" onClick={() => setCopyOpen(true)}>Создать на основе этого</button>
@@ -156,6 +156,7 @@ function EventPage() {
                                 {isDeleteModalOpen && (
                                     <ConfirmDeleteModal
                                         itemName="событие"
+                                        allowKeepGifts
                                         onConfirm={handleDeleteEvent}
                                         onCancel={() => setIsDeleteModalOpen(false)}
                                     />

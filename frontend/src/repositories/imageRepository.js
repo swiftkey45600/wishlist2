@@ -7,7 +7,7 @@ function getApiBaseUrl() {
 }
 
 export function resolveImageUrl(imageId, imageUrl) {
-    if (imageId) {
+    if (imageId && !imageUrl) {
         return new URL(`images/${encodeURIComponent(imageId)}`, getApiBaseUrl()).toString()
     }
     if (!imageUrl) return ""

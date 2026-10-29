@@ -132,6 +132,19 @@ class DebugApiFlows(unittest.TestCase):
             path.unlink()
         self.assertEqual(self.client.get(f'/images/{image_id}').status_code, 404)
 
+    def test_upload_iphone_mpo_jpeg_as_event_cover(self):
+        data = io.BytesIO()
+        Image.new('RGB', (4, 4), 'red').save(
+            data, format='MPO', save_all=True, append_images=[Image.new('RGB', (4, 4), 'blue')]
+        )
+        response = self.client.post('/images', files={'file': ('cover.jpg', data.getvalue(), 'image/jpeg')})
+        self.assertEqual(response.status_code, 200, response.text)
+        image_id = response.json()['id']
+        response = self.client.post('/events/', json={'title': 'Event with cover', 'cover_image_id': image_id})
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()['event']['cover_image_id'], image_id)
+        self.assertEqual(self.client.get(f'/images/{image_id}').headers['content-type'], 'image/jpeg')
+
     def test_legacy_gift_without_price_does_not_break_owner_list(self):
         with get_connection() as connection:
             connection.execute('INSERT INTO gifts(event_id, title) VALUES (?, ?)', (self.event['id'], 'Old gift'))

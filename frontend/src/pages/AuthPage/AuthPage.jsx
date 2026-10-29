@@ -1,5 +1,7 @@
+import SegmentedControl from "../../components/SegmentedControl/SegmentedControl"
 import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
+import { Link, useNavigate, useSearchParams } from "react-router-dom"
+import { Gift, Heart, Sparkles } from "lucide-react"
 import { emailFeaturesEnabled } from "../../repositories/accountEmailRepository"
 
 import {
@@ -28,6 +30,7 @@ function AuthPage() {
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     const navigate = useNavigate()
+    const [params] = useSearchParams()
 
     async function handleSubmit(event) {
         event.preventDefault()
@@ -79,13 +82,15 @@ function AuthPage() {
 
             localStorage.setItem("accessToken", response.access_token)
             localStorage.setItem("user", JSON.stringify(response.user))
-            navigate("/", { replace: true })
+            const next = params.get("next") || ""
+            navigate(next.startsWith("/wishes/shared/") && !next.startsWith("//") ? next : "/", { replace: true })
         } catch (submitError) {
             const detail = submitError?.response?.data?.detail
             const messages = {
                 "Login already exists": "Этот логин уже занят. Попробуйте другой.",
                 "No user with this login": "Пользователь с таким логином не найден.",
-                "Invalid password": "Неверный пароль. Проверьте введенные данные."
+                "Invalid password": "Неверный пароль. Проверьте введенные данные.",
+                "Invalid login or password": "Неверный логин или пароль."
             }
             const message = typeof detail === "string"
                 ? messages[detail] || detail
@@ -98,30 +103,23 @@ function AuthPage() {
 
     return (
         <div className="auth-page">
+            <div className="auth-layout">
+                <section className="auth-welcome" aria-label="О Wishlist">
+                    <div className="auth-brand"><span><Heart size={22} fill="currentColor" /></span> Wishlist</div>
+                    <div className="auth-welcome-content">
+                        <span className="auth-eyebrow"><Sparkles size={15} /> ПОВОДЫ ДЛЯ РАДОСТИ</span>
+                        <h1>Желания, которые<br />сближают</h1>
+                        <p>Собирайте идеи подарков и делитесь ими с теми, кто вам дорог.</p>
+                        <div className="auth-wish-card"><span className="auth-gift-icon"><Gift size={23} /></span><div><strong>Всё, о чём мечтается</strong><small>В одном красивом месте</small></div><Heart size={18} /></div>
+                    </div>
+                    <span className="auth-welcome-footer">Ваше пространство для особенных моментов ✨</span>
+                </section>
             <div className="auth-card">
-                <h1>Wishlist</h1>
+                <div className="auth-card-heading"><span>ВАШЕ ПРОСТРАНСТВО</span><h2>{isLogin ? "С возвращением" : "Присоединяйтесь"}</h2><p>{isLogin ? "Войдите, чтобы открыть свои желания" : "Создайте свой первый список желаний"}</p></div>
 
-                <div className="auth-tabs">
-                    <button
-                        className={isLogin ? "active-tab" : ""}
-                        onClick={() => {
-                            setIsLogin(true)
-                            setError(null)
-                        }}
-                    >
-                        Вход
-                    </button>
-
-                    <button
-                        className={!isLogin ? "active-tab" : ""}
-                        onClick={() => {
-                            setIsLogin(false)
-                            setError(null)
-                        }}
-                    >
-                        Регистрация
-                    </button>
-                </div>
+                <SegmentedControl label="Вход или регистрация" value={isLogin}
+                    onChange={value => { setIsLogin(value); setError(null) }}
+                    options={[{ value: true, label: "Вход" }, { value: false, label: "Регистрация" }]} />
 
                 <form className="auth-form" onSubmit={handleSubmit}>
                     {
@@ -171,6 +169,7 @@ function AuthPage() {
                         {isLogin ? "Войти" : "Зарегистрироваться"}
                     </button>
                 </form>
+            </div>
             </div>
         </div>
     )

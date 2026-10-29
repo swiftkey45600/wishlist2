@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse
 from app.repositories.event_repository import EventRepository
 from app.repositories.gift_repository import GiftRepository
 from app.repositories.image_repository import ImageRepository
+from app.utils.image_access import signed_image_url
 
 
 router = APIRouter(tags=["share"])
@@ -70,7 +71,7 @@ def get_share_preview(public_token: str, request: Request):
         if image_id is not None:
             image = image_repository.get_image_by_id(image_id)
             if image is not None and Path(image.image_path).is_file():
-                image_url = f"{origin}{api_prefix}/images/{image.id}"
+                image_url = f"{origin}{api_prefix}{signed_image_url(image.id)}"
         if image_url is None:
             image_url = _public_image_url(picture_url, origin, api_prefix)
         if image_url is not None:

@@ -6,6 +6,7 @@ import "./styles/common.css"
 import './main.css'
 
 import App from './App.jsx'
+import './styles/design.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <BrowserRouter>

@@ -62,18 +62,18 @@
 .presents-button.primary {
     background: var(--primary);
     color: #fff;
-    box-shadow: 0 6px 15px #655cff2b;
+    box-shadow: 0 6px 15px #7152df2b;
 }
 
 .presents-button.secondary {
     border: 1px solid var(--line);
-    background: #fff;
+    background: #faf7fd;
     color: #555b68;
 }
 
 .presents-button.danger {
     border: 1px solid #f0d9de;
-    background: #fff;
+    background: #faf7fd;
     color: var(--danger);
 }
 
@@ -85,7 +85,7 @@
     padding: 14px;
     border: 1px solid var(--line);
     border-radius: 16px;
-    background: #fff;
+    background: #faf7fd;
     box-shadow: var(--shadow);
 }
 
@@ -110,7 +110,7 @@
     border: 1px solid var(--line);
     border-radius: 10px;
     outline: none;
-    background: #fff;
+    background: #faf7fd;
     color: #555b68;
 }
 
@@ -152,7 +152,7 @@
     overflow: visible;
     border: 1px solid var(--line);
     border-radius: var(--r);
-    background: #fff;
+    background: #faf7fd;
     box-shadow: var(--shadow);
     cursor: pointer;
     transition: transform var(--transition-fast), box-shadow var(--transition-fast);
@@ -265,7 +265,7 @@
     padding: 7px;
     border: 1px solid var(--line);
     border-radius: 10px;
-    background: #fff;
+    background: #faf7fd;
     box-shadow: var(--shadow);
     transform: translateX(-50%);
     opacity: 0;
@@ -383,7 +383,7 @@
     right: -4px;
     padding: 2px 4px;
     border-radius: 4px;
-    background: #eceaff;
+    background: #eee9ff;
     color: var(--primary);
     font-size: 8px;
 }
@@ -430,3 +430,25 @@
         margin-left: 0;
     }
 }
+.presents-manage-actions select { max-width: 220px; padding: 9px; border: 1px solid var(--line); border-radius: 10px; color: var(--text); background: #faf7fd; }
+
+/* Карточки действий занимают две колонки и не перекрывают подписи. */
+.presents-gift-card { position: relative; background: #eee7f8; }
+.presents-gift-top { position: relative; padding-top: 22px; }
+.presents-select { position: absolute; right: 14px; top: 14px; display: grid; place-items: center; }
+.presents-select input { width: 17px; height: 17px; accent-color: var(--primary); cursor: pointer; }
+.presents-gift-title { padding-right: 22px; }
+.presents-gift-bottom { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; padding: 14px 17px; }
+.presents-market { grid-column: 1; grid-row: 1; overflow: hidden; text-overflow: ellipsis; }
+.presents-share-one { grid-column: 2; grid-row: 1; color: var(--primary); background: transparent; font-weight: 700; font-size: 12px; cursor: pointer; }
+.presents-actions { grid-column: 1 / -1; width: 100%; margin: 0; }
+.presents-manage-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; gap: 8px; }
+.presents-manage-actions button, .presents-manage-actions select { min-width: 0; max-width: none; width: 100%; padding: 10px 8px; font-size: 12px; }
+.presents-share-list { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 13px; }
+.presents-create-event-dialog { width: min(100%, 540px); max-height: calc(100vh - 40px); overflow-y: auto; padding: 25px; border-radius: 20px; background: #f2eafa; }
+@media (max-width: 600px) { .presents-share-list { align-items: flex-start; flex-direction: column; } }
+.presents-heading h1 { font-size: clamp(34px, 4vw, 50px); font-weight: 850; letter-spacing: -.05em; color: #19191d; }
+.presents-gift-card { background: #e7e8f7; border-color: #d7daed; }
+.presents-pic-fallback { background: linear-gradient(135deg, #d5e7f1, #ded8fa); }
+.presents-toolbar { background: #edf0fa; }
+.presents-share-one { color: #3a2bba; }

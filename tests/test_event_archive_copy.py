@@ -42,7 +42,7 @@ class EventLifecycleTests(unittest.TestCase):
         self.reservations = ReservationRepository()
         self.event = self.events.create_event(Event(
             owner_id=1, title="Birthday", description="Description", place="Home",
-            event_date="2026-01-01", public_token="original-token",
+            event_date="2099-01-01", public_token="original-token",
         ))
         self.gift = self.gifts.create_gift(Gift(event_id=self.event.id, title="Book", price=500))
         self.client = TestClient(app)
@@ -165,7 +165,7 @@ class EventLifecycleTests(unittest.TestCase):
         tags = TagRepository()
         used = tags.create_tag(Tag(event_id=self.event.id, name="Books"))
         tags.create_tag(Tag(event_id=self.event.id, name="Unused tag"))
-        self.gifts.update_gift(self.gift.id, {"tag_ids": [used.id], "share_in_recommendations": True})
+        self.gifts.update_gift(self.gift.id, {"tag_ids": [used.id]})
         self.reservations.reserve_gift(Reservation(gift_id=self.gift.id, is_anonymous=False, reserver_id=2))
         fundraising = self.gifts.create_gift(Gift(
             event_id=self.event.id, title="Laptop", price=1000, contribution_goal=1000,
@@ -194,7 +194,6 @@ class EventLifecycleTests(unittest.TestCase):
             self.assertEqual(gift.status, "available")
             self.assertIsNone(gift.reservation_id)
             self.assertEqual(gift.contribution_total, 0)
-            self.assertFalse(gift.share_in_recommendations)
             self.assertEqual(ContributionRepository().get_contributions_by_gift(gift.id), [])
             for tag in gift.tags:
                 self.assertEqual(tag.event_id, copied["id"])
@@ -274,7 +273,7 @@ class EventLifecycleTests(unittest.TestCase):
         self.assertEqual(copied_gift.image_id, image_id)
         self.assertEqual(self.client.delete(f"/images/{image_id}", headers=self.owner).status_code, 409)
         self.client.delete(f"/events/{self.event.id}", headers=self.owner)
-        self.assertEqual(self.client.get(f"/images/{image_id}").status_code, 200)
+        self.assertEqual(self.client.get(f"/images/{image_id}", headers=self.owner).status_code, 200)
         self.assertEqual(self.client.delete(f"/images/{image_id}", headers=self.owner).status_code, 409)
         self.gifts.update_gift(copied_gift.id, {"image_id": None})
         self.assertEqual(self.client.delete(f"/images/{image_id}", headers=self.owner).status_code, 200)

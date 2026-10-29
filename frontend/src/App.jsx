@@ -7,6 +7,7 @@ import AuthPage from "./pages/AuthPage/AuthPage"
 import PublicEventPage from "./pages/PublicEventPage/PublicEventPage"
 import PasswordRecoveryPage from "./components/AccountEmail/PasswordRecoveryPage"
 import PresentsPage from "./pages/PresentsPage/PresentsPage"
+import SharedWishesPage from "./pages/SharedWishesPage/SharedWishesPage"
 
 function ProtectedRoute({ children }) {
     const token = localStorage.getItem("accessToken")
@@ -18,6 +19,7 @@ function App() {
     
 
     <Routes>
+      <Route path="/wishes/shared/:token" element={<SharedWishesPage />} />
       <Route path="/forgot-password" element={<PasswordRecoveryPage />} />
       <Route path="/reset-password" element={<PasswordRecoveryPage reset />} />
       <Route 

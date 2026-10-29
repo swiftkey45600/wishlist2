@@ -35,7 +35,7 @@ function PasswordRecoveryPage({ reset = false }) {
     return <div className="auth-page"><div className="auth-card">
         <h1>{reset ? "Новый пароль" : "Восстановление пароля"}</h1>
         {!emailFeaturesEnabled ? <p>Восстановление пароля пока недоступно.</p> : done
-            ? <p>{reset ? "Пароль изменён. Войдите с новым паролем." : "Если адрес привязан к аккаунту и отправка писем настроена, на него придёт письмо."}</p>
+            ? <p>{reset ? "Пароль изменён. Войдите с новым паролем." : "Если этот адрес привязан к аккаунту, проверьте почту."}</p>
             : <form className="auth-form" onSubmit={submit}>
                 {reset ? <>
                     <input type="password" autoComplete="new-password" placeholder="Новый пароль" value={password} onChange={event => setPassword(event.target.value)} required />

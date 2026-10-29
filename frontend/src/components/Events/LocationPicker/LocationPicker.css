@@ -1,0 +1,9 @@
+.location-picker { display: grid; gap: 6px; }
+.location-map-button { justify-self: start; padding: 3px 0; background: transparent; color: var(--primary); font-size: 13px; font-weight: 650; cursor: pointer; }
+.location-overlay { position: fixed; inset: 0; z-index: 1200; display: grid; place-items: center; padding: 16px; background: rgba(28,20,48,.5); }
+.location-dialog { display: grid; gap: 12px; width: min(680px, 100%); padding: 22px; border-radius: 20px; background: #faf7fd; box-shadow: var(--shadow-modal); }
+.location-dialog p { color: var(--muted); font-size: 13px; line-height: 1.5; }
+.location-map { height: min(52vh, 380px); min-height: 220px; border: 1px solid var(--line); border-radius: 12px; background: #eeeaf6; z-index: 0; }
+.location-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.location-actions button { padding: 10px 15px; border-radius: 10px; color: var(--text); background: #eee9fa; font-weight: 700; cursor: pointer; }
+.location-actions button:last-child { color: #fff; background: var(--primary); }

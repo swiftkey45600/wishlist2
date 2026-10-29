@@ -70,7 +70,7 @@
 	border: 1px solid var(--line);
 	border-radius: 10px;
 	outline: none;
-	background: #fff;
+	background: #faf7fd;
 	color: var(--text);
 	font-weight: 400;
 }
@@ -107,12 +107,12 @@
 .profile-button.primary {
 	background: var(--primary);
 	color: #fff;
-	box-shadow: 0 6px 15px #655cff2b;
+	box-shadow: 0 6px 15px #7152df2b;
 }
 
 .profile-button.secondary {
 	border: 1px solid var(--line);
-	background: #fff;
+	background: #faf7fd;
 	color: #555b68;
 }
 
@@ -264,3 +264,7 @@
 		text-align: left;
 	}
 }
+
+.reminder-settings p { color: var(--muted); font-size: 14px; margin: 6px 0 12px; line-height: 1.5; }
+.reminder-option { display: flex; align-items: center; gap: 10px; color: var(--text); font-weight: 600; }
+.reminder-option input { accent-color: var(--primary); width: 18px; height: 18px; }

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from app.utils.image_access import signed_image_url
 from datetime import date, datetime
 from typing import Annotated, Literal
 
@@ -15,10 +16,15 @@ class Event:
     id: int | None = None
     description: str | None = None
     event_date: str | None = None
+    end_date: str | None = None
     place: str | None = None
     public_token: str | None = None
     status: EventStatus = "active"
     cover_image_id: int | None = None
+    cover_image_url: str | None = None
+
+    def __post_init__(self):
+        self.cover_image_url = signed_image_url(self.cover_image_id)
 
 
 class EventCopyRequest(BaseModel):
@@ -41,6 +47,7 @@ class EventCreateRequest(BaseModel):
     
     description: str | None = None
     event_date: str | None = None
+    end_date: str | None = None
     place: str | None = None
     cover_image_id: int | None = Field(default=None, gt=0, le=9223372036854775807)
 
@@ -49,6 +56,7 @@ class EventUpdateRequest(BaseModel):
     title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)] | None = None
     description: str | None = None
     event_date: str | None = None
+    end_date: str | None = None
     place: str | None = None
     cover_image_id: int | None = Field(default=None, gt=0, le=9223372036854775807)
 

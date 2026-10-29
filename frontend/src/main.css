@@ -1,35 +1,27 @@
 @import "./styles/variables.css";
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@font-face {
+    font-family: "Manrope";
+    src: url("/fonts/Manrope.ttf") format("truetype");
+    font-style: normal;
+    font-weight: 200 800;
+    font-display: swap;
 }
-
+* { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-  font-family: var(--font-family-base);
-  background: var(--background-color);
-  color: var(--text-color);
-  font-size: 14px;
+    font-family: var(--font-family-base);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+    min-height: 100vh;
+    background: radial-gradient(ellipse at 95% 0%, #d5d0f3, transparent 44%),
+                radial-gradient(ellipse at 5% 85%, #cfe7ed, transparent 40%), var(--bg);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
 }
-
-a {
-  text-decoration: none;
-  color: inherit;
-}
-
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
-
-button {
-  border: 0;
-}
-
-button:disabled {
-  opacity: .42;
-  cursor: not-allowed;
-}
+a { text-decoration: none; color: inherit; }
+button, input, textarea, select { font: inherit; }
+button { border: 0; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button, select, input, textarea { -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+::selection { background: #d2c9fc; color: #251879; }

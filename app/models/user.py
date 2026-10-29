@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 from typing import Annotated
 
@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr, field_va
 class User:
     name: str
     login: str
-    password: str
+    password: str = field(repr=False)
     id: int | None = None
     birthday: str | None = None
     gender: str | None = None
@@ -49,19 +49,19 @@ class PasswordResetConfirmRequest(EmailVerificationConfirmRequest):
 class UserRegisterRequest:
     name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
     login: str
-    password: str
+    password: str = field(repr=False)
     email: EmailStr | None = None
 
 @dataclass
 class UserLoginRequest:
     login: str
-    password: str
+    password: str = field(repr=False)
 
 
 class UserUpdateRequest(BaseModel):
     name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)] | None = None
     login: str | None = None
-    password: str | None = None
+    password: str | None = Field(default=None, repr=False)
     birthday: date | None = None
     gender: str | None = None
     email: EmailStr | None = None

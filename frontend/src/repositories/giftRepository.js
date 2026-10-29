@@ -44,3 +44,13 @@ export async function unreserveGift(reservationId) {
 export async function deleteGift(giftId) {
   await api.delete(`/gifts/${giftId}`)
 }
+
+export async function setGiftReceived(giftId, received) {
+  const response = await api.patch(`/gifts/${giftId}/received`, { received })
+  return response.data
+}
+
+export async function carryGift(giftId, eventId) {
+  const response = await api.post(`/gifts/${giftId}/carry`, { event_id: eventId })
+  return response.data
+}
