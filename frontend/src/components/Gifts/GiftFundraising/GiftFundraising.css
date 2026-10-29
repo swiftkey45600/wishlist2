@@ -89,3 +89,17 @@
     width: auto;
     margin: 0;
 }
+
+.presents-gift-card .gift-fundraising { margin: 0 18px 16px; }
+.fundraising-entries { max-height: 320px; overflow-y: auto; overscroll-behavior: contain; }
+
+.gift-fundraising progress {
+    appearance: none;
+    border: 0;
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--line);
+}
+.gift-fundraising progress::-webkit-progress-bar { background: var(--line); border-radius: 999px; }
+.gift-fundraising progress::-webkit-progress-value { background: var(--primary); border-radius: 999px; }
+.gift-fundraising progress::-moz-progress-bar { background: var(--primary); border-radius: 999px; }

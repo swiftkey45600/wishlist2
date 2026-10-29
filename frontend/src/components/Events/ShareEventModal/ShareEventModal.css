@@ -20,3 +20,5 @@
 .share-event-actions .share-event-copy { flex: 1; border-color: #7152df; background: #7152df; color: #fff; }
 .share-event-message { margin: 12px 0 0; color: #644c9b; font-size: 12px; line-height: 1.4; }
 @media (max-width: 480px) { .share-event-dialog { padding: 24px; } .share-event-dialog h2 { font-size: 26px; } .share-event-actions .share-event-copy { flex-basis: 100%; } }
+
+.share-event-dialog { max-height: calc(100dvh - 40px); overflow-y: auto; overscroll-behavior: contain; }

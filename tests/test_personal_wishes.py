@@ -7,8 +7,10 @@ from fastapi.testclient import TestClient
 from app.database import get_connection, init_db
 from app.main import app
 from app.models.event import Event
+from app.models.contribution import Contribution
 from app.models.gift import Gift
 from app.models.tag import Tag
+from app.repositories.contribution_repository import ContributionRepository
 from app.repositories.event_repository import EventRepository
 from app.repositories.gift_repository import GiftRepository
 from app.repositories.tag_repository import TagRepository
@@ -113,7 +115,34 @@ class PersonalWishTests(unittest.TestCase):
         gift = self.gifts.create_gift(Gift(event_id=self.event.id,title='Game',price=100))
         token = self.client.post('/wish-shares/',headers=self.owner,json={'items':[{'kind':'gift','id':gift.id}]}).json()['token']
         url = f'/wish-shares/{token}/items/0/reservation'
+        self.assertNotIn('fundraising', self.client.get(f'/wish-shares/{token}').json()['items'][0])
         self.assertEqual(self.client.post(url,headers=self.other,json={}).status_code,200)
         self.assertEqual(self.gifts.get_gift_by_id(gift.id).status,'reserved')
         self.assertEqual(self.client.request('DELETE',url,headers=self.other,json={}).status_code,200)
         self.assertEqual(self.gifts.get_gift_by_id(gift.id).status,'available')
+
+    def test_shared_fundraising_gift_exposes_progress_without_reservation(self):
+        event = self.events.create_event(Event(owner_id=1, title='Fundraiser', public_token='fundraising-token'))
+        gift = self.gifts.create_gift(Gift(event_id=event.id, title='Laptop', price=1000, contribution_goal=1000))
+        ContributionRepository().create_contribution(Contribution(
+            gift_id=gift.id, amount=250, contributor_name='Guest', is_anonymous=False,
+        ))
+
+        response = self.client.post('/wish-shares/', headers=self.owner, json={'items': [{'kind': 'gift', 'id': gift.id}]})
+        self.assertEqual(response.status_code, 201, response.text)
+        token = response.json()['token']
+        item = self.client.get(f'/wish-shares/{token}').json()['items'][0]
+        self.assertEqual(item['status'], 'available')
+        self.assertEqual(item['fundraising'], {
+            'id': gift.id,
+            'contribution_goal': 1000,
+            'contribution_total': 250,
+            'status': 'available',
+            'public_token': 'fundraising-token',
+        })
+
+        reservation = self.client.post(
+            f'/wish-shares/{token}/items/0/reservation',
+            json={'name': 'Guest', 'secret_word': 'snow'},
+        )
+        self.assertEqual(reservation.status_code, 409, reservation.text)
