@@ -54,3 +54,5 @@
     background: var(--dangerbg);
     color: var(--danger);
 }
+.confirm-keep-gifts { display: flex; align-items: center; gap: 9px; margin: 16px 0 8px; color: var(--text); font-weight: 650; }
+.confirm-keep-gifts input { accent-color: var(--primary); width: 16px; height: 16px; }

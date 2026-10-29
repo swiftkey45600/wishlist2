@@ -1,4 +1,4 @@
-.event-content { max-width: 1080px; }
+.event-content { max-width: 1280px; }
 .event-back { margin-bottom: 22px; padding: 0; background: transparent; color: var(--muted); font-weight: 650; cursor: pointer; }
 .event-page-status { color: var(--muted); }
 

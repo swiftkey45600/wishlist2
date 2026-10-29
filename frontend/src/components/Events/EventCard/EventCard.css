@@ -3,7 +3,7 @@
     margin-bottom: 17px;
     border: 1px solid var(--line);
     border-radius: var(--r);
-    background: #fff;
+    background: #faf7fd;
     box-shadow: var(--shadow);
     cursor: pointer;
     transition: transform var(--transition-fast), box-shadow var(--transition-fast);

@@ -17,17 +17,17 @@
 
 .page-layout {
     display: grid;
-    grid-template-columns: 235px minmax(0, 1fr);
+    grid-template-columns: 215px minmax(0, 1fr);
     min-height: 100vh;
-    max-width: 1450px;
+    max-width: 1600px;
     margin: 0 auto;
 }
 
 .page-content {
     width: 100%;
-    max-width: 1050px;
+    max-width: 1280px;
     margin: 0 auto;
-    padding: var(--page-padding-y) var(--page-padding-x) 70px;
+    padding: var(--page-padding-y) var(--page-padding-x) 55px;
 }
 
 .card {
@@ -45,4 +45,30 @@
     .page-content {
         padding: 25px 16px 50px;
     }
+}
+/* Небольшие движения помогают заметить действия, не отвлекая от содержимого. */
+@media (prefers-reduced-motion: no-preference) {
+    .page-content { animation: page-appear 320ms ease both; }
+    .event-card, .gift-card, .presents-gift-card {
+        transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+    }
+    .event-card:hover, .gift-card:hover, .presents-gift-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 28px rgba(65, 43, 125, .1);
+    }
+    .gift-questions-content { animation: page-appear 200ms ease both; }
+    @keyframes page-appear {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+}
+
+@media (min-width: 801px) {
+    .page-layout:has(.sidebar--collapsed), .body:has(.sidebar--collapsed) { grid-template-columns: 78px minmax(0, 1fr); }
+}
+@media (max-width: 800px) {
+    .page-content, .body > main { padding-bottom: 105px; }
+}
+@media (max-width: 800px) {
+    .body { display: block; }
 }

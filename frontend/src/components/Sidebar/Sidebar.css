@@ -1,45 +1,47 @@
 .sidebar {
-    min-height: calc(100vh - 70px);
-    border-right: 1px solid var(--border-color);
-    padding: 25px 17px;
+    position: sticky;
+    top: 94px;
+    align-self: start;
+    min-width: 0;
+    padding: 18px 12px;
+    margin: 20px 0 0 14px;
+    border: 1px solid rgba(224, 216, 242, .9);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, .55);
+    box-shadow: 0 10px 25px rgba(67, 49, 110, .04);
 }
-
-.nav {
-    display: grid;
-    gap: 4px;
-}
-
-.nav + .nav {
-    margin-top: 27px;
-    padding-top: 12px;
-    border-top: 1px solid var(--border-color);
-}
-
-.sidebar-link {
-    display: block;
-    width: 100%;
-    background: transparent;
-    text-align: left;
-    padding: 11px 12px;
-    border: 0;
-    border-radius: 10px;
-    color: #5e6370;
-    font-size: 14px;
-    transition: background var(--transition-fast), color var(--transition-fast);
-}
-
-.sidebar-link.active {
-    background: #eceaff;
-    color: var(--primary-color);
-    font-weight: 700;
-}
-
-.sidebar-link:hover {
-    background: #f0efff;
-}
-
+.sidebar-heading { display: flex; align-items: center; justify-content: space-between; gap: 3px; padding: 0 4px 13px; }
+.sidebar-label { margin: 0; color: #9285a9; font-size: 9px; font-weight: 800; letter-spacing: .075em; }
+.sidebar-toggle { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border: 0; border-radius: 8px; background: transparent; color: #81769a; cursor: pointer; }
+.sidebar-toggle:hover { background: #eee9ff; color: var(--primary-color); }
+.sidebar-nav { display: grid; gap: 4px; }
+.sidebar-link { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 11px 10px; border-radius: 10px; color: #756d89; font-size: 14px; text-decoration: none; transition: background 180ms ease, color 180ms ease, transform 180ms ease; }
+.sidebar-link svg { flex: none; }
+.sidebar-link.active { background: #e9e3ff; color: var(--primary-color); font-weight: 700; }
+.sidebar-link:hover { background: #f0ebff; transform: translateX(2px); }
+.sidebar-upcoming { margin-top: 22px; padding: 15px 12px; border: 1px solid #e9e0fa; border-radius: 13px; background: linear-gradient(145deg, #f2ecff, #fbf4fa); }
+.sidebar-upcoming-label { display: flex; align-items: center; gap: 5px; color: #8b75b4; font-size: 9px; font-weight: 800; letter-spacing: .04em; }
+.sidebar-upcoming-link { display: grid; gap: 6px; margin-top: 10px; color: var(--text); font-size: 13px; text-decoration: none; overflow-wrap: anywhere; }
+.sidebar-upcoming-link span { color: var(--primary-color); font-size: 12px; }
+.sidebar-upcoming p { margin: 10px 0 0; color: #817895; font-size: 12px; line-height: 1.45; }
+.sidebar--collapsed { padding-inline: 8px; }
+.sidebar--collapsed .sidebar-label, .sidebar--collapsed .sidebar-link span { display: none; }
+.sidebar--collapsed .sidebar-heading { justify-content: center; padding-inline: 0; }
+.sidebar--collapsed .sidebar-link { justify-content: center; }
 @media (max-width: 800px) {
-    .sidebar {
-        display: none;
-    }
+    .sidebar { position: fixed; inset: auto 12px 10px; z-index: 20; margin: 0; padding: 7px; border-radius: 16px; background: rgba(250,248,255,.96); box-shadow: 0 5px 24px #49357329; backdrop-filter: blur(12px); }
+    .sidebar-heading, .sidebar-upcoming { display: none; }
+    .sidebar-nav { grid-template-columns: repeat(3, 1fr); }
+    .sidebar-link, .sidebar--collapsed .sidebar-link { display: flex; justify-content: center; flex-direction: column; gap: 4px; padding: 7px 2px; font-size: 10px; }
+    .sidebar--collapsed .sidebar-link span { display: inline; }
+    .sidebar-link:hover { transform: none; }
 }
+@media (prefers-reduced-motion: reduce) { .sidebar-link { transition: none; } }
+
+.sidebar { background: #ebe3f6; border-color: #ddd1ef; box-shadow: 0 12px 30px #6c4f9912; }
+.sidebar-upcoming { background: linear-gradient(140deg,#e2d4f9,#f4dfea); border-color: #d9c8ed; }
+.sidebar { background: #e0e2f3; border-color: #d0d5eb; }
+.sidebar-link { color: #50576f; }
+.sidebar-link.active { color: #fff; background: linear-gradient(120deg, #2878bf, #4b2cd3); }
+.sidebar-link.active:hover { color: #fff; background: linear-gradient(120deg, #2878bf, #4b2cd3); }
+.sidebar-upcoming { background: linear-gradient(135deg, #d4e5f4, #ded8f6); border-color: #cad1eb; }

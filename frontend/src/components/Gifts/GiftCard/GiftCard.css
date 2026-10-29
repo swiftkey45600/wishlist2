@@ -2,7 +2,7 @@
     padding: 15px;
     border: 1px solid var(--line);
     border-radius: 16px;
-    background: #fff;
+    background: #faf7fd;
     box-shadow: var(--shadow);
 }
 
@@ -103,7 +103,7 @@
     padding: 7px;
     border: 1px solid var(--line);
     border-radius: 10px;
-    background: #fff;
+    background: #faf7fd;
     box-shadow: var(--shadow);
     transform: translateX(-50%);
     opacity: 0;
