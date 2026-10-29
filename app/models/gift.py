@@ -28,6 +28,8 @@ class Gift:
     contribution_goal: int | None = None
     received: bool = False
     carried_forward: bool = False
+    source_wish_id: int | None = None
+    source_gift_id: int | None = None
 
 @dataclass
 class GiftCreateRequest(Gift):

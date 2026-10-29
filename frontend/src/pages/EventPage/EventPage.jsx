@@ -24,6 +24,7 @@ function EventPage() {
     const [archiveBusy, setArchiveBusy] = useState(false)
     const [event, setEvent] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
+    const [loadError, setLoadError] = useState("")
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
     const [isEditModalOpen, setIsEditModalOpen] = useState(false)
     const [isShareModalOpen, setIsShareModalOpen] = useState(false)
@@ -38,14 +39,23 @@ function EventPage() {
         let cancelled = false
         async function loadEvent() {
             setIsLoading(true)
+            setLoadError("")
+            setEvent(null)
 
-            const eventById = await getEvent(id)
-            if (!cancelled) {
-                setEvent(eventById)
-                setIsLoading(false)
-                setIsEditModalOpen(false)
-                setIsDeleteModalOpen(false)
-                setIsShareModalOpen(false)
+            try {
+                const eventById = await getEvent(id)
+                if (!cancelled) {
+                    setEvent(eventById)
+                    setIsEditModalOpen(false)
+                    setIsDeleteModalOpen(false)
+                    setIsShareModalOpen(false)
+                }
+            } catch {
+                if (!cancelled) {
+                    setLoadError("Не удалось загрузить событие. Попробуйте обновить страницу.")
+                }
+            } finally {
+                if (!cancelled) setIsLoading(false)
             }
         }
 
@@ -95,7 +105,13 @@ function EventPage() {
                     }
 
                     {
-                        !isLoading && !event && (
+                        !isLoading && loadError && (
+                            <p className="event-page-status" role="alert">{loadError}</p>
+                        )
+                    }
+
+                    {
+                        !isLoading && !loadError && !event && (
                             <p className="event-page-status">
                                 Событие с id {id} не найдено
                             </p>

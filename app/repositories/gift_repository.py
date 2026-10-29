@@ -26,6 +26,10 @@ class GiftRepository:
         )
 
     def _row_to_gift(self, row, connection) -> Gift:
+        source = connection.execute(
+            "SELECT source_wish_id, source_gift_id FROM event_gift_imports WHERE gift_id = ?",
+            (row["id"],),
+        ).fetchone()
         return Gift(
             id=row["id"],
             event_id=row["event_id"],
@@ -44,6 +48,8 @@ class GiftRepository:
             contribution_goal=row["contribution_goal"],
             received=bool(row["received"]),
             carried_forward=bool(row["carried_forward"]),
+            source_wish_id=source["source_wish_id"] if source else None,
+            source_gift_id=source["source_gift_id"] if source else None,
             contribution_total=connection.execute(
                 "SELECT COALESCE(SUM(amount), 0) FROM contributions WHERE gift_id = ?", (row["id"],)
             ).fetchone()[0],
