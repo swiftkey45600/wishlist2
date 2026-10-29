@@ -26,6 +26,7 @@ import { parseContributionGoal } from "../../application/contributionApplication
 import { carryGift, setGiftReceived, fetchGift } from "../../repositories/giftRepository"
 import { getWishes, removeWish, receiveWish, addWishToEvent, createWishShare } from "../../repositories/wishRepository"
 import PersonalWishForm from "../../components/Gifts/PersonalWishForm/PersonalWishForm"
+import { uniquePersonalGifts } from "../../utils/personalGifts"
 
 function productLink(value) {
     try {
@@ -130,7 +131,7 @@ function PresentsPage() {
     const filteredGifts = useMemo(() => {
         const query = search.trim().toLowerCase()
 
-        return gifts.filter((gift) => {
+        return uniquePersonalGifts(gifts).filter((gift) => {
             const matchesSearch = !query || gift.title?.toLowerCase().includes(query)
             const matchesTag = !selectedTag || gift.tags?.some(tag => tag.name.trim().toLocaleLowerCase("ru-RU") === selectedTag)
             const matchesTab = giftTab === "received" ? gift.received : !gift.received && !gift.carried_forward
