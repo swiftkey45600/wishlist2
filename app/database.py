@@ -44,9 +44,15 @@ def _run_migrations(connection: sqlite3.Connection) -> None:
         connection.execute("ALTER TABLE users ADD COLUMN email TEXT COLLATE NOCASE")
     if not _column_exists(connection, "users", "email_verified"):
         connection.execute("ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0 CHECK (email_verified IN (0, 1))")
+    if not _column_exists(connection, "users", "event_reminders"):
+        connection.execute("ALTER TABLE users ADD COLUMN event_reminders INTEGER NOT NULL DEFAULT 0 CHECK (event_reminders IN (0, 1))")
     if not _column_exists(connection, "users", "auth_version"):
         connection.execute("ALTER TABLE users ADD COLUMN auth_version INTEGER NOT NULL DEFAULT 0 CHECK (auth_version >= 0)")
     connection.execute("CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique ON users(email COLLATE NOCASE)")
+    if not _column_exists(connection, "events", "end_date"):
+        connection.execute("ALTER TABLE events ADD COLUMN end_date TEXT")
+    if not _column_exists(connection, "personal_wishes", "priority"):
+        connection.execute("ALTER TABLE personal_wishes ADD COLUMN priority TEXT NOT NULL DEFAULT 'normal'")
     if not _column_exists(connection, "events", "status"):
         connection.execute(
             "ALTER TABLE events ADD COLUMN status TEXT NOT NULL DEFAULT 'active' "
@@ -57,8 +63,10 @@ def _run_migrations(connection: sqlite3.Connection) -> None:
         connection.execute(
             "ALTER TABLE events ADD COLUMN cover_image_id INTEGER REFERENCES images(id) ON DELETE SET NULL"
         )
-    if not _column_exists(connection, "gifts", "share_in_recommendations"):
-        connection.execute("ALTER TABLE gifts ADD COLUMN share_in_recommendations INTEGER NOT NULL DEFAULT 0")
+    if not _column_exists(connection, "gifts", "received"):
+        connection.execute("ALTER TABLE gifts ADD COLUMN received INTEGER NOT NULL DEFAULT 0 CHECK (received IN (0, 1))")
+    if not _column_exists(connection, "gifts", "carried_forward"):
+        connection.execute("ALTER TABLE gifts ADD COLUMN carried_forward INTEGER NOT NULL DEFAULT 0 CHECK (carried_forward IN (0, 1))")
     if not _column_exists(connection, "gifts", "contribution_goal"):
         connection.execute("ALTER TABLE gifts ADD COLUMN contribution_goal INTEGER CHECK (contribution_goal > 0)")
     if not _column_exists(connection, "reservations", "is_fundraising"):

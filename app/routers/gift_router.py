@@ -14,7 +14,6 @@ from app.repositories.marketplace_links_repository import MarketplacesLinksRepos
 from app.repositories.reservation_repository import ReservationRepository
 from app.services.gift_service import GiftService
 from app.services.reservation_service import ReservationService
-from app.services.recommendation_service import RecommendationService
 from app.services.gift_privacy import owner_gift_response, owner_gift_filters
 from app.utils.jwt import get_current_user
 
@@ -46,21 +45,9 @@ def create_gift(gift: GiftCreateRequest, current_user: User = Depends(get_curren
         raise HTTPException(status_code=404, detail="Event not found")
     if event.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Only the event owner can create gifts")
+    gift.received = False
+    gift.carried_forward = False
     return gift_service.create_gift(gift, gift.tag_ids)
-
-
-@router.get("/events/{event_id}/recommendations")
-def get_recommendations(
-    event_id: DatabaseId,
-    current_user: User = Depends(get_current_user),
-    limit: int = Query(default=6, ge=1, le=20),
-):
-    event = event_repo.get_event_by_id(event_id)
-    if event is None:
-        raise HTTPException(status_code=404, detail="Event not found")
-    if event.owner_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Only the event owner can view recommendations")
-    return RecommendationService().get_recommendations(event, limit)
 
 
 @router.get("/gifts/{gift_id}", response_model=Gift)
@@ -102,14 +89,38 @@ class GiftUpdateRequest(BaseModel):
     is_reserved: Optional[bool] = None
     tag_ids: list[DatabaseId] = Field(default_factory=list)
     contribution_goal: int | None = Field(default=None, gt=0, le=9223372036854775807)
-    share_in_recommendations: bool | None = None
 
-    @field_validator("title", "price", "status", "share_in_recommendations", "priority")
+    @field_validator("title", "price", "status", "priority")
     @classmethod
     def validate_required_fields(cls, value):
         if value is None:
-            raise ValueError("Title, price, status, sharing preference and priority cannot be null")
+            raise ValueError("Title, price, status and priority cannot be null")
         return value
+
+
+class ReceivedRequest(BaseModel):
+    received: bool
+
+
+class CarryGiftRequest(BaseModel):
+    event_id: DatabaseId
+
+
+@router.patch("/gifts/{gift_id}/received", response_model=Gift)
+def set_gift_received(gift_id: DatabaseId, data: ReceivedRequest, current_user: User = Depends(get_current_user)):
+    gift = gift_repo.set_received(gift_id, current_user.id, data.received)
+    if gift is None:
+        raise HTTPException(status_code=404, detail="Gift not found")
+    return owner_gift_response(gift)
+
+
+@router.post("/gifts/{gift_id}/carry", response_model=Gift)
+def carry_gift(gift_id: DatabaseId, data: CarryGiftRequest, current_user: User = Depends(get_current_user)):
+    event_repo.archive_expired()
+    gift = gift_repo.carry_to_event(gift_id, current_user.id, data.event_id)
+    if gift is None:
+        raise HTTPException(status_code=409, detail="Gift or target event is not available for transfer")
+    return owner_gift_response(gift)
 
 
 @router.patch("/gifts/{gift_id}/status", response_model=Gift)

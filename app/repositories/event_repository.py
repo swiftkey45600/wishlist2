@@ -1,4 +1,5 @@
 import secrets
+import json
 
 from app.models import Event
 from app.models.event import EventStatus
@@ -6,6 +7,16 @@ from app.database import get_connection
 
 
 class EventRepository:
+    def archive_expired(self) -> None:
+        # Events have no end time; the full local calendar day belongs to the event.
+        with get_connection() as conn:
+            conn.execute("""
+                UPDATE events SET status = 'archived'
+                WHERE status = 'active' AND COALESCE(end_date, event_date) IS NOT NULL
+                  AND date(substr(COALESCE(end_date, event_date), 1, 10)) IS NOT NULL
+                  AND date(substr(COALESCE(end_date, event_date), 1, 10)) < date('now', 'localtime')
+            """)
+
     def _row_to_event(self, row) -> Event:
         return Event(
             id=row["id"],
@@ -13,6 +24,7 @@ class EventRepository:
             title=row["title"],
             description=row["description"],
             event_date=row["event_date"],
+            end_date=row["end_date"],
             place=row["place"],
             public_token=row["public_token"],
             status=row["status"],
@@ -24,16 +36,17 @@ class EventRepository:
             cursor = conn.execute(
                 """
                 INSERT INTO events (
-                    owner_id, title, description, event_date,
+                    owner_id, title, description, event_date, end_date,
                     place, public_token, status, cover_image_id
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     event.owner_id,
                     event.title,
                     event.description,
                     event.event_date,
+                    event.end_date,
                     event.place,
                     event.public_token,
                     event.status,
@@ -44,6 +57,7 @@ class EventRepository:
         return event
 
     def get_event_by_id(self, event_id: int) -> Event | None:
+        self.archive_expired()
         with get_connection() as conn:
             row = conn.execute("SELECT * FROM events WHERE id = ?", (event_id,)).fetchone()
         if row is None:
@@ -51,6 +65,7 @@ class EventRepository:
         return self._row_to_event(row)
 
     def get_events_by_user(self, owner_id: int, status: EventStatus | None = None) -> list[Event]:
+        self.archive_expired()
         with get_connection() as conn:
             query = "SELECT * FROM events WHERE owner_id = ?"
             parameters = [owner_id]
@@ -61,6 +76,7 @@ class EventRepository:
         return [self._row_to_event(row) for row in rows]
 
     def get_event_by_public_token(self, public_token: str) -> Event | None:
+        self.archive_expired()
         with get_connection() as conn:
             row = conn.execute("SELECT * FROM events WHERE public_token = ?", (public_token,)).fetchone()
         if row is None:
@@ -117,8 +133,8 @@ class EventRepository:
                 new_gift_id = conn.execute(
                     """INSERT INTO gifts (
                         event_id, title, price, status, priority, description, picture_url,
-                        marketplace_url, category_id, image_id, contribution_goal, share_in_recommendations
-                    ) VALUES (?, ?, ?, 'available', ?, ?, ?, ?, ?, ?, ?, 0)""",
+                        marketplace_url, category_id, image_id, contribution_goal
+                    ) VALUES (?, ?, ?, 'available', ?, ?, ?, ?, ?, ?, ?)""",
                     (new_id, gift["title"], gift["price"], gift["priority"], gift["description"], gift["picture_url"],
                      gift["marketplace_url"], gift["category_id"], gift["image_id"], gift["contribution_goal"]),
                 ).lastrowid
@@ -129,19 +145,28 @@ class EventRepository:
                 )
             return self._row_to_event(conn.execute("SELECT * FROM events WHERE id = ?", (new_id,)).fetchone())
 
-    def delete_event(self, event_id: int) -> bool:
+    def delete_event(self, event_id: int, owner_id: int, keep_gifts: bool = False) -> bool:
         with get_connection() as conn:
-            cursor = conn.execute("DELETE FROM events WHERE id = ?", (event_id,))
-        return cursor.rowcount > 0
+            conn.execute("BEGIN IMMEDIATE")
+            event = conn.execute("SELECT id FROM events WHERE id = ? AND owner_id = ?", (event_id, owner_id)).fetchone()
+            if event is None:
+                return False
+            if keep_gifts:
+                for gift in conn.execute("SELECT * FROM gifts WHERE event_id = ? AND carried_forward = 0", (event_id,)).fetchall():
+                    tags = conn.execute("SELECT tags.name FROM tags JOIN gift_tags ON tags.id = gift_tags.tag_id WHERE gift_tags.gift_id = ?", (gift['id'],)).fetchall()
+                    conn.execute("""INSERT INTO personal_wishes (owner_id,title,price,description,marketplace_url,picture_url,image_id,tags_json,received,priority)
+                        VALUES (?,?,?,?,?,?,?,?,?,?)""", (owner_id,gift['title'],gift['price'],gift['description'],gift['marketplace_url'],gift['picture_url'],gift['image_id'],json.dumps([tag['name'] for tag in tags],ensure_ascii=False),gift['received'],gift['priority']))
+            conn.execute("DELETE FROM events WHERE id = ? AND owner_id = ?", (event_id, owner_id))
+        return True
 
     def update_event(self, event_id: int, event: Event) -> Event | None:
         with get_connection() as conn:
             conn.execute(
                 """
                 UPDATE events
-                SET title = ?, description = ?, event_date = ?, place = ?, cover_image_id = ?
+                SET title = ?, description = ?, event_date = ?, end_date = ?, place = ?, cover_image_id = ?
                 WHERE id = ?
                 """,
-                (event.title, event.description, event.event_date, event.place, event.cover_image_id, event_id),
+                (event.title, event.description, event.event_date, event.end_date, event.place, event.cover_image_id, event_id),
             )
         return self.get_event_by_id(event_id)

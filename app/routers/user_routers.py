@@ -4,6 +4,8 @@ from app.services.user_service import UserConflictError, UserService, validate_l
 from app.repositories.user_repository import UserRepository
 from app.utils.jwt import create_access_token, get_current_user
 from app.models.identifiers import DatabaseId
+from app.database import get_connection
+from pydantic import BaseModel
 
 router = APIRouter(
     prefix="/users",
@@ -27,6 +29,28 @@ async def get_my_profile(current_user: User = Depends(get_current_user)):
             "email_verified": current_user.email_verified,
         }
     }
+
+
+class ReminderSettings(BaseModel):
+    enabled: bool
+
+
+@router.get("/me/reminders", response_model=ReminderSettings)
+def get_reminder_settings(current_user: User = Depends(get_current_user)):
+    with get_connection() as connection:
+        row = connection.execute("SELECT event_reminders FROM users WHERE id = ?", (current_user.id,)).fetchone()
+    return {"enabled": bool(row["event_reminders"])}
+
+
+@router.put("/me/reminders", response_model=ReminderSettings)
+def set_reminder_settings(settings: ReminderSettings, current_user: User = Depends(get_current_user)):
+    with get_connection() as connection:
+        if settings.enabled:
+            row = connection.execute("SELECT email, email_verified FROM users WHERE id = ?", (current_user.id,)).fetchone()
+            if not row["email"] or not row["email_verified"]:
+                raise HTTPException(status_code=409, detail="A verified email is required")
+        connection.execute("UPDATE users SET event_reminders = ? WHERE id = ?", (int(settings.enabled), current_user.id))
+    return settings
 
 
 @router.get("/me/email", response_model=UserEmailResponse)

@@ -40,7 +40,8 @@ class GiftRepository:
             reservation_id=row["reservation_id"] if "reservation_id" in row.keys() else None,
             tags=self._get_gift_tags(connection, row["id"]),
             contribution_goal=row["contribution_goal"],
-            share_in_recommendations=bool(row["share_in_recommendations"]),
+            received=bool(row["received"]),
+            carried_forward=bool(row["carried_forward"]),
             contribution_total=connection.execute(
                 "SELECT COALESCE(SUM(amount), 0) FROM contributions WHERE gift_id = ?", (row["id"],)
             ).fetchone()[0],
@@ -61,10 +62,9 @@ class GiftRepository:
                     marketplace_url,
                     category_id,
                     image_id,
-                    contribution_goal,
-                    share_in_recommendations
+                    contribution_goal
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     gift.event_id,
@@ -78,7 +78,6 @@ class GiftRepository:
                     gift.category_id,
                     gift.image_id,
                     gift.contribution_goal,
-                    gift.share_in_recommendations,
                 ),
             )
 
@@ -107,7 +106,8 @@ class GiftRepository:
                     gifts.category_id,
                     gifts.image_id,
                     gifts.contribution_goal,
-                    gifts.share_in_recommendations,
+                    gifts.received,
+                    gifts.carried_forward,
                     reservations.id AS reservation_id
                 FROM gifts
                 LEFT JOIN reservations ON reservations.gift_id = gifts.id
@@ -189,7 +189,8 @@ class GiftRepository:
                     gifts.category_id,
                     gifts.image_id,
                     gifts.contribution_goal,
-                    gifts.share_in_recommendations,
+                    gifts.received,
+                    gifts.carried_forward,
                     reservations.id AS reservation_id
                 FROM gifts
                 LEFT JOIN reservations ON reservations.gift_id = gifts.id
@@ -201,22 +202,38 @@ class GiftRepository:
 
             return [self._row_to_gift(row, connection) for row in rows]
 
-    def get_recommendation_candidates(self, owner_id: int, event_id: int) -> list[Gift]:
+    def set_received(self, gift_id: int, owner_id: int, received: bool) -> Gift | None:
         with get_connection() as connection:
-            rows = connection.execute(
-                """
-                SELECT gifts.*, reservations.id AS reservation_id
-                FROM gifts
-                JOIN events ON events.id = gifts.event_id
-                LEFT JOIN reservations ON reservations.gift_id = gifts.id
-                WHERE gifts.event_id != ?
-                  AND (events.owner_id = ? OR gifts.share_in_recommendations = 1)
-                  AND gifts.price > 0
-                ORDER BY gifts.id
-                """,
-                (event_id, owner_id),
-            ).fetchall()
-            return [self._row_to_gift(row, connection) for row in rows]
+            row = connection.execute("""
+                UPDATE gifts SET received = ? WHERE id = ? AND EXISTS (
+                    SELECT 1 FROM events WHERE events.id = gifts.event_id AND events.owner_id = ?
+                ) RETURNING id
+            """, (int(received), gift_id, owner_id)).fetchone()
+        return self.get_gift_by_id(gift_id) if row else None
+
+    def carry_to_event(self, gift_id: int, owner_id: int, event_id: int) -> Gift | None:
+        with get_connection() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            source = connection.execute("""
+                SELECT gifts.* FROM gifts JOIN events ON events.id = gifts.event_id
+                WHERE gifts.id = ? AND events.owner_id = ? AND events.status = 'archived'
+                  AND gifts.received = 0 AND gifts.carried_forward = 0
+            """, (gift_id, owner_id)).fetchone()
+            target = connection.execute("SELECT id FROM events WHERE id = ? AND owner_id = ? AND status = 'active'", (event_id, owner_id)).fetchone()
+            if source is None or target is None:
+                return None
+            new_id = connection.execute("""
+                INSERT INTO gifts (event_id, title, price, status, priority, description, picture_url,
+                    marketplace_url, category_id, image_id, contribution_goal)
+                VALUES (?, ?, ?, 'available', ?, ?, ?, ?, ?, ?, ?)
+            """, (event_id, source['title'], source['price'], source['priority'], source['description'],
+                  source['picture_url'], source['marketplace_url'], source['category_id'], source['image_id'], source['contribution_goal'])).lastrowid
+            for tag in connection.execute("SELECT tags.name FROM tags JOIN gift_tags ON tags.id = gift_tags.tag_id WHERE gift_tags.gift_id = ?", (gift_id,)).fetchall():
+                connection.execute("INSERT OR IGNORE INTO tags (event_id, name) VALUES (?, ?)", (event_id, tag['name']))
+                tag_id = connection.execute("SELECT id FROM tags WHERE event_id = ? AND name = ?", (event_id, tag['name'])).fetchone()['id']
+                connection.execute("INSERT INTO gift_tags (gift_id, tag_id) VALUES (?, ?)", (new_id, tag_id))
+            connection.execute("UPDATE gifts SET carried_forward = 1 WHERE id = ?", (gift_id,))
+        return self.get_gift_by_id(new_id)
 
     def update_gift_status(self, gift_id: int, status: str) -> Gift | None:
         with get_connection() as connection:

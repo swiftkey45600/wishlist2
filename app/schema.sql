@@ -45,18 +45,61 @@ CREATE TABLE IF NOT EXISTS auth_mail_rate_limits (
     expires_at INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS personal_wishes (
+    id INTEGER PRIMARY KEY,
+    owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title TEXT NOT NULL,
+    price INTEGER,
+    description TEXT,
+    marketplace_url TEXT,
+    picture_url TEXT,
+    image_id INTEGER REFERENCES images(id) ON DELETE SET NULL,
+    tags_json TEXT NOT NULL DEFAULT '[]',
+    priority TEXT NOT NULL DEFAULT 'normal' CHECK (priority IN ('low', 'normal', 'high')),
+    received INTEGER NOT NULL DEFAULT 0 CHECK (received IN (0, 1))
+);
+
+CREATE TABLE IF NOT EXISTS wish_shares (
+    token TEXT PRIMARY KEY,
+    owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    items_json TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS wish_share_items (
+    share_token TEXT NOT NULL REFERENCES wish_shares(token) ON DELETE CASCADE,
+    position INTEGER NOT NULL,
+    kind TEXT NOT NULL CHECK (kind IN ('wish', 'gift')),
+    item_id INTEGER NOT NULL,
+    PRIMARY KEY (share_token, position)
+);
+
+CREATE TABLE IF NOT EXISTS personal_wish_reservations (
+    wish_id INTEGER PRIMARY KEY REFERENCES personal_wishes(id) ON DELETE CASCADE,
+    reserver_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    guest_name TEXT,
+    secret_word_hash TEXT
+);
+
 CREATE TABLE IF NOT EXISTS events (
     id INTEGER PRIMARY KEY,
     owner_id INTEGER NOT NULL,
     title TEXT NOT NULL,
     description TEXT,
     event_date TEXT,
+    end_date TEXT,
     place TEXT,
     public_token TEXT UNIQUE,
     status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'archived')),
     cover_image_id INTEGER,
     FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (cover_image_id) REFERENCES images(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS event_reminder_deliveries (
+    event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    event_date TEXT NOT NULL,
+    PRIMARY KEY (event_id, user_id, event_date)
 );
 
 CREATE TABLE IF NOT EXISTS gifts (
@@ -74,7 +117,8 @@ CREATE TABLE IF NOT EXISTS gifts (
     category_id INTEGER,
     image_id INTEGER,
     contribution_goal INTEGER CHECK (contribution_goal > 0),
-    share_in_recommendations INTEGER NOT NULL DEFAULT 0,
+    received INTEGER NOT NULL DEFAULT 0 CHECK (received IN (0, 1)),
+    carried_forward INTEGER NOT NULL DEFAULT 0 CHECK (carried_forward IN (0, 1)),
     FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
     FOREIGN KEY (image_id) REFERENCES images(id) ON DELETE SET NULL
 );
