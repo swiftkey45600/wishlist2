@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import CORS_ORIGINS
 from app.database import init_db
+from app.services.event_reminders import start_reminder_worker, stop_reminder_worker
 from app.models.user import UserRegisterRequest
 from app.routers import user_routers
 from app.routers import auth_router
@@ -18,6 +19,8 @@ from app.routers import email_verification_router
 from app.routers import password_reset_router
 from app.routers import share_router
 from app.routers import gift_question_router
+from app.routers import wish_router
+from app.routers import wish_share_router
 
 
 app = FastAPI()
@@ -26,6 +29,12 @@ app = FastAPI()
 @app.on_event("startup")
 def on_startup():
     init_db()
+    start_reminder_worker()
+
+
+@app.on_event("shutdown")
+def on_shutdown():
+    stop_reminder_worker()
 
 
 app.add_middleware(
@@ -51,6 +60,8 @@ app.include_router(email_verification_router.router)
 app.include_router(password_reset_router.router)
 app.include_router(share_router.router)
 app.include_router(gift_question_router.router)
+app.include_router(wish_router.router)
+app.include_router(wish_share_router.router)
 
 
 @app.get("/")

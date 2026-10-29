@@ -29,12 +29,14 @@ class ContributionRepository:
         with get_connection() as connection:
             connection.execute("BEGIN IMMEDIATE")
             gift = connection.execute(
-                """SELECT gifts.status, gifts.contribution_goal, events.status AS event_status
+                """SELECT gifts.status, gifts.contribution_goal, gifts.received, events.status AS event_status
                    FROM gifts JOIN events ON events.id = gifts.event_id WHERE gifts.id = ?""",
                 (contribution.gift_id,)
             ).fetchone()
             if gift is None or gift["contribution_goal"] is None:
                 raise ValueError("Fundraising is not enabled for this gift")
+            if gift["received"]:
+                raise ValueError("Gift is already received")
             if gift["event_status"] == "archived":
                 raise ValueError("Event is archived")
             if gift["status"] != "available":

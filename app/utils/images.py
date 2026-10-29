@@ -17,6 +17,8 @@ ALLOWED_IMAGE_TYPES = frozenset(
 
 _FORMAT_TO_MEDIA_TYPE = {
     "JPEG": "image/jpeg",
+    # iPhone photos can be JPEG-compatible multi-picture files detected as MPO.
+    "MPO": "image/jpeg",
     "PNG": "image/png",
     "WEBP": "image/webp",
     "GIF": "image/gif",

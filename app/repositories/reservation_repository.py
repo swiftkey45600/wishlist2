@@ -40,7 +40,7 @@ class ReservationRepository:
             connection.execute("BEGIN IMMEDIATE")
             cursor = connection.execute(
                 """UPDATE gifts SET status = 'reserved'
-                   WHERE id = ? AND status = 'available' AND contribution_goal IS NULL
+                   WHERE id = ? AND status = 'available' AND contribution_goal IS NULL AND received = 0
                      AND EXISTS (SELECT 1 FROM events WHERE events.id = gifts.event_id AND events.status = 'active')""",
                 (reservation.gift_id,),
             )
@@ -92,7 +92,7 @@ class ReservationRepository:
             connection.execute("BEGIN IMMEDIATE")
             changed = connection.execute(
                 """UPDATE gifts SET status = 'reserved'
-                   WHERE id = ? AND status = 'available' AND contribution_goal IS NULL
+                   WHERE id = ? AND status = 'available' AND contribution_goal IS NULL AND received = 0
                      AND EXISTS (SELECT 1 FROM events WHERE events.id = gifts.event_id AND events.status = 'active')""",
                 (reservation.gift_id,),
             )
