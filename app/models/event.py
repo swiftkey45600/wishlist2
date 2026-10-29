@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from app.utils.image_access import signed_image_url
 from datetime import date, datetime
 from typing import Annotated, Literal
 
@@ -20,6 +21,10 @@ class Event:
     public_token: str | None = None
     status: EventStatus = "active"
     cover_image_id: int | None = None
+    cover_image_url: str | None = None
+
+    def __post_init__(self):
+        self.cover_image_url = signed_image_url(self.cover_image_id)
 
 
 class EventCopyRequest(BaseModel):

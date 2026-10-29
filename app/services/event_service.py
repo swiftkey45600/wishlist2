@@ -9,6 +9,7 @@ from app.models.event import EventCopyRequest, EventStatus
 from app.repositories import EventRepository
 from app.repositories import GiftRepository
 from app.repositories.image_repository import ImageRepository
+from app.utils.image_access import user_can_use_image
 
 
 class EventService:
@@ -31,7 +32,7 @@ class EventService:
         place: str | None = None,
         cover_image_id: int | None = None,
     ) -> Event:
-        self._validate_cover(cover_image_id)
+        self._validate_cover(cover_image_id, owner_id)
         self._validate_dates(event_date, end_date)
         new_event = Event(
             owner_id=owner_id,
@@ -95,7 +96,7 @@ class EventService:
         return self.event_repository.delete_event(event_id, owner_id, keep_gifts)
 
     def update_event(self, event_id: int, event: Event) -> Event | None:
-        self._validate_cover(event.cover_image_id)
+        self._validate_cover(event.cover_image_id, event.owner_id)
         self._validate_dates(event.event_date, event.end_date)
         try:
             return self.event_repository.update_event(event_id, event)
@@ -118,8 +119,8 @@ class EventService:
         except ValueError:
             raise HTTPException(status_code=422, detail="Invalid event date") from None
 
-    def _validate_cover(self, image_id: int | None) -> None:
-        if image_id is not None and self.image_repository.get_image_by_id(image_id) is None:
+    def _validate_cover(self, image_id: int | None, owner_id: int) -> None:
+        if image_id is not None and not user_can_use_image(image_id, owner_id):
             raise HTTPException(status_code=404, detail="Cover image not found")
 
     def get_price_statistics(self, event_id: int) -> dict:

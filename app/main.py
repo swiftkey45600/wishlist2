@@ -1,4 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -24,6 +26,23 @@ from app.routers import wish_share_router
 
 
 app = FastAPI()
+
+
+@app.exception_handler(RequestValidationError)
+async def safe_validation_error(request: Request, error: RequestValidationError):
+    fields = [{"loc": item["loc"], "msg": item["msg"], "type": item["type"]} for item in error.errors()]
+    return JSONResponse(status_code=422, content={"detail": fields})
+
+
+@app.middleware("http")
+async def private_response_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers.setdefault("Cache-Control", "private, no-store")
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Robots-Tag"] = "noindex, nofollow"
+    return response
+
 
 
 @app.on_event("startup")

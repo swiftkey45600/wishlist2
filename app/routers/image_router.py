@@ -16,7 +16,9 @@ from app.utils.images import (
     MAX_IMAGE_SIZE,
     validate_image_bytes,
 )
-from app.utils.jwt import get_current_user
+from app.utils.jwt import get_current_user, get_optional_user
+from app.database import get_connection
+from app.utils.image_access import image_key, user_can_use_image, valid_image_key
 
 router = APIRouter(tags=["Images"])
 image_repository = ImageRepository()
@@ -24,12 +26,14 @@ image_repository = ImageRepository()
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def _with_image_url(image: Image, request: Request) -> ImageResponse:
+def _with_image_url(image: Image, request: Request, user: User) -> ImageResponse:
+    with get_connection() as conn:
+        conn.execute("INSERT OR IGNORE INTO image_upload_grants (image_id,user_id) VALUES (?,?)", (image.id, user.id))
     return ImageResponse(
         id=image.id,
         image_type=image.image_type,
         hash=image.hash,
-        image_url=str(request.url_for("get_image", image_id=image.id)),
+        image_url=str(request.url_for("get_image", image_id=image.id).include_query_params(key=image_key(image.id, image.hash))),
     )
 
 
@@ -51,7 +55,7 @@ async def upload_image(
 
     existing_image = image_repository.get_image_by_hash(image_hash)
     if existing_image:
-        return _with_image_url(existing_image, request)
+        return _with_image_url(existing_image, request, current_user)
 
     filename = f"{uuid4().hex}{validated_image.extension}"
     file_path = UPLOAD_DIR / filename
@@ -75,18 +79,21 @@ async def upload_image(
         if stored_image is None:
             raise HTTPException(status_code=409, detail="Image already exists")
 
-    return _with_image_url(stored_image, request)
+    return _with_image_url(stored_image, request, current_user)
 
 
 @router.get("/images/{image_id}")
-def get_image(image_id: DatabaseId):
+def get_image(image_id: DatabaseId, key: str | None = None, user: User | None = Depends(get_optional_user)):
     image = image_repository.get_image_by_id(image_id)
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
 
+    if not valid_image_key(image, key) and not (user and user_can_use_image(image_id, user.id)):
+        raise HTTPException(status_code=404, detail="Image not found")
+
     if not Path(image.image_path).is_file():
         raise HTTPException(status_code=404, detail="Image file not found")
-    return FileResponse(path=image.image_path, media_type=image.image_type)
+    return FileResponse(path=image.image_path, media_type=image.image_type, headers={"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"})
 
 
 @router.delete("/images/{image_id}")

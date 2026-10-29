@@ -18,7 +18,7 @@ async def login(user_request: UserLoginRequest):
     try:
         user = user_service.authenticate_user(user_request)
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid login or password")
 
     token = create_access_token(data={
         "sub": user.login,

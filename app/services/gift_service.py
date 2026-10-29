@@ -12,6 +12,7 @@ from app.repositories.event_repository import EventRepository
 from app.repositories.tag_repository import TagRepository
 from app.services.reservation_service import ReservationService
 from app.models.user import User
+from app.utils.image_access import signed_image_url, user_can_use_image
 
 
 class GiftService:
@@ -34,7 +35,7 @@ class GiftService:
         self.tag_repository = tag_repository or TagRepository()
 
     def _get_image_url(self, image_id: int) -> str:
-        return f"/images/{image_id}"
+        return signed_image_url(image_id)
 
     def _fill_image(self, gift: Gift) -> None:
         if gift.image_id is None:
@@ -68,6 +69,10 @@ class GiftService:
         if gift.image_id is not None and self.image_repository.get_image_by_id(gift.image_id) is None:
             raise HTTPException(status_code=404, detail="Image not found")
 
+        if gift.image_id is not None:
+            event = self.event_repository.get_event_by_id(gift.event_id)
+            if event is None or not user_can_use_image(gift.image_id, event.owner_id):
+                raise HTTPException(status_code=404, detail="Image not found")
         self._validate_tag_ids(gift.event_id, tag_ids or [])
         try:
             created_gift = self.gift_repository.create_gift(gift, tag_ids)
@@ -111,6 +116,9 @@ class GiftService:
             raise HTTPException(status_code=403, detail="Event owner cannot reserve their own gift")
 
         if data.get("image_id") is not None and self.image_repository.get_image_by_id(data["image_id"]) is None:
+            raise HTTPException(status_code=404, detail="Image not found")
+
+        if data.get("image_id") is not None and not user_can_use_image(data["image_id"], current_user.id):
             raise HTTPException(status_code=404, detail="Image not found")
 
         if data.get("status") is not None and data["status"] not in {"available", "bought"}:

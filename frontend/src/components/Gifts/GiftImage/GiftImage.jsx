@@ -13,7 +13,7 @@ function getFallbackEmoji(giftId) {
 }
 
 function GiftImage({ gift, className, fallbackClassName, alt = "" }) {
-    const imageUrl = resolveImageUrl(gift.image_id, gift.picture_url || gift.image_url)
+    const imageUrl = resolveImageUrl(gift.image_id, gift.image_url || gift.picture_url)
     const [failedImageUrl, setFailedImageUrl] = useState(null)
 
     if (imageUrl && failedImageUrl !== imageUrl) {

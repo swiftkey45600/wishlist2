@@ -509,6 +509,7 @@ class MarketplaceService:
         image_hash = hashlib.sha256(image_bytes).hexdigest()
         existing = self.image_repository.get_image_by_hash(image_hash)
         if existing is not None:
+            self._grant_downloaded_image(existing.id, owner_id)
             return existing
 
         UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -523,7 +524,16 @@ class MarketplaceService:
             existing = self.image_repository.get_image_by_hash(image_hash)
             if existing is None:
                 raise MarketplaceParseError("Не удалось сохранить изображение товара")
+            self._grant_downloaded_image(existing.id, owner_id)
             return existing
+
+    @staticmethod
+    def _grant_downloaded_image(image_id: int, owner_id: int | None):
+        if owner_id is None:
+            return
+        from app.database import get_connection
+        with get_connection() as conn:
+            conn.execute("INSERT OR IGNORE INTO image_upload_grants (image_id,user_id) VALUES (?,?)", (image_id, owner_id))
 
     @staticmethod
     def _find_product_node(json_ld_parts: list[str]) -> dict | None:
