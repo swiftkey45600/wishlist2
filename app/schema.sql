@@ -99,7 +99,8 @@ CREATE TABLE IF NOT EXISTS event_reminder_deliveries (
     event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     event_date TEXT NOT NULL,
-    PRIMARY KEY (event_id, user_id, event_date)
+    days_before INTEGER NOT NULL DEFAULT 1 CHECK (days_before IN (1, 7)),
+    PRIMARY KEY (event_id, user_id, event_date, days_before)
 );
 
 CREATE TABLE IF NOT EXISTS gifts (
@@ -221,4 +222,15 @@ CREATE TABLE IF NOT EXISTS image_upload_grants (
     image_id INTEGER NOT NULL REFERENCES images(id) ON DELETE CASCADE,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     PRIMARY KEY (image_id, user_id)
+);
+
+-- A source can be copied once into a target; deleting it removes stale mappings.
+CREATE TABLE IF NOT EXISTS event_gift_imports (
+    gift_id INTEGER PRIMARY KEY REFERENCES gifts(id) ON DELETE CASCADE,
+    event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    source_wish_id INTEGER REFERENCES personal_wishes(id) ON DELETE CASCADE,
+    source_gift_id INTEGER REFERENCES gifts(id) ON DELETE CASCADE,
+    CHECK ((source_wish_id IS NULL) != (source_gift_id IS NULL)),
+    UNIQUE (event_id, source_wish_id),
+    UNIQUE (event_id, source_gift_id)
 );

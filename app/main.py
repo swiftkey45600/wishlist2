@@ -23,6 +23,7 @@ from app.routers import share_router
 from app.routers import gift_question_router
 from app.routers import wish_router
 from app.routers import wish_share_router
+from app.routers import gift_import_router
 
 
 app = FastAPI()
@@ -81,6 +82,7 @@ app.include_router(share_router.router)
 app.include_router(gift_question_router.router)
 app.include_router(wish_router.router)
 app.include_router(wish_share_router.router)
+app.include_router(gift_import_router.router)
 
 
 @app.get("/")

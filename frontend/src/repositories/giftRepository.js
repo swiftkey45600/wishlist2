@@ -54,3 +54,12 @@ export async function carryGift(giftId, eventId) {
   const response = await api.post(`/gifts/${giftId}/carry`, { event_id: eventId })
   return response.data
 }
+
+
+export async function getExistingGiftOptions(eventId) {
+    return (await api.get(`/events/${eventId}/gift-options`)).data
+}
+
+export async function addExistingGifts(eventId, items) {
+    return (await api.post(`/events/${eventId}/gifts/import`, { items })).data
+}

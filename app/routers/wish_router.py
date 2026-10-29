@@ -8,7 +8,6 @@ from pydantic import BaseModel, Field, StringConstraints
 from app.database import get_connection
 from app.models.identifiers import DatabaseId
 from app.models.user import User
-from app.repositories.event_repository import EventRepository
 from app.utils.jwt import get_current_user
 from app.utils.image_access import signed_image_url, can_use_image
 
@@ -109,28 +108,7 @@ def delete_wish(wish_id: DatabaseId, user: User = Depends(get_current_user)):
 
 @router.post("/{wish_id}/events", status_code=201)
 def add_to_event(wish_id: DatabaseId, data: AddToEvent, user: User = Depends(get_current_user)):
-    EventRepository().archive_expired()
-    with get_connection() as connection:
-        connection.execute("BEGIN IMMEDIATE")
-        wish = connection.execute(
-            "SELECT * FROM personal_wishes WHERE id = ? AND owner_id = ? AND received = 0",
-            (wish_id, user.id),
-        ).fetchone()
-        event = connection.execute(
-            "SELECT id FROM events WHERE id = ? AND owner_id = ? AND status = 'active'",
-            (data.event_id, user.id),
-        ).fetchone()
-        if not wish or not event:
-            raise HTTPException(status_code=404, detail="Wish or event not found")
-        if wish["price"] is None:
-            raise HTTPException(status_code=422, detail="Set a price before adding to an event")
-        new_id = connection.execute("""
-            INSERT INTO gifts (event_id, title, price, description, picture_url, marketplace_url, image_id, priority)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (data.event_id, wish["title"], wish["price"], wish["description"], wish["picture_url"],
-              wish["marketplace_url"], wish["image_id"], wish["priority"])).lastrowid
-        for name in json.loads(wish["tags_json"]):
-            connection.execute("INSERT OR IGNORE INTO tags (event_id, name) VALUES (?, ?)", (data.event_id, name))
-            tag_id = connection.execute("SELECT id FROM tags WHERE event_id = ? AND name = ?", (data.event_id, name)).fetchone()["id"]
-            connection.execute("INSERT OR IGNORE INTO gift_tags (gift_id, tag_id) VALUES (?, ?)", (new_id, tag_id))
-    return {"gift_id": new_id}
+    from app.services.gift_import_service import GiftImportService
+    from app.models.gift_import import GiftImportItem
+    gift = GiftImportService().add(data.event_id, user.id, [GiftImportItem(kind="wish", id=wish_id)])[0]
+    return {"gift_id": gift.id}

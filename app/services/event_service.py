@@ -10,6 +10,7 @@ from app.repositories import EventRepository
 from app.repositories import GiftRepository
 from app.repositories.image_repository import ImageRepository
 from app.utils.image_access import user_can_use_image
+from app.utils.event_dates import end_date_for_duration
 
 
 class EventService:
@@ -31,7 +32,10 @@ class EventService:
         end_date: str | None = None,
         place: str | None = None,
         cover_image_id: int | None = None,
+        duration_days: int | None = None,
     ) -> Event:
+        if duration_days is not None:
+            end_date = end_date_for_duration(event_date, duration_days)
         self._validate_cover(cover_image_id, owner_id)
         self._validate_dates(event_date, end_date)
         new_event = Event(
@@ -81,7 +85,9 @@ class EventService:
 
     def copy_event(self, event_id: int, owner_id: int, data: EventCopyRequest) -> Event:
         self._owned_event(event_id, owner_id)
-        event = self.event_repository.copy_event(event_id, owner_id, data.title, data.event_date)
+        if data.duration_days is not None:
+            end_date_for_duration(data.event_date, data.duration_days)
+        event = self.event_repository.copy_event(event_id, owner_id, data.title, data.event_date, data.duration_days)
         if event is None:
             raise HTTPException(status_code=404, detail="Event not found")
         return event

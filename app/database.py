@@ -84,3 +84,21 @@ def _run_migrations(connection: sqlite3.Connection) -> None:
         # Existing images intentionally remain ownerless. They must not be
         # assigned to whichever user happens to run the migration.
         connection.execute("ALTER TABLE images ADD COLUMN owner_id INTEGER")
+
+    if not _column_exists(connection, "event_reminder_deliveries", "days_before"):
+        # Preserve the day-before claims when upgrading to two reminder windows.
+        connection.execute("ALTER TABLE event_reminder_deliveries RENAME TO event_reminder_deliveries_legacy")
+        connection.execute("""
+            CREATE TABLE event_reminder_deliveries (
+                event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                event_date TEXT NOT NULL,
+                days_before INTEGER NOT NULL DEFAULT 1 CHECK (days_before IN (1, 7)),
+                PRIMARY KEY (event_id, user_id, event_date, days_before)
+            )
+        """)
+        connection.execute("""
+            INSERT INTO event_reminder_deliveries (event_id, user_id, event_date, days_before)
+            SELECT event_id, user_id, event_date, 1 FROM event_reminder_deliveries_legacy
+        """)
+        connection.execute("DROP TABLE event_reminder_deliveries_legacy")

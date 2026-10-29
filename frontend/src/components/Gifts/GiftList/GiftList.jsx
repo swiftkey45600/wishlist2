@@ -1,3 +1,4 @@
+import ExistingGiftPicker from "../ExistingGiftPicker/ExistingGiftPicker"
 import { useEffect, useRef, useState } from "react"
 import "./GiftList.css"
 
@@ -31,13 +32,14 @@ import {
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"])
 
-function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
+function GiftList({ eventId, isOwner, publicToken, onGiftDataChange, eventArchived = false }) {
     const [gifts, setGifts] = useState([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState(null)
     const [actionError, setActionError] = useState(null)
     const [fieldErrors, setFieldErrors] = useState({})
     const [isFormOpen, setIsFormOpen] = useState(false)
+    const [existingOpen, setExistingOpen] = useState(false)
     const [title, setTitle] = useState("")
     const [price, setPrice] = useState("")
     const [contributionGoal, setContributionGoal] = useState(null)
@@ -379,6 +381,7 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
                             {showReservations ? "Скрыть брони" : "Показать брони (спойлер)"}
                         </button>
                     )}
+                    {isOwner && <button type="button" className="gift-reservations-toggle" disabled={eventArchived} onClick={() => setExistingOpen(true)}>Из моих подарков</button>}
                     {isOwner && <button
                         className="add-gift-button"
                         onClick={() => setIsFormOpen(prev => !prev)}
@@ -387,6 +390,14 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
                     </button>}
                 </div>
             </div>
+
+            {isOwner && existingOpen && <ExistingGiftPicker eventId={eventId} onClose={() => setExistingOpen(false)} onAdded={added => {
+                const ids = new Set(added.map(gift => gift.id))
+                setGifts(current => [...current.filter(gift => !ids.has(gift.id)), ...added])
+                setExistingOpen(false)
+                onGiftDataChange?.()
+                getEventTags(eventId).then(setTags).catch(() => setTagsAttempt(value => value + 1))
+            }} />}
 
             <GiftFilters
                 hideStatus={isOwner && !showReservations}

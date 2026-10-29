@@ -17,9 +17,17 @@ function LocationPicker({ value, onChange }) {
             if (!active || !mapElement.current) return
             const L = module.default
             map = L.map(mapElement.current).setView(initial || [55.7558, 37.6173], initial ? 14 : 4)
-            L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-                maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            }).addTo(map)
+            let loadedTiles = 0
+            const tiles = L.tileLayer(import.meta.env.VITE_MAP_TILE_URL || "https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                maxZoom: 19,
+                referrerPolicy: "strict-origin-when-cross-origin",
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                updateWhenIdle: true,
+                keepBuffer: 1
+            })
+            tiles.on("tileload", () => { loadedTiles += 1; if (active) setMapError(false) })
+            tiles.on("load", () => { if (active) setMapError(loadedTiles === 0) })
+            tiles.addTo(map)
             const marker = L.circleMarker(initial || [0, 0], { radius: 8, color: "#fff", weight: 3, fillColor: "#7152df", fillOpacity: 1 })
             if (initial) marker.addTo(map)
             map.on("click", event => { marker.setLatLng(event.latlng).addTo(map); setPoint([event.latlng.lat, event.latlng.lng]) })
@@ -43,7 +51,7 @@ function LocationPicker({ value, onChange }) {
                 <h3 id="location-title">Выберите место</h3>
                 <p>Нажмите на карту, чтобы поставить точку. Название места можно вписать вручную.</p>
                 <div className="location-map" ref={mapElement} aria-label="Карта для выбора места" />
-                {mapError && <p role="alert">Не удалось открыть карту. Место можно указать вручную.</p>}
+                {mapError && <p role="alert">Не удалось загрузить карту. Проверьте подключение или укажите место вручную.</p>}
                 <div className="location-actions"><button type="button" onClick={() => setOpen(false)}>Отмена</button><button type="button" disabled={!point} onClick={save}>Выбрать точку</button></div>
             </div>
         </div>}
