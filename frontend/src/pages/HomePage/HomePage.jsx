@@ -1,5 +1,7 @@
+import SegmentedControl from "../../components/SegmentedControl/SegmentedControl"
 import { useCallback, useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { CalendarDays, Gift, Sparkles } from "lucide-react"
 
 import "./HomePage.css"
 import "../../styles/common.css"
@@ -16,7 +18,7 @@ function HomePage() {
   const navigate = useNavigate()
   const [events, setEvents] = useState([])
   const [archiveTab, setArchiveTab] = useState(false)
-  const [giftStats, setGiftStats] = useState({ total: 0, reserved: 0 })
+  const [giftStats, setGiftStats] = useState({ total: 0 })
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [error, setError] = useState(null)
   const [eventsLoading, setEventsLoading] = useState(true)
@@ -66,8 +68,7 @@ function HomePage() {
     const allGifts = Object.values(giftsByEvent).flat()
 
     setGiftStats({
-      total: allGifts.length,
-      reserved: allGifts.filter((gift) => gift.status === "reserved").length
+      total: allGifts.length
     })
   }, [])
 
@@ -76,12 +77,13 @@ function HomePage() {
       <Header />
 
       <div className="body">
-        <Sidebar />
+        <Sidebar events={archiveTab ? undefined : visibleEvents} />
 
         <main>
           <div className="heading">
             <div>
-              <h1>Мои события</h1>
+              <span className="home-eyebrow"><Sparkles size={14} /> ВАШИ ПОВОДЫ ДЛЯ РАДОСТИ</span>
+              <h1>Мои события <svg className="heading-sparkle" aria-hidden="true" viewBox="0 0 40 40" fill="none"><path d="M20 2c1 9 4 12 12 14-8 2-11 5-12 14-2-9-5-12-13-14C15 14 18 11 20 2Z" fill="currentColor" opacity=".85"/><path d="M33 22c.5 4 2 5.5 5 6-3 .5-4.5 2-5 6-.5-4-2-5.5-5-6 3-.5 4.5-2 5-6Z" fill="currentColor" opacity=".55"/></svg></h1>
               <div className="muted">Списки желаний для ваших событий</div>
             </div>
 
@@ -95,17 +97,13 @@ function HomePage() {
 
           <div className="stats">
             <div className="stat">
-              <small>Мои события</small>
+              <small><CalendarDays size={17} /> Мои события</small>
               <strong>{events.length}</strong>
             </div>
 
             <div className="stat">
-              <small>Подарки</small>
+              <small><Gift size={17} /> Подарки</small>
               <strong>{giftStats.total}</strong>
-            </div>
-            <div className="stat">
-              <small>Забронировано</small>
-              <strong>{giftStats.reserved}</strong>
             </div>
           </div>
 
@@ -114,10 +112,8 @@ function HomePage() {
             <span className="muted">Ваши события</span>
           </div>
 
-          {eventArchiveEnabled && <div className="event-archive-tabs">
-            <button className="btn secondary" type="button" aria-pressed={!archiveTab} onClick={() => setArchiveTab(false)}>Активные</button>
-            <button className="btn secondary" type="button" aria-pressed={archiveTab} onClick={() => setArchiveTab(true)}>Архив</button>
-          </div>}
+          {eventArchiveEnabled && <SegmentedControl label="Разделы событий" value={archiveTab} onChange={setArchiveTab}
+            options={[{ value: false, label: "Активные" }, { value: true, label: "Архив" }]} />}
           {eventsLoading && <p role="status">Загружаем события...</p>}
           {eventArchiveEnabled && !eventsLoading && !error && visibleEvents.length === 0 && <p>{archiveTab ? "В архиве пока нет событий." : "Активных событий пока нет."}</p>}
           {!eventsLoading && !error && <EventsList

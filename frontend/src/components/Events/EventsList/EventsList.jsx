@@ -16,7 +16,7 @@ function EventsList({ events, onOpenEvent, onGiftsLoaded }) {
             try {
                 const giftEntries = await Promise.all(events.map(async (event) => {
                     const gifts = await getGiftsByEvent(event.id)
-                    return [event.id, Array.isArray(gifts) ? applySavedGiftPriorities(gifts) : []]
+                    return [event.id, Array.isArray(gifts) ? applySavedGiftPriorities(gifts.filter(gift => !gift.received && !gift.carried_forward)) : []]
                 }))
 
                 if (isCurrent) {

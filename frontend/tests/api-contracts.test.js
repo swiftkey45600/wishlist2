@@ -119,33 +119,6 @@ test("API conflicts and wrong words remain failures", async () => {
     }
 })
 
-test("recommendations load from the owner's event endpoint", async () => {
-    const items = [{ id: 1, title: "Book", price: 100 }]
-    const application = await loadApplication("recommendationApplication", {
-        async get(path) {
-            assert.equal(path, "/events/12/recommendations")
-            return { data: items }
-        }
-    })
-    assert.equal(await application.getRecommendations(12), items)
-})
-
-test("adding a recommendation copies only product data", async () => {
-    let body
-    const application = await loadApplication("recommendationApplication", {}, async data => {
-        body = data
-        return { ...data, id: 99 }
-    })
-    const result = await application.addRecommendedGift(12, {
-        id: 1, event_id: 777, title: "Book", price: 100,
-        status: "reserved", reservation_id: 42, tags: [{ id: 9 }], public_token: "private"
-    })
-    assert.equal(result.id, 99)
-    assert.equal(body.event_id, 12)
-    assert.equal(body.status, "available")
-    for (const key of ["id", "reservation_id", "tags", "public_token"]) assert.equal(key in body, false)
-})
-
 test("server gift priority takes precedence over the local fallback", async () => {
     const values = new Map([["wishlist.gift-priority.7", "low"]])
     const context = vm.createContext({

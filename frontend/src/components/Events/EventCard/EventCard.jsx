@@ -1,6 +1,5 @@
 import "./EventCard.css"
 import GiftImage from "../../Gifts/GiftImage/GiftImage"
-import { getGiftStatusLabel } from "../../Gifts/giftStatus"
 import { getGiftPriorityLabel } from "../../Gifts/giftPriority"
 
 function formatEventDate(value) {
@@ -19,7 +18,7 @@ function EventCard({ event, gifts, onOpenEvent }) {
                 <div className="event-card-info">
                     <h2 className="event-card-title">{eventTitle}</h2>
                     {event.description && <p className="event-card-description">{event.description}</p>}
-                    <p className="event-card-date">{formatEventDate(event.event_date)}{event.place ? ` · ${event.place}` : ""}</p>
+                    <p className="event-card-date">{formatEventDate(event.event_date)}{event.end_date && event.end_date.slice(0, 10) !== event.event_date?.slice(0, 10) ? ` — ${formatEventDate(event.end_date)}` : ""}{event.place ? ` · ${event.place}` : ""}</p>
                 </div>
             </div>
             <div className="event-card-gifts">
@@ -38,7 +37,7 @@ function EventCard({ event, gifts, onOpenEvent }) {
                             </div>
                             <span>{gift.description || "Описание подарка не указано"}</span>
                         </div>
-                        <div className="event-gift-right"><strong>{gift.price} ₽</strong><span className={`gift-badge ${gift.status}`}>{getGiftStatusLabel(gift.status)}</span></div>
+                        <div className="event-gift-right"><strong>{gift.price} ₽</strong></div>
                     </div>
                 ))}
             </div>

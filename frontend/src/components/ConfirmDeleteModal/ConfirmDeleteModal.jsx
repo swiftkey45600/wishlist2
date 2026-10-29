@@ -1,7 +1,8 @@
 import "./ConfirmDeleteModal.css"
 import { useState } from "react"
 
-function ConfirmDeleteModal({ itemName, onConfirm, onCancel }) {
+function ConfirmDeleteModal({ itemName, onConfirm, onCancel, allowKeepGifts = false }) {
+    const [keepGifts, setKeepGifts] = useState(true)
     const [pending, setPending] = useState(false)
     const [error, setError] = useState("")
     async function confirm() {
@@ -9,7 +10,7 @@ function ConfirmDeleteModal({ itemName, onConfirm, onCancel }) {
         setPending(true)
         setError("")
         try {
-            if (await onConfirm() === false) setError("Не удалось удалить. Попробуйте ещё раз.")
+            if (await onConfirm(keepGifts) === false) setError("Не удалось удалить. Попробуйте ещё раз.")
         } catch {
             setError("Не удалось удалить. Попробуйте ещё раз.")
         } finally {
@@ -23,6 +24,10 @@ function ConfirmDeleteModal({ itemName, onConfirm, onCancel }) {
             <div className="confirm-delete-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-delete-title">
                 <h2 id="confirm-delete-title">Удалить {itemName}?</h2>
                 <p>Вы точно хотите удалить этот объект? Отменить действие будет невозможно.</p>
+                {allowKeepGifts && <>
+                    <label className="confirm-keep-gifts"><input type="checkbox" checked={keepGifts} onChange={event => setKeepGifts(event.target.checked)} /> Сохранить подарки в моих желаниях</label>
+                    <p>Брони и взносы этого события будут удалены вместе с ним.</p>
+                </>}
                 {error && <p role="alert">{error}</p>}
                 <div className="confirm-delete-actions">
                     <button className="confirm-delete-cancel" onClick={onCancel} disabled={pending}>
