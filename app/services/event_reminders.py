@@ -11,54 +11,74 @@ from app.services.email_service import EmailDeliveryError, EmailService
 logger = logging.getLogger(__name__)
 
 
+def reminder_message(row, days_before: int) -> tuple[str, str]:
+    event_date = date.fromisoformat(row["event_date"][:10]).strftime("%d.%m.%Y")
+    when = "завтра" if days_before == 1 else "через неделю"
+    subject = f"Wishlist: событие {when}"
+    role = "которое вы организуете" if row["user_id"] == row["owner_id"] else "для которого вы забронировали подарок"
+    body = (f"Здравствуйте, {row['name']}!\n\n"
+            f"Напоминаем: {when}, {event_date}, состоится событие «{row['title']}», {role}.\n")
+    if row["place"]:
+        body += f"Место: {row['place']}\n"
+    if days_before == 7:
+        body += "\nЕщё есть время спокойно подготовиться и проверить свои планы.\n"
+    else:
+        body += "\nЖелаем вам приятного дня и тёплой встречи.\n"
+    body += ("\nЕсли не хотите получать напоминания, выключите их в профиле Wishlist.\n"
+             "Команда Wishlist")
+    return subject, body
+
+
 def send_due_reminders(today: date | None = None, mail: EmailService | None = None) -> int:
-    """Send one reminder per person and event date, the day before the event."""
-    tomorrow = (today or datetime.now().astimezone().date()) + timedelta(days=1)
-    day = tomorrow.isoformat()
+    """At most one email per recipient, start date and reminder window (7 or 1 days)."""
+    current_day = today or datetime.now().astimezone().date()
+    days = [(current_day + timedelta(days=lead)).isoformat() for lead in (1, 7)]
     with get_connection() as connection:
         rows = connection.execute('''
-            SELECT DISTINCT e.id AS event_id, e.title, e.event_date, e.place,
+            SELECT DISTINCT e.id AS event_id, e.owner_id, e.title, e.event_date, e.place,
                    u.id AS user_id, u.email, u.name
             FROM events e
             JOIN users u ON u.id = e.owner_id OR EXISTS (
                 SELECT 1 FROM gifts g JOIN reservations r ON r.gift_id = g.id
                 WHERE g.event_id = e.id AND r.reserver_id = u.id
             )
-            WHERE e.status = 'active' AND substr(e.event_date, 1, 10) = ?
+            WHERE e.status = 'active' AND substr(e.event_date, 1, 10) IN (?, ?)
               AND u.email IS NOT NULL AND u.email_verified = 1 AND u.event_reminders = 1
-        ''', (day,)).fetchall()
+        ''', days).fetchall()
 
     sender = mail or EmailService()
     sent = 0
     for row in rows:
+        event_day = row["event_date"][:10]
+        lead = (date.fromisoformat(event_day) - current_day).days
         with get_connection() as connection:
             claimed = connection.execute('''
-                INSERT OR IGNORE INTO event_reminder_deliveries (event_id, user_id, event_date)
-                SELECT ?, ?, ? WHERE EXISTS (
+                INSERT OR IGNORE INTO event_reminder_deliveries (event_id, user_id, event_date, days_before)
+                SELECT ?, ?, ?, ? WHERE EXISTS (
                     SELECT 1 FROM users WHERE id = ? AND email = ? AND email_verified = 1 AND event_reminders = 1
                 ) AND EXISTS (
-                    SELECT 1 FROM events WHERE id = ? AND status = 'active' AND substr(event_date, 1, 10) = ?
+                    SELECT 1 FROM events e
+                    WHERE e.id = ? AND e.status = 'active' AND substr(e.event_date, 1, 10) = ?
+                      AND (e.owner_id = ? OR EXISTS (
+                          SELECT 1 FROM gifts g JOIN reservations r ON r.gift_id = g.id
+                          WHERE g.event_id = e.id AND r.reserver_id = ?
+                      ))
                 )
-            ''', (row['event_id'], row['user_id'], day, row['user_id'], row['email'], row['event_id'], day)).rowcount
+            ''', (row["event_id"], row["user_id"], event_day, lead,
+                   row["user_id"], row["email"], row["event_id"], event_day, row["user_id"], row["user_id"])).rowcount
         if not claimed:
             continue
-        # The unique claim is stored before contacting SMTP to prevent duplicate emails
-        # across workers. An interrupted send is intentionally not retried automatically.
-        event_date = tomorrow.strftime('%d.%m.%Y')
-        body = (f"Здравствуйте, {row['name']}!\n\n"
-                f"Напоминаем: завтра, {event_date}, состоится событие «{row['title']}».\n")
-        if row['place']:
-            body += f"Место: {row['place']}\n"
-        body += ("\nНадеемся, подготовка идёт хорошо и впереди приятный день.\n\n"
-                 "Если не хотите получать такие письма, выключите напоминания в профиле Wishlist.\n"
-                 "Команда Wishlist")
+        # Claim before SMTP so concurrent workers do not send duplicate messages.
+        subject, body = reminder_message(row, lead)
         try:
-            sender.send(row['email'], 'Wishlist: завтра событие', body)
+            sender.send(row["email"], subject, body)
         except (EmailDeliveryError, SMTPConfigurationError, ValueError):
             with get_connection() as connection:
-                connection.execute('DELETE FROM event_reminder_deliveries WHERE event_id = ? AND user_id = ? AND event_date = ?',
-                                   (row['event_id'], row['user_id'], day))
-            logger.warning('Event reminder could not be sent')
+                connection.execute(
+                    "DELETE FROM event_reminder_deliveries WHERE event_id=? AND user_id=? AND event_date=? AND days_before=?",
+                    (row["event_id"], row["user_id"], event_day, lead),
+                )
+            logger.warning("Event reminder could not be sent")
         else:
             sent += 1
     return sent

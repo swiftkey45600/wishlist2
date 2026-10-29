@@ -162,7 +162,7 @@ function PresentsPage() {
             if (gift.isPersonal) {
                 const created = await addWishToEvent(gift.id, Number(eventId))
                 const copied = await fetchGift(created.gift_id)
-                setGifts(current => [...current, { ...copied, event: destination }])
+                setGifts(current => current.some(item => !item.isPersonal && item.id === copied.id) ? current : [...current, { ...copied, event: destination }])
                 setNotice(`Желание добавлено в событие «${destination.title}».`)
             } else {
                 const copied = await carryGift(gift.id, Number(eventId))

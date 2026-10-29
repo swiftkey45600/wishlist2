@@ -7,6 +7,7 @@ from app.models.event import EventCopyRequest, EventCreateRequest, EventStatus, 
 from app.models.gift import GiftFilters
 from app.models.user import User
 from app.services.event_service import EventService
+from app.utils.event_dates import end_date_for_duration
 from app.repositories.event_repository import EventRepository
 from app.repositories.gift_repository import GiftRepository
 from app.utils.jwt import get_current_user, get_optional_user
@@ -89,6 +90,7 @@ async def create_event(event_request: EventCreateRequest, current_user: User = D
         description=event_request.description,
         event_date=event_request.event_date,
         end_date=event_request.end_date,
+        duration_days=event_request.duration_days,
         place=event_request.place,
         cover_image_id=event_request.cover_image_id,
     )
@@ -109,8 +111,15 @@ async def update_event(
     if event.owner_id != current_user.id:
         raise HTTPException(status_code=403, detail="Forbidden: you can only edit your own events")
 
-    for field_name, value in event_request.model_dump(exclude_unset=True).items():
+    changes = event_request.model_dump(exclude_unset=True)
+    duration = changes.pop("duration_days", None)
+    previous_duration = event.duration_days
+    for field_name, value in changes.items():
         setattr(event, field_name, value)
+    if duration is not None:
+        event.end_date = end_date_for_duration(event.event_date, duration)
+    elif "event_date" in changes and "end_date" not in changes:
+        event.end_date = end_date_for_duration(event.event_date, previous_duration if event.event_date else 1)
 
     return {"event": event_service.update_event(event_id, event)}
 

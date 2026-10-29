@@ -1,3 +1,5 @@
+import EventDurationInput from "../EventDurationInput"
+import { getEventDurationDays, isValidDuration } from "../../../utils/eventDuration"
 import DateTimePicker from "../DateTimePicker"
 import { useEffect, useRef, useState } from "react"
 import "../CreateEventForm/CreateEventForm.css"
@@ -22,7 +24,7 @@ function EditEventForm({ event, onSave, onCancel }) {
     const [description, setDescription] = useState(event.description || "")
     const [place, setPlace] = useState(event.place || "")
     const [eventDate, setEventDate] = useState(getDateTimeValue(event.event_date))
-    const [endDate, setEndDate] = useState(getDateTimeValue(event.end_date))
+    const [durationDays, setDurationDays] = useState(event.duration_days || getEventDurationDays(event.event_date, event.end_date))
     const [coverFile, setCoverFile] = useState(null)
     const coverInputRef = useRef(null)
     const [coverPreview, setCoverPreview] = useState(
@@ -53,11 +55,12 @@ function EditEventForm({ event, onSave, onCancel }) {
         }
 
         setTitleError("")
-        if (endDate && (!eventDate || endDate < eventDate)) {
-            setError("Дата окончания должна быть не раньше начала")
+        if (!isValidDuration(durationDays)) {
+            setError("Укажите длительность от 1 до 3650 дней")
             return
         }
 
+        if (!eventDate && durationDays > 1) { setError("Укажите дату начала для события на несколько дней"); return }
         setError("")
         setIsSaving(true)
         try {
@@ -72,7 +75,7 @@ function EditEventForm({ event, onSave, onCancel }) {
                 description: description.trim(),
                 place: place.trim(),
                 event_date: eventDate || null,
-                end_date: endDate || null,
+                duration_days: durationDays,
                 ...(uploadedCover ? { cover_image_id: uploadedCover.id } : {})
             })
             if (!saved) setError("Не удалось сохранить изменения")
@@ -101,7 +104,7 @@ function EditEventForm({ event, onSave, onCancel }) {
                     Дата и время
                     <DateTimePicker value={eventDate} min={`${todayLocalDate()}T00:00`} onChange={(inputEvent) => { setEventDate(inputEvent.target.value); if (error === "Выберите сегодняшнюю или будущую дату") setError("") }} onBlur={() => { if (eventDate !== getDateTimeValue(event.event_date) && isPastEventDate(eventDate)) { setEventDate(getDateTimeValue(event.event_date)); setError("Выберите сегодняшнюю или будущую дату") } }} />
                 </label>
-                <label className="create-event-field">Дата и время окончания <span className="event-optional">необязательно</span><DateTimePicker value={endDate} min={eventDate || `${todayLocalDate()}T00:00`} onChange={event => setEndDate(event.target.value)} /></label>
+                <EventDurationInput startDate={eventDate} value={durationDays} onChange={setDurationDays} />
                 <LocationPicker value={place} onChange={setPlace} />
                 <label className="create-event-field">
                     Обложка события
