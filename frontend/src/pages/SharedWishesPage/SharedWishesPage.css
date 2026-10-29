@@ -1,0 +1,37 @@
+.shared-wishes-page { width: min(100%, 1120px); margin: auto; padding: 42px 28px; }
+.shared-wishes-header { position: relative; overflow: hidden; padding: 34px; margin-bottom: 24px; border: 1px solid var(--line); border-radius: 22px; background: linear-gradient(115deg,#d1e5f2,#dcd5f8 70%,#e7d9f3); }
+.shared-wishes-header::after { content: ""; position: absolute; inset: 0 0 0 auto; width: 8px; background: linear-gradient(#24d3d7,#4b36d8,#a14edd); }
+.shared-wishes-brand { display: flex; align-items: center; gap: 8px; color: var(--primary); font-size: 19px; font-weight: 800; }
+.shared-wishes-page h1 { margin: 18px 0 12px; font-size: clamp(30px, 4vw, 48px); }
+.shared-wishes-page p { color: var(--muted); line-height: 1.6; }
+.shared-wishes-header > p { max-width: 600px; }
+.shared-wishes-access, .shared-wishes-header > a { display: inline-flex; align-items: center; gap: 7px; margin: 18px 20px 0 0; font-size: 12px; font-weight: 700; color: #403594; }
+.shared-wishes-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,330px),1fr)); gap: 18px; }
+.shared-wishes-grid article { display: flex; align-items: flex-start; gap: 18px; padding: 24px; border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(145deg, #f0f1fa, #e4e4f5); box-shadow: var(--shadow); }
+.shared-wishes-image { flex: none; width: 108px; height: 108px; object-fit: cover; border-radius: 14px; }
+.shared-wishes-placeholder { display: grid; place-items: center; background: linear-gradient(135deg,#d3e4f0,#d9d1f4); font-size: 40px; }
+.shared-wishes-details { flex: 1; min-width: 0; }
+.shared-wishes-grid h2 { font-size: 21px; margin-bottom: 10px; overflow-wrap: anywhere; }
+.shared-wishes-grid p { margin-bottom: 10px; font-size: 13px; overflow-wrap: anywhere; }
+.shared-wishes-price { display: block; font-size: 21px; }
+.shared-wishes-grid a { display: flex; align-items: center; gap: 5px; margin-top: 13px; color: var(--primary); font-size: 12px; font-weight: 700; }
+.shared-wishes-grid button, .shared-wishes-dialog button, .shared-wishes-owner button { margin-top: 14px; padding: 11px 15px; border-radius: 10px; color: white; background: linear-gradient(115deg,#394cdf,#6c35d7); font-weight: 700; cursor: pointer; }
+.shared-wishes-modal { position: fixed; inset: 0; margin: auto; width: min(calc(100% - 32px), 450px); max-height: calc(100dvh - 32px); overflow-y: auto; border: 1px solid var(--line); border-radius: 20px; background: var(--card); color: var(--text); box-shadow: var(--shadow-modal); }
+.shared-wishes-modal::backdrop { background: #1d183a80; backdrop-filter: blur(5px); }
+.shared-wishes-dialog { display: grid; gap: 14px; padding: 28px; }
+.shared-wishes-dialog > svg { color: var(--primary); }
+.shared-wishes-dialog h2 { font-size: 23px; }
+.shared-wishes-dialog label { display: grid; gap: 7px; font-weight: 700; }
+.shared-wishes-dialog input { width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: #fafaff; }
+.shared-wishes-dialog p { font-size: 13px; }
+.shared-wishes-dialog > div { display: flex; justify-content: flex-end; gap: 10px; }
+.shared-wishes-dialog button[type="button"], .shared-wishes-grid .shared-wishes-cancel { color: var(--primary); background: #e0dcf3; }
+.shared-wishes-page [role="alert"] { color: var(--danger); }
+.shared-wishes-owner { display: flex; align-items: center; flex-wrap: wrap; gap: 18px; padding: 20px 24px; margin-bottom: 22px; background: #dfe3f3; border: 1px solid var(--line); border-radius: 16px; }
+.shared-wishes-owner > div:first-child { flex: 1 1 350px; }
+.shared-wishes-owner p { font-size: 13px; margin-top: 5px; }
+.shared-wishes-owner button { margin-top: 0; font-size: 12px; }
+.shared-wishes-owner > div:last-child > button + button { margin-left: 10px; }
+.shared-wishes-notice { padding-block: 12px; }
+.shared-wishes-reserved { margin-top: 14px; color: var(--ok) !important; font-weight: 700; }
+@media (max-width: 480px) { .shared-wishes-page { padding: 24px 16px; } .shared-wishes-header { padding: 25px; } .shared-wishes-grid article { padding: 20px; gap: 14px; } .shared-wishes-image { width: 76px; height: 76px; } }

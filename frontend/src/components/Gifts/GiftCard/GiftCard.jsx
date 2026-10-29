@@ -14,9 +14,9 @@ function marketplaceLink(value) {
     }
 }
 
-function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit, hideReservationDetails = false,
+function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onMarkReceived, onEdit, hideReservationDetails = false,
     publicToken, isOwner = false, archived = false, onGiftChange }) {
-    const hideStatus = hideReservationDetails && ["reserved", "bought"].includes(gift.status)
+    const hideStatus = hideReservationDetails
     const productUrl = marketplaceLink(gift.marketplace_url)
 
     return (
@@ -104,6 +104,7 @@ function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onEdit, hideRe
                     <a className="gift-marketplace" href={productUrl} target="_blank" rel="noopener noreferrer">Открыть товар ↗</a>
                 )}
                 <div className="gift-actions">
+                    {onMarkReceived && <button className="gift-secondary-button" onClick={() => onMarkReceived(gift.id)}>Мне подарили</button>}
                     {onEdit && <button className="gift-secondary-button" onClick={() => onEdit(gift)}>Изменить</button>}
                     {onDelete && <button className="gift-danger-button" onClick={() => onDelete(gift.id)}>Удалить</button>}
                 </div>

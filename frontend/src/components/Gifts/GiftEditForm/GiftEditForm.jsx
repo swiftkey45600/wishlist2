@@ -5,7 +5,6 @@ import { parseMarketplaceProduct } from "../../../application/marketplaceApplica
 import TagSelector from "../../Tags/TagSelector/TagSelector"
 import FundraisingGoalInput from "../GiftFundraising/FundraisingGoalInput"
 import { parseContributionGoal } from "../../../application/contributionApplication"
-import RecommendationSharingInput from "../GiftRecommendations/RecommendationSharingInput"
 import { giftPriorityOptions } from "../giftPriority"
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"])
@@ -19,7 +18,7 @@ function GiftEditForm({ gift, tags, tagsDisabled = false, onTagsChange, onChange
     const [imageFile, setImageFile] = useState(null)
     const imageInputRef = useRef(null)
     const [imagePreview, setImagePreview] = useState(
-        resolveImageUrl(gift.image_id, gift.picture_url || gift.image_url)
+        resolveImageUrl(gift.image_id, gift.image_url || gift.picture_url)
     )
 
     useEffect(() => {
@@ -93,6 +92,8 @@ function GiftEditForm({ gift, tags, tagsDisabled = false, onTagsChange, onChange
         }
     }
 
+    const tagSelectorRef = useRef(null)
+
     async function handleSubmit(event) {
         event.preventDefault()
 
@@ -109,8 +110,10 @@ function GiftEditForm({ gift, tags, tagsDisabled = false, onTagsChange, onChange
         if (Object.keys(errors).length) return
 
         setError("")
+        const pendingTags = tagSelectorRef.current?.createPendingTag()
         setIsSaving(true)
         try {
+            const tagIds = pendingTags ? await pendingTags : (gift.tag_ids || [])
             let imageId = gift.image_id
             if (imageFile) {
                 const uploadedImage = await uploadImageFile(imageFile)
@@ -121,7 +124,7 @@ function GiftEditForm({ gift, tags, tagsDisabled = false, onTagsChange, onChange
                 imageId = uploadedImage.id
             }
 
-            const saved = await onSave(imageId)
+            const saved = await onSave(imageId, tagIds)
             if (!saved) setError("Не удалось сохранить подарок")
         } catch {
             setError("Не удалось сохранить подарок. Обновите данные и попробуйте снова.")
@@ -168,7 +171,7 @@ function GiftEditForm({ gift, tags, tagsDisabled = false, onTagsChange, onChange
             </label>
 
             <label>
-                Приоритет
+                Насколько хочется
                 <select
                     value={gift.priority || "normal"}
                     onChange={e => onChange({ ...gift, priority: e.target.value })}
@@ -204,11 +207,6 @@ function GiftEditForm({ gift, tags, tagsDisabled = false, onTagsChange, onChange
                 }}
             />
 
-            <RecommendationSharingInput
-                checked={Boolean(gift.share_in_recommendations)}
-                disabled={isSaving || isParsingMarketplace}
-                onChange={value => onChange({ ...gift, share_in_recommendations: value })}
-            />
 
             <label>
                 Загрузить изображение файлом
@@ -229,7 +227,7 @@ function GiftEditForm({ gift, tags, tagsDisabled = false, onTagsChange, onChange
                         setImageFile(file)
                         setImagePreview(file
                             ? URL.createObjectURL(file)
-                            : resolveImageUrl(gift.image_id, gift.picture_url || gift.image_url))
+                            : resolveImageUrl(gift.image_id, gift.image_url || gift.picture_url))
                     }}
                 />
             </label>
@@ -278,6 +276,7 @@ function GiftEditForm({ gift, tags, tagsDisabled = false, onTagsChange, onChange
             {marketplaceNotice && <p role="status">{marketplaceNotice}</p>}
 
             {tags && <TagSelector
+                ref={tagSelectorRef}
                 disabled={tagsDisabled || isSaving}
                 eventId={gift.event_id}
                 tags={tags}

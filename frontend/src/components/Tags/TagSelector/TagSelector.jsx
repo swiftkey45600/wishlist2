@@ -1,8 +1,8 @@
-import { useState } from "react"
+import { forwardRef, useImperativeHandle, useRef, useState } from "react"
 import { createTag, deleteTag } from "../../../application/tagApplication"
 import "./TagSelector.css"
 
-function TagSelector({ eventId, tags, selectedTagIds, onTagsChange, onChange, disabled = false }) {
+const TagSelector = forwardRef(function TagSelector({ eventId, tags, selectedTagIds, onTagsChange, onChange, disabled = false }, ref) {
     const [newTagName, setNewTagName] = useState("")
     const [error, setError] = useState("")
     const [isCreating, setIsCreating] = useState(false)
@@ -16,35 +16,43 @@ function TagSelector({ eventId, tags, selectedTagIds, onTagsChange, onChange, di
         onChange(nextTagIds)
     }
 
-    async function handleCreateTag() {
-        if (isCreating || deletingTagId !== null || disabled) return
+    const pendingCreate = useRef(null)
+
+    function createPendingTag() {
+        if (pendingCreate.current) return pendingCreate.current
         const name = newTagName.trim()
-
-        if (!name) {
-            setError("Введите название тега")
-            return
+        if (!name) return Promise.resolve(selectedTagIds)
+        if (disabled || deletingTagId !== null) return Promise.reject(new Error("Теги пока недоступны"))
+        const existing = tags.find(tag => tag.name.trim().toLowerCase() === name.toLowerCase())
+        if (existing) {
+            const ids = selectedTagIds.includes(existing.id) ? selectedTagIds : [...selectedTagIds, existing.id]
+            onChange(ids)
+            setNewTagName("")
+            setError("")
+            return Promise.resolve(ids)
         }
-
-        if (tags.some(tag => tag.name.toLowerCase() === name.toLowerCase())) {
-            setError("Такой тег уже существует")
-            return
-        }
-
         setError("")
         setIsCreating(true)
-        try {
-            const createdTag = await createTag(eventId, name)
+        const request = createTag(eventId, name).then(createdTag => {
+            const ids = [...selectedTagIds, createdTag.id]
             onTagsChange([...tags, createdTag])
-            onChange([...selectedTagIds, createdTag.id])
+            onChange(ids)
             setNewTagName("")
-        } catch (requestError) {
+            return ids
+        }).catch(requestError => {
             setError(requestError.response?.status === 409
                 ? "Такой тег уже существует. Обновите список тегов."
                 : "Не удалось создать тег. Попробуйте ещё раз.")
-        } finally {
+            throw requestError
+        }).finally(() => {
+            pendingCreate.current = null
             setIsCreating(false)
-        }
+        })
+        pendingCreate.current = request
+        return request
     }
+
+    useImperativeHandle(ref, () => ({ createPendingTag }))
 
     async function handleDeleteTag(tagId) {
         if (deletingTagId !== null || isCreating || disabled) return
@@ -65,7 +73,7 @@ function TagSelector({ eventId, tags, selectedTagIds, onTagsChange, onChange, di
     function handleKeyDown(event) {
         if (event.key === "Enter") {
             event.preventDefault()
-            handleCreateTag()
+            createPendingTag().catch(() => {})
         }
     }
 
@@ -108,22 +116,14 @@ function TagSelector({ eventId, tags, selectedTagIds, onTagsChange, onChange, di
                     value={newTagName}
                     onChange={event => setNewTagName(event.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Новый тег"
+                    placeholder="Введите тег и нажмите Enter"
                     maxLength={40}
                 />
-                <button
-                    type="button"
-                    className="tag-create-button"
-                    onClick={handleCreateTag}
-                    disabled={disabled || isCreating || deletingTagId !== null}
-                >
-                    {isCreating ? "Создаём..." : "+ Создать"}
-                </button>
             </div>
 
             {error && <span className="tag-selector-error" role="alert">{error}</span>}
         </div>
     )
-}
+})
 
 export default TagSelector

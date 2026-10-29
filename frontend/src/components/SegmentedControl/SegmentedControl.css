@@ -1,0 +1,42 @@
+.segmented-control {
+    position: relative;
+    isolation: isolate;
+    display: inline-grid;
+    grid-template-columns: repeat(var(--segments), minmax(0, 1fr));
+    width: fit-content;
+    max-width: 100%;
+    padding: 5px;
+    margin-bottom: 18px;
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    background: #dcdff0;
+}
+.segmented-control-indicator {
+    position: absolute;
+    z-index: -1;
+    top: 5px;
+    bottom: 5px;
+    left: 5px;
+    width: calc((100% - 10px) / var(--segments));
+    border-radius: 10px;
+    background: #f8f8ff;
+    box-shadow: 0 3px 12px #292c6f14;
+    transform: translateX(calc(var(--selected) * 100%));
+    transition: transform 380ms cubic-bezier(.22, 1, .36, 1);
+}
+.segmented-control button {
+    min-width: 0;
+    padding: 11px 22px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: color 220ms ease;
+}
+.segmented-control button[aria-pressed="true"] { color: var(--primary); }
+.segmented-control button:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+@media (max-width: 480px) { .segmented-control button { padding-inline: 15px; } }
+@media (prefers-reduced-motion: reduce) { .segmented-control-indicator, .segmented-control button { transition: none; } }

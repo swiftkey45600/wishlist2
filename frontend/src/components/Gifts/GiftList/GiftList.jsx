@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react"
 import "./GiftList.css"
 
 import GiftCard from "../GiftCard/GiftCard"
-import GiftRecommendations from "../GiftRecommendations/GiftRecommendations"
 import {
   getGiftsByEvent,
   createGift,
@@ -22,8 +21,7 @@ import GiftFilters from "../GiftFilters/GiftFilters"
 import { useGiftFilters } from "../GiftFilters/useGiftFilters"
 import FundraisingGoalInput from "../GiftFundraising/FundraisingGoalInput"
 import { parseContributionGoal } from "../../../application/contributionApplication"
-import { fetchGiftsByEvent } from "../../../repositories/giftRepository"
-import RecommendationSharingInput from "../GiftRecommendations/RecommendationSharingInput"
+import { fetchGiftsByEvent, setGiftReceived } from "../../../repositories/giftRepository"
 import { giftPriorityOptions } from "../giftPriority"
 import {
     applySavedGiftPriorities,
@@ -43,7 +41,6 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
     const [title, setTitle] = useState("")
     const [price, setPrice] = useState("")
     const [contributionGoal, setContributionGoal] = useState(null)
-    const [shareInRecommendations, setShareInRecommendations] = useState(false)
     const [priority, setPriority] = useState("normal")
     const [description, setDescription] = useState("")
     const [imageFile, setImageFile] = useState(null)
@@ -51,6 +48,7 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
     const [parsedImageId, setParsedImageId] = useState(null)
     const [pictureUrl, setPictureUrl] = useState("")
     const imageInputRef = useRef(null)
+    const tagSelectorRef = useRef(null)
     const [formError, setFormError] = useState(null)
     const [marketplaceUrl, setMarketplaceUrl] = useState("")
     const [editingGift, setEditingGift] = useState(null)
@@ -180,8 +178,10 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
         setFieldErrors(errors)
         if (Object.keys(errors).length) return
 
+        const pendingTags = tagSelectorRef.current?.createPendingTag()
         setIsSubmitting(true)
         try {
+            const tagIds = pendingTags ? await pendingTags : selectedTagIds
             let imageId = parsedImageId
             if (imageFile) {
                 const uploadedImage = await uploadImageFile(imageFile)
@@ -197,13 +197,12 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
                 title: title.trim(),
                 price: parsedPrice,
                 contribution_goal: parsedGoal,
-                share_in_recommendations: shareInRecommendations,
                 priority,
                 description: description.trim() || undefined,
                 marketplace_url: marketplaceUrl.trim() || undefined,
                 image_id: imageId,
                 picture_url: imageId ? null : pictureUrl.trim() || null,
-                tag_ids: selectedTagIds,
+                tag_ids: tagIds,
                 status: "available"
             })
 
@@ -222,7 +221,6 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
             setTitle("")
             setPrice("")
             setContributionGoal(null)
-            setShareInRecommendations(false)
             setPriority("normal")
             setDescription("")
             setImageFile(null)
@@ -233,6 +231,8 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
             setSelectedTagIds([])
             setIsFormOpen(false)
             onGiftDataChange?.()
+        } catch {
+            setFormError("Не удалось создать тег. Попробуйте ещё раз.")
         } finally {
             setIsSubmitting(false)
         }
@@ -335,7 +335,17 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
         })
     })
 
-    const { filters, filteredGifts, updateFilter } = useGiftFilters(gifts, isOwner && !showReservations)
+    async function handleReceived(giftId) {
+        try {
+            await setGiftReceived(giftId, true)
+            setGifts(current => current.map(gift => gift.id === giftId ? { ...gift, received: true } : gift))
+            setActionError(null)
+            onGiftDataChange?.()
+        } catch { setActionError("Не удалось отметить подарок. Попробуйте ещё раз.") }
+    }
+
+    const visibleGifts = gifts.filter(gift => !gift.received)
+    const { filters, filteredGifts, updateFilter } = useGiftFilters(visibleGifts, isOwner && !showReservations)
     const isPrioritySort = filters.sortBy === "priority"
     const filteredGiftGroups = allTags
         .map(tag => ({
@@ -350,7 +360,7 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
             <div className="gift-section-heading">
                 <div>
                     <h2>Подарки события</h2>
-                    <span>{filteredGifts.length} из {gifts.length}</span>
+                    <span>{filteredGifts.length} из {visibleGifts.length}</span>
                 </div>
                 <div className="gift-section-actions">
                     {isOwner && (
@@ -426,7 +436,7 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
                             {fieldErrors.price && <span id="create-gift-price-error" className="gift-form-error" role="alert">{fieldErrors.price}</span>}
                         </label>
                         <label>
-                            Приоритет
+                            Насколько хочется
                             <select
                                 value={priority}
                                 onChange={event => setPriority(event.target.value)}
@@ -449,11 +459,6 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
                         }}
                     />
 
-                    <RecommendationSharingInput
-                        checked={shareInRecommendations}
-                        disabled={isSubmitting || isParsingMarketplace}
-                        onChange={setShareInRecommendations}
-                    />
 
                     <label>
                         Описание
@@ -530,6 +535,7 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
                     {marketplaceNotice && <p role="status">{marketplaceNotice}</p>}
 
                     <TagSelector
+                        ref={tagSelectorRef}
                         disabled={tagsLoading || Boolean(tagsError) || isSubmitting}
                         eventId={eventId}
                         tags={tags}
@@ -547,8 +553,7 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
                             setParsedImageId(null)
                             setPictureUrl("")
                             setContributionGoal(null)
-                            setShareInRecommendations(false)
-                            setFormError(null)
+                                            setFormError(null)
                             setIsFormOpen(false)
                         }} disabled={isSubmitting || isParsingMarketplace}>
                             Отмена
@@ -570,11 +575,11 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
 
             {actionError && <p className="gift-list-status error" role="alert">{actionError}</p>}
 
-            {!isLoading && !error && gifts.length === 0 && (
+            {!isLoading && !error && visibleGifts.length === 0 && (
                 <p className="gift-list-status">Подарки не найдены.</p>
             )}
 
-            {!isLoading && !error && gifts.length > 0 && filteredGifts.length === 0 && (
+            {!isLoading && !error && visibleGifts.length > 0 && filteredGifts.length === 0 && (
                 <p className="gift-list-status">Подарки по заданным фильтрам не найдены.</p>
             )}
 
@@ -592,6 +597,7 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
                                 : undefined}
                             onDelete={isOwner ? (giftId) => setGiftToDelete(gifts.find(item => item.id === giftId)) : undefined}
                             onMarkBought={isOwner && showReservations ? handleMarkBought : undefined}
+                            onMarkReceived={isOwner ? handleReceived : undefined}
                             hideReservationDetails={isOwner && !showReservations}
                             onEdit={isOwner ? openEditForm : undefined}
                         />
@@ -620,6 +626,7 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
                                             : undefined}
                                         onDelete={isOwner ? (giftId) => setGiftToDelete(gifts.find(item => item.id === giftId)) : undefined}
                                         onMarkBought={isOwner && showReservations ? handleMarkBought : undefined}
+                            onMarkReceived={isOwner ? handleReceived : undefined}
                                         hideReservationDetails={isOwner && !showReservations}
                                         onEdit={isOwner ? openEditForm : undefined}
                                     />
@@ -647,6 +654,7 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
                                             : undefined}
                                         onDelete={isOwner ? (giftId) => setGiftToDelete(gifts.find(item => item.id === giftId)) : undefined}
                                         onMarkBought={isOwner && showReservations ? handleMarkBought : undefined}
+                            onMarkReceived={isOwner ? handleReceived : undefined}
                                         hideReservationDetails={isOwner && !showReservations}
                                         onEdit={isOwner ? openEditForm : undefined}
                                     />
@@ -656,17 +664,6 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
                     )}
                 </div>
             )}
-
-            {isOwner && !isLoading && !error && <GiftRecommendations
-                key={eventId}
-                eventId={eventId}
-                gifts={gifts}
-                onAdd={gift => {
-                    const giftWithPriority = applySavedGiftPriorities([gift])[0]
-                    setGifts(previous => [giftWithPriority, ...previous])
-                    onGiftDataChange?.()
-                }}
-            />}
 
             {editingGift && (
                 <div className="gift-edit-modal" onClick={(event) => {
@@ -679,17 +676,16 @@ function GiftList({ eventId, isOwner, publicToken, onGiftDataChange }) {
                             tags={tags}
                             onTagsChange={setTags}
                             onChange={setEditingGift}
-                            onSave={(imageId) =>
+                            onSave={(imageId, tagIds) =>
                                 handleEditGift(editingGift.id, {
                                     title: editingGift.title.trim(),
                                     price: Number(editingGift.price),
                                     contribution_goal: parseContributionGoal(editingGift.contribution_goal, editingGift.contribution_total),
-                                    share_in_recommendations: Boolean(editingGift.share_in_recommendations),
                                     description: editingGift.description?.trim() || null,
                                     picture_url: editingGift.picture_url?.trim() || null,
                                     marketplace_url: editingGift.marketplace_url?.trim() || null,
                                     priority: editingGift.priority || "normal",
-                                    tag_ids: editingGift.tag_ids || [],
+                                    tag_ids: tagIds,
                                     image_id: imageId ?? null,
                                     ...(imageId ? { picture_url: null } : {})
                                 })

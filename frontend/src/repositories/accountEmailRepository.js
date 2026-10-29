@@ -13,3 +13,13 @@ export async function resetPassword(token, password) {
 export async function requestEmailVerification() {
     await api.post("/auth/email/verification/request")
 }
+
+export async function getReminderSettings() {
+    const { data } = await api.get("/users/me/reminders")
+    return data.enabled
+}
+
+export async function setReminderSettings(enabled) {
+    const { data } = await api.put("/users/me/reminders", { enabled })
+    return data.enabled
+}

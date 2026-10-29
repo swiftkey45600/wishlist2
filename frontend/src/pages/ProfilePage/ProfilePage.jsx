@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import "./ProfilePage.css"
 import "../../styles/common.css"
 
-import { emailFeaturesEnabled, requestEmailVerification } from "../../repositories/accountEmailRepository"
+import { emailFeaturesEnabled, requestEmailVerification, getReminderSettings, setReminderSettings } from "../../repositories/accountEmailRepository"
 import Header from "../../components/Header/Header"
 import Sidebar from "../../components/Sidebar/Sidebar"
 import ProfileCard from "../../components/Profile/ProfileCard/ProfileCard"
@@ -23,6 +23,16 @@ function ProfilePage() {
     const [error, setError] = useState(null)
     const [email, setEmail] = useState("")
     const [emailMessage, setEmailMessage] = useState("")
+    const [reminders, setReminders] = useState(null)
+    const [reminderBusy, setReminderBusy] = useState(false)
+    const [reminderError, setReminderError] = useState("")
+
+    useEffect(() => {
+        let cancelled = false
+        getReminderSettings().then(value => { if (!cancelled) setReminders(value) })
+            .catch(() => { if (!cancelled) setReminderError("Не удалось загрузить настройки напоминаний.") })
+        return () => { cancelled = true }
+    }, [])
     const [name, setName] = useState("")
     const [login, setLogin] = useState("")
     const [password, setPassword] = useState("")
@@ -166,10 +176,28 @@ function ProfilePage() {
 
                                 {emailFeaturesEnabled && user.email && !user.email_verified && <button type="button" className="profile-button secondary" onClick={async () => {
                                     setEmailMessage("")
-                                    try { await requestEmailVerification(); setEmailMessage("Запрос принят. Если отправка писем настроена, письмо придёт на вашу почту.") }
+                                    try { await requestEmailVerification(); setEmailMessage("Письмо отправлено. Проверьте почту.") }
                                     catch { setEmailMessage("Не удалось запросить письмо. Попробуйте позже.") }
                                 }}>Отправить письмо повторно</button>}
                                 {emailMessage && <p role="status">{emailMessage}</p>}
+                                <div className="profile-section reminder-settings">
+                                    <div className="profile-section-head"><h2>Напоминания о событиях</h2></div>
+                                    <p>Одно письмо за день до вашего события или события, на которое вы забронировали подарок.</p>
+                                    <label className="reminder-option">
+                                        <input type="checkbox" checked={reminders === true}
+                                            disabled={reminders === null || reminderBusy || (!user.email_verified && !reminders)}
+                                            onChange={async event => {
+                                                setReminderBusy(true)
+                                                setReminderError("")
+                                                try { setReminders(await setReminderSettings(event.target.checked)) }
+                                                catch { setReminderError("Не удалось сохранить настройку. Попробуйте ещё раз.") }
+                                                finally { setReminderBusy(false) }
+                                            }} />
+                                        Получать напоминания на почту
+                                    </label>
+                                    {!user.email_verified && <p>Чтобы включить напоминания, укажите и подтвердите почту.</p>}
+                                    {reminderError && <p role="alert">{reminderError}</p>}
+                                </div>
                                 <ProfileActions />
                             </section>
                         </>

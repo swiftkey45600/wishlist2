@@ -11,6 +11,7 @@ export async function createEvent(eventData) {
         title: eventData.title,
         description: eventData.description,
         event_date: eventData.event_date,
+        end_date: eventData.end_date || null,
         place: eventData.place,
         cover_image_id: eventData.cover_image_id
     })
@@ -36,8 +37,8 @@ export async function fetchEventStatistics(eventId) {
     return response.data
 }
 
-export async function deleteEvent(eventId) {
-    await api.delete(`/events/${eventId}`)
+export async function deleteEvent(eventId, keepGifts = false) {
+    await api.delete(`/events/${eventId}`, { params: { keep_gifts: keepGifts } })
 }
 
 export async function updateEvent(eventId, eventData) {

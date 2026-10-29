@@ -48,9 +48,9 @@ export async function getEventStatistics(eventId) {
     }
 }
 
-export async function deleteEvent(eventId) {
+export async function deleteEvent(eventId, keepGifts = false) {
     try {
-        await deleteEventRepository(eventId)
+        await deleteEventRepository(eventId, keepGifts)
         return true
     } catch (error) {
         console.error(error)

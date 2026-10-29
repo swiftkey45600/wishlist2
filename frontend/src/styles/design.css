@@ -1,0 +1,55 @@
+/* Shared visual language: bold type, editorial panels and the blue/violet spectrum. */
+:root { color-scheme: light; }
+:is(button, input, select, textarea) { font-family: var(--font-family-base); }
+:is(button, select) { font-weight: 700; }
+:is(h1, h2, h3, h4) { font-family: var(--font-family-base); font-weight: 800; line-height: 1.17; letter-spacing: -.04em; }
+:is(.heading, .presents-heading, .profile-heading) { position: relative; overflow: hidden; min-height: 156px; padding: 28px 32px; border: 1px solid #d4d8ed; border-radius: 20px; background: linear-gradient(115deg, #d6e5f2, #dedafa 58%, #e9dff1); }
+:is(.heading, .presents-heading, .profile-heading)::before { content: ""; position: absolute; inset: 0 0 0 auto; width: 8px; background: linear-gradient(#25c8db, #4754e5 52%, #953ee4); }
+:is(.heading, .presents-heading, .profile-heading)::after { content: ""; position: absolute; pointer-events: none; width: 205px; height: 205px; top: -105px; right: 55px; border: 28px solid #6b55e014; border-radius: 50%; }
+:is(.heading h1, .presents-heading h1, .profile-heading h1) { font-size: clamp(32px, 3.6vw, 48px); font-weight: 800; letter-spacing: -.055em; color: var(--text); }
+:is(.heading, .presents-heading, .profile-heading) > * { position: relative; z-index: 1; }
+:is(.heading .muted, .presents-muted, .profile-muted) { margin-top: 10px; font-size: 14px; }
+.home-eyebrow { color: #4f409b; }
+.top { height: 76px; background: #e9eaf6ee; border-color: #cfd4e9; }
+.logo { font-size: 29px; font-weight: 800; color: #17172b; }
+.mark { background: linear-gradient(145deg, #36b5cd, #4930d9 72%); }
+.sidebar { background: #dfe3f2; border-color: #cbd1e8; box-shadow: none; }
+.sidebar-upcoming { background: linear-gradient(135deg, #d2e4f0, #ded6f4); }
+.sidebar-link { font-weight: 650; }
+:is(.btn.primary, .presents-button.primary, .profile-button.primary, .submit-button, .share-event-actions .share-event-copy) { background: linear-gradient(115deg, #394cdf, #6c35d7); color: #fff; border: 0; box-shadow: 0 5px 16px #4d38cb20; }
+:is(.btn.primary, .presents-button.primary, .profile-button.primary, .submit-button):hover { background: linear-gradient(115deg, #293dca, #5623ba); }
+:is(.stat, .event-card, .profile-panel, .gift-card) { border-color: var(--line); box-shadow: var(--shadow); }
+.stat { position: relative; overflow: hidden; background: #e9edf8; padding: 18px 22px; }
+.stat::after { content: ""; position: absolute; right: -16px; bottom: -25px; width: 95px; height: 95px; border-radius: 50%; background: #a7b5ec25; }
+.stat small { color: #565b79; font-weight: 650; }
+.stat strong { font-size: 30px; font-weight: 800; }
+.presents-gift-card { background: linear-gradient(145deg, #eef0fa, #e4e4f5); border-color: #cbd0e7; box-shadow: 0 9px 24px #3032690c; cursor: default; }
+.presents-gift-top { padding: 23px 20px; gap: 18px; }
+.presents-gift-title h3 { font-size: 20px; font-weight: 800; }
+.presents-description { font-size: 13px; margin-block: 10px; }
+.presents-price { font-size: 21px; font-weight: 800; }
+.presents-pic { background: linear-gradient(145deg, #d0e4f0, #d7d0f6); }
+.presents-gift-bottom { background: #dfe2f340; padding: 15px 20px; border-radius: 0 0 18px 18px; }
+.presents-manage-actions :is(button, select) { font-family: var(--font-family-base); font-size: 12px; font-weight: 700; line-height: 1.35; min-height: 43px; background-color: #f0f1fa; }
+.presents-manage-actions select { padding-right: 28px; text-overflow: ellipsis; }
+.presents-button.danger { color: #c03b5b; background: #f7edf4; border-color: #e7c9d5; }
+.presents-market, .presents-share-one { font-size: 12px; font-weight: 700; }
+.presents-toolbar { background: #e9edf8; box-shadow: none; }
+.presents-share-list { flex-wrap: wrap; }
+.profile-banner { background: linear-gradient(120deg, #d1e4f3, #ddd5f8); }
+.auth-page { background: transparent; }
+.auth-welcome { background: radial-gradient(circle at 110% 0%, #b2a0f8, transparent 50%), linear-gradient(135deg, #c6e6f0, #d3cdf5); }
+.auth-welcome::after { content: ""; position: absolute; width: 235px; height: 235px; border: 40px solid #6854e01a; border-radius: 50%; right: -100px; bottom: -80px; pointer-events: none; }
+.auth-welcome h1 { color: var(--text); font-weight: 800; }
+.auth-card .segmented-control { display: grid; width: 100%; margin: 0; }
+.auth-card .segmented-control button, .auth-card .segmented-control button:hover { color: var(--muted); background: transparent; transform: none; }
+.auth-card .segmented-control button[aria-pressed="true"] { color: var(--primary); }
+.share-event-dialog h2 { color: var(--text); font-family: var(--font-family-base); }
+:is(.create-dialog, .create-event-form, .edit-event-form, .presents-edit-dialog, .share-event-dialog) { background-color: var(--card); }
+@media (prefers-reduced-motion: no-preference) {
+    :is(button, select, a) { transition: color 180ms ease, background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
+    :is(.create-dialog, .presents-edit-dialog, .profile-edit-modal, .share-event-dialog, .shared-wishes-dialog) { animation: panel-enter 240ms cubic-bezier(.22, 1, .36, 1) both; }
+    @keyframes panel-enter { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+}
+@media (max-width: 800px) { :is(.heading, .presents-heading, .profile-heading) { padding: 24px; min-height: 140px; } .top { padding-inline: 18px; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }

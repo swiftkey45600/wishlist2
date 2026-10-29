@@ -1,6 +1,9 @@
+import DateTimePicker from "../DateTimePicker"
 import "./CreateEventForm.css"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import { isPastEventDate, todayLocalDate } from "../../../utils/eventDate"
 import { uploadImageFile } from "../../../application/imageApplication"
+import LocationPicker from "../LocationPicker/LocationPicker"
 
 const allowedImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"])
 
@@ -9,7 +12,9 @@ function CreateEventForm({ onCreateEvent, onCancel }) {
     const [description, setDescription] = useState("")
     const [place, setPlace] = useState("")
     const [eventDate, setEventDate] = useState("")
+    const [endDate, setEndDate] = useState("")
     const [coverFile, setCoverFile] = useState(null)
+    const coverInputRef = useRef(null)
     const [coverPreview, setCoverPreview] = useState("")
     const [error, setError] = useState("")
     const [isSaving, setIsSaving] = useState(false)
@@ -28,12 +33,24 @@ function CreateEventForm({ onCreateEvent, onCancel }) {
             return
         }
 
+        if (error === "Выберите сегодняшнюю или будущую дату") return
+
+        if (isPastEventDate(eventDate)) {
+            setError("Выберите сегодняшнюю или будущую дату")
+            return
+        }
+
+        if (endDate && (!eventDate || endDate < eventDate)) {
+            setError("Дата окончания должна быть не раньше начала")
+            return
+        }
+
         setError("")
         setIsSaving(true)
         try {
             const uploadedCover = coverFile ? await uploadImageFile(coverFile) : null
             if (coverFile && !uploadedCover?.id) {
-                setError("Не удалось загрузить обложку")
+                setError("Не удалось загрузить обложку. Выберите другую или продолжите без неё.")
                 return
             }
 
@@ -42,12 +59,13 @@ function CreateEventForm({ onCreateEvent, onCancel }) {
                 description: description.trim(),
                 place: place.trim(),
                 event_date: eventDate,
+                end_date: endDate || null,
                 cover_image_id: uploadedCover?.id || null
             })
             if (!created) setError("Не удалось создать событие")
         } catch (uploadError) {
             console.error("Не удалось загрузить обложку события", uploadError)
-            setError("Не удалось загрузить обложку")
+            setError("Не удалось загрузить обложку. Выберите другую или продолжите без неё.")
         } finally {
             setIsSaving(false)
         }
@@ -56,22 +74,29 @@ function CreateEventForm({ onCreateEvent, onCancel }) {
     return (
         <div className="create-event-form">
             <h2>Создать событие</h2>
-            <form className="create-event-form-fields" onSubmit={handleSubmit}>
+            <form className="create-event-form-fields" onSubmit={handleSubmit} noValidate>
                 <label className="create-event-field">Название<input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Например, День рождения" aria-invalid={error === "Введите название события"} aria-describedby="create-event-title-error" autoFocus />
                     {error === "Введите название события" && <span id="create-event-title-error" className="create-event-error" role="alert">{error}</span>}
                 </label>
                 <label className="create-event-field">Описание<input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Описание события" /></label>
-                <label className="create-event-field">Дата и время<input value={eventDate} type="datetime-local" onChange={(event) => setEventDate(event.target.value)} /></label>
-                <label className="create-event-field">Место<input value={place} onChange={(event) => setPlace(event.target.value)} placeholder="Город или место" /></label>
+                <label className="create-event-field">Дата и время<DateTimePicker value={eventDate} min={`${todayLocalDate()}T00:00`} onChange={(event) => { setEventDate(event.target.value); if (error === "Выберите сегодняшнюю или будущую дату") setError("") }} onBlur={() => { if (isPastEventDate(eventDate)) { setEventDate(""); setError("Выберите сегодняшнюю или будущую дату") } }} /></label>
+                <label className="create-event-field">Дата и время окончания <span className="event-optional">необязательно</span><DateTimePicker value={endDate} min={eventDate || `${todayLocalDate()}T00:00`} onChange={event => setEndDate(event.target.value)} /></label>
+                <LocationPicker value={place} onChange={setPlace} />
                 <label className="create-event-field">
                     Обложка события
-                    <input
+                    <span className="event-cover-picker"><span>Выбрать фото</span><input
                         type="file"
+                        ref={coverInputRef}
                         accept="image/jpeg,image/png,image/webp,image/gif"
                         disabled={isSaving}
                         onChange={(inputEvent) => {
                             const file = inputEvent.target.files?.[0] || null
                             if (!file) return
+                            if (file.size > 5 * 1024 * 1024) {
+                                setError("Изображение должно быть не больше 5 МБ")
+                                inputEvent.target.value = ""
+                                return
+                            }
                             if (!allowedImageTypes.has(file.type)) {
                                 setError("Выберите изображение в формате JPEG, PNG, WebP или GIF")
                                 inputEvent.target.value = ""
@@ -81,9 +106,11 @@ function CreateEventForm({ onCreateEvent, onCancel }) {
                             setCoverFile(file)
                             setCoverPreview(URL.createObjectURL(file))
                         }}
-                    />
+                    /></span>
+                    <span className="event-cover-hint">{coverFile ? coverFile.name : "Фото из файлов или галереи, до 5 МБ"}</span>
                 </label>
                 {coverPreview && <img className="event-cover-preview" src={coverPreview} alt="Предпросмотр обложки события" />}
+                {coverFile && <button type="button" className="event-remove-cover" onClick={() => { setCoverFile(null); setCoverPreview(""); if (coverInputRef.current) coverInputRef.current.value = ""; setError("") }}>Убрать выбранную обложку</button>}
                 {error && error !== "Введите название события" && <p className="create-event-error" role="alert">{error}</p>}
                 <div className="create-event-actions">
                     <button type="button" className="create-event-secondary" onClick={onCancel} disabled={isSaving}>Отмена</button>
