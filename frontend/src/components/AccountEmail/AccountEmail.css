@@ -1,0 +1,16 @@
+.account-email-page { align-items: center; }
+.auth-card.account-email-card { width: min(460px, 100%); padding: 34px; gap: 22px; border: 1px solid #ffffffcc; border-radius: 24px; background: #ffffffed; box-shadow: 0 24px 70px #462e7f18; }
+.account-email-card .auth-brand { margin-bottom: 8px; }
+.account-email-icon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 16px; background: #e9e4fb; color: var(--primary); }
+.account-email-icon.success { color: var(--ok); background: var(--okbg); }
+.account-email-heading h1 { text-align: left; font-size: 27px; line-height: 1.2; letter-spacing: -.035em; }
+.account-email-heading p { margin: 12px 0 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
+.account-email-card .auth-form { gap: 17px; }
+.account-email-card label { display: grid; gap: 8px; color: #37384d; font-size: 13px; font-weight: 600; }
+.account-email-card input { font-weight: 400; }
+.account-email-card .auth-error { padding: 12px 14px; border: 1px solid #efced7; border-radius: 10px; background: var(--dangerbg); }
+.account-email-hint { margin: 0; padding: 14px 16px; border-radius: 10px; background: #f3f1fb; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.account-email-back { display: flex; align-items: center; justify-content: center; gap: 7px; color: var(--primary); font-size: 13px; font-weight: 600; text-decoration: none; }
+.account-email-back:hover { text-decoration: underline; }
+.account-email-back:focus-visible { outline: 2px solid var(--primary); outline-offset: 4px; }
+@media (max-width: 480px) { .auth-card.account-email-card { padding: 26px 24px; border-radius: 20px; } .account-email-heading h1 { font-size: 25px; } }
