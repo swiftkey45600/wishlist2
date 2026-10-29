@@ -182,7 +182,7 @@ function ProfilePage() {
                                 {emailMessage && <p role="status">{emailMessage}</p>}
                                 <div className="profile-section reminder-settings">
                                     <div className="profile-section-head"><h2>Напоминания о событиях</h2></div>
-                                    <p>Одно письмо за день до вашего события или события, на которое вы забронировали подарок.</p>
+                                    <p>Напомним за неделю и за день до события, которое вы организуете или для которого забронировали подарок.</p>
                                     <label className="reminder-option">
                                         <input type="checkbox" checked={reminders === true}
                                             disabled={reminders === null || reminderBusy || (!user.email_verified && !reminders)}

@@ -123,8 +123,8 @@ function EventPage() {
                                     {archiveError && <p role="alert">{archiveError}</p>}
                                 </div>}
                                 {copyOpen && <div className="event-edit-modal"><div className="event-edit-dialog">
-                                    <CopyEventForm event={event} onCancel={() => setCopyOpen(false)} onCopy={async (title, date) => {
-                                        const copied = await copyEvent(id, title, date)
+                                    <CopyEventForm event={event} onCancel={() => setCopyOpen(false)} onCopy={async (title, date, durationDays) => {
+                                        const copied = await copyEvent(id, title, date, durationDays)
                                         if (!copied?.id) throw new Error("Missing copied event")
                                         setCopyOpen(false)
                                         navigate(`/events/${copied.id}`)
@@ -136,6 +136,7 @@ function EventPage() {
                                 <GiftList
                                     key={id}
                                     eventId={id}
+                                    eventArchived={event.status === "archived"}
                                     isOwner={isOwner}
                                     publicToken={event.public_token}
                                     onGiftDataChange={() => setStatisticsRefreshKey((key) => key + 1)}

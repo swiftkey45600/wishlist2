@@ -7,7 +7,7 @@ export async function changeEventArchive(eventId, archived) {
     return response.data.event
 }
 
-export async function copyEvent(eventId, title, eventDate) {
-    const response = await api.post(`/events/${eventId}/copy`, { title, event_date: eventDate || null })
+export async function copyEvent(eventId, title, eventDate, durationDays) {
+    const response = await api.post(`/events/${eventId}/copy`, { title, event_date: eventDate || null, ...(durationDays != null ? { duration_days: durationDays } : {}) })
     return response.data.event
 }

@@ -11,7 +11,7 @@ export async function createEvent(eventData) {
         title: eventData.title,
         description: eventData.description,
         event_date: eventData.event_date,
-        end_date: eventData.end_date || null,
+        ...(eventData.duration_days != null ? { duration_days: eventData.duration_days } : { end_date: eventData.end_date || null }),
         place: eventData.place,
         cover_image_id: eventData.cover_image_id
     })

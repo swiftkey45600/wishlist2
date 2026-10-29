@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from app.utils.event_dates import event_duration_days, MAX_DURATION_DAYS
 from app.utils.image_access import signed_image_url
 from datetime import date, datetime
 from typing import Annotated, Literal
@@ -22,14 +23,17 @@ class Event:
     status: EventStatus = "active"
     cover_image_id: int | None = None
     cover_image_url: str | None = None
+    duration_days: int = field(init=False, default=1)
 
     def __post_init__(self):
         self.cover_image_url = signed_image_url(self.cover_image_id)
+        self.duration_days = event_duration_days(self.event_date, self.end_date)
 
 
 class EventCopyRequest(BaseModel):
     title: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
     event_date: str | None = None
+    duration_days: int | None = Field(default=None, ge=1, le=MAX_DURATION_DAYS)
 
     @field_validator("event_date")
     @classmethod
@@ -48,6 +52,7 @@ class EventCreateRequest(BaseModel):
     description: str | None = None
     event_date: str | None = None
     end_date: str | None = None
+    duration_days: int | None = Field(default=None, ge=1, le=MAX_DURATION_DAYS)
     place: str | None = None
     cover_image_id: int | None = Field(default=None, gt=0, le=9223372036854775807)
 
@@ -57,6 +62,7 @@ class EventUpdateRequest(BaseModel):
     description: str | None = None
     event_date: str | None = None
     end_date: str | None = None
+    duration_days: int | None = Field(default=None, ge=1, le=MAX_DURATION_DAYS)
     place: str | None = None
     cover_image_id: int | None = Field(default=None, gt=0, le=9223372036854775807)
 

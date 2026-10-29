@@ -4,6 +4,7 @@ import json
 from app.models import Event
 from app.models.event import EventStatus
 from app.database import get_connection
+from app.utils.event_dates import end_date_for_duration, event_duration_days
 
 
 class EventRepository:
@@ -97,7 +98,7 @@ class EventRepository:
             ).fetchone()
             return self._row_to_event(row) if row is not None else None
 
-    def copy_event(self, event_id: int, owner_id: int, title: str, event_date: str | None) -> Event | None:
+    def copy_event(self, event_id: int, owner_id: int, title: str, event_date: str | None, duration_days: int | None = None) -> Event | None:
         with get_connection() as conn:
             conn.execute("BEGIN IMMEDIATE")
             source = conn.execute(
@@ -105,19 +106,22 @@ class EventRepository:
             ).fetchone()
             if source is None:
                 return None
+            duration = duration_days if duration_days is not None else event_duration_days(source["event_date"], source["end_date"])
+            end_date = end_date_for_duration(event_date, duration) if event_date else None
             cursor = conn.execute(
                 """
                 INSERT INTO events (
-                    owner_id, title, description, event_date,
+                    owner_id, title, description, event_date, end_date,
                     place, public_token, status, cover_image_id
                 )
-                VALUES (?, ?, ?, ?, ?, ?, 'active', ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?)
                 """,
                 (
                     owner_id,
                     title,
                     source["description"],
                     event_date,
+                    end_date,
                     source["place"],
                     secrets.token_urlsafe(16),
                     source["cover_image_id"],

@@ -63,6 +63,46 @@ class ReminderTests(unittest.TestCase):
         self.assertEqual(send_due_reminders(date(2026, 11, 1), FailedMail()), 0)
         self.assertEqual(send_due_reminders(date(2026, 11, 1), MailStub()), 2)
 
+    def test_week_and_day_are_separate_once_only_windows(self):
+        mail = MailStub()
+        self.assertEqual(send_due_reminders(date(2026, 10, 26), mail), 2)
+        self.assertEqual(send_due_reminders(date(2026, 10, 26), mail), 0)
+        self.assertEqual(send_due_reminders(date(2026, 11, 1), mail), 2)
+        self.assertEqual(send_due_reminders(date(2026, 11, 1), mail), 0)
+        self.assertEqual(len(mail.messages), 4)
+        owner = next(body for address, _, body in mail.messages if address == 'owner@example.com')
+        guest = next(body for address, _, body in mail.messages if address == 'guest@example.com')
+        self.assertIn('которое вы организуете', owner)
+        self.assertIn('для которого вы забронировали подарок', guest)
+        self.assertIn('через неделю', mail.messages[0][1])
+        for _, _, body in mail.messages:
+            self.assertNotIn('Другой подарок', body)
+            self.assertNotIn('Игорь', owner)
+
+    def test_opt_out_and_cancelled_reservation_stop_later_reminder(self):
+        mail = MailStub()
+        self.assertEqual(send_due_reminders(date(2026, 10, 26), mail), 2)
+        with get_connection() as db:
+            db.execute('DELETE FROM reservations WHERE reserver_id=2')
+            db.execute('UPDATE users SET event_reminders=0 WHERE id=1')
+        self.assertEqual(send_due_reminders(date(2026, 11, 1), mail), 0)
+
+    def test_upgrade_preserves_previous_day_before_claims(self):
+        with get_connection() as db:
+            db.execute('DROP TABLE event_reminder_deliveries')
+            db.execute("""CREATE TABLE event_reminder_deliveries (
+                event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                event_date TEXT NOT NULL, PRIMARY KEY(event_id,user_id,event_date))""")
+            db.execute("INSERT INTO event_reminder_deliveries VALUES (1,1,'2026-11-02')")
+        init_db()
+        mail = MailStub()
+        self.assertEqual(send_due_reminders(date(2026, 10, 26), mail), 2)
+        self.assertEqual(send_due_reminders(date(2026, 11, 1), mail), 1)
+        with get_connection() as db:
+            rows = db.execute('SELECT days_before FROM event_reminder_deliveries').fetchall()
+        self.assertEqual(sorted(row['days_before'] for row in rows), [1,1,7,7])
+
 
 if __name__ == '__main__':
     unittest.main()
