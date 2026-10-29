@@ -17,6 +17,7 @@ function LocationPicker({ value, onChange }) {
             if (!active || !mapElement.current) return
             const L = module.default
             map = L.map(mapElement.current).setView(initial || [55.7558, 37.6173], initial ? 14 : 4)
+            map.attributionControl.setPrefix('<a href="https://leafletjs.com">Leaflet</a>')
             let loadedTiles = 0
             const tiles = L.tileLayer(import.meta.env.VITE_MAP_TILE_URL || "https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
                 maxZoom: 19,
