@@ -1,6 +1,7 @@
 from app.models.gift import Gift, GiftFilters
 from app.models.tag import Tag
 from app.database import get_connection
+from app.utils.image_access import signed_image_url
 from app.repositories.contribution_repository import ContributionRepository
 
 class GiftRepository:
@@ -37,6 +38,7 @@ class GiftRepository:
             marketplace_url=row["marketplace_url"],
             category_id=row["category_id"],
             image_id=row["image_id"],
+            image_url=signed_image_url(row["image_id"]),
             reservation_id=row["reservation_id"] if "reservation_id" in row.keys() else None,
             tags=self._get_gift_tags(connection, row["id"]),
             contribution_goal=row["contribution_goal"],

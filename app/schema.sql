@@ -215,3 +215,10 @@ VALUES ('yandex-market', 'Я.Маркет', 'https://market.yandex.ru');
 
 INSERT OR IGNORE INTO marketplaces (slug, name, base_url)
 VALUES ('aliexpress', 'AliExpress', 'https://aliexpress.ru');
+
+-- Deduplicated images may be uploaded independently by several users.
+CREATE TABLE IF NOT EXISTS image_upload_grants (
+    image_id INTEGER NOT NULL REFERENCES images(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    PRIMARY KEY (image_id, user_id)
+);

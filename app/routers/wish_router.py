@@ -10,6 +10,7 @@ from app.models.identifiers import DatabaseId
 from app.models.user import User
 from app.repositories.event_repository import EventRepository
 from app.utils.jwt import get_current_user
+from app.utils.image_access import signed_image_url, can_use_image
 
 router = APIRouter(prefix="/wishes", tags=["Wishes"])
 
@@ -35,13 +36,14 @@ class AddToEvent(BaseModel):
 
 def as_wish(row):
     result = dict(row)
+    result["image_url"] = signed_image_url(result["image_id"])
     result["tags"] = json.loads(result.pop("tags_json"))
     result["received"] = bool(result["received"])
     return result
 
 
-def validate_image(connection, image_id):
-    if image_id is not None and not connection.execute("SELECT 1 FROM images WHERE id = ?", (image_id,)).fetchone():
+def validate_image(connection, image_id, user_id):
+    if image_id is not None and not can_use_image(connection, image_id, user_id):
         raise HTTPException(status_code=404, detail="Image not found")
 
 
@@ -61,7 +63,7 @@ def get_wishes(user: User = Depends(get_current_user)):
 @router.post("/", status_code=201)
 def create_wish(data: WishCreate, user: User = Depends(get_current_user)):
     with get_connection() as connection:
-        validate_image(connection, data.image_id)
+        validate_image(connection, data.image_id, user.id)
         row = connection.execute("""
             INSERT INTO personal_wishes (owner_id, title, price, description, marketplace_url,
                                          picture_url, image_id, tags_json, priority)
@@ -73,7 +75,7 @@ def create_wish(data: WishCreate, user: User = Depends(get_current_user)):
 @router.put("/{wish_id}")
 def update_wish(wish_id: DatabaseId, data: WishCreate, user: User = Depends(get_current_user)):
     with get_connection() as connection:
-        validate_image(connection, data.image_id)
+        validate_image(connection, data.image_id, user.id)
         row = connection.execute("""
             UPDATE personal_wishes SET title=?, price=?, description=?, marketplace_url=?,
                                        picture_url=?, image_id=?, tags_json=?, priority=?

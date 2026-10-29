@@ -17,6 +17,7 @@ from app.repositories.reservation_repository import ReservationRepository
 from app.services.reservation_service import ReservationService
 from app.utils.jwt import get_current_user, get_optional_user
 from app.utils.security import hash_password, verify_password
+from app.utils.image_access import signed_image_url
 
 router = APIRouter(prefix="/wish-shares", tags=["Wish sharing"])
 reservations = ReservationRepository()
@@ -121,7 +122,7 @@ def get_shared_wishes(token: str, user: User | None = Depends(get_optional_user)
             display = {field: row[field] for field in fields} if row is not None else dict.fromkeys(fields)
             if row is None:
                 display["title"] = "Подарок удалён"
-            items.append({**display, "position": position, "status": status,
+            items.append({**display, "image_url": signed_image_url(display["image_id"]), "position": position, "status": status,
                           "is_mine": bool(reserved and user and row["reserver_id"] == user.id)})
         return {"items": items, "is_owner": is_owner, "legacy": not bool(refs)}
 
