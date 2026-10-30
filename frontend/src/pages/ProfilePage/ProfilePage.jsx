@@ -1,3 +1,4 @@
+import { YandexButton } from "../../components/YandexAuth/YandexAuth"
 import { useEffect, useState } from "react"
 import "./ProfilePage.css"
 import "../../styles/common.css"
@@ -198,6 +199,7 @@ function ProfilePage() {
                                     {!user.email_verified && <p>Чтобы включить напоминания, укажите и подтвердите почту.</p>}
                                     {reminderError && <p role="alert">{reminderError}</p>}
                                 </div>
+                                <div className="profile-section"><div className="profile-section-head"><h2>Вход через Яндекс</h2></div><p>Привяжите Яндекс ID, чтобы входить в этот аккаунт без пароля Wishlist.</p><YandexButton link /></div>
                                 <ProfileActions />
                             </section>
                         </>
