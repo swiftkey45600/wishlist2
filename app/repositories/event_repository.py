@@ -15,7 +15,12 @@ class EventRepository:
                 UPDATE events SET status = 'archived'
                 WHERE status = 'active' AND COALESCE(end_date, event_date) IS NOT NULL
                   AND date(substr(COALESCE(end_date, event_date), 1, 10)) IS NOT NULL
-                  AND date(substr(COALESCE(end_date, event_date), 1, 10)) < date('now', 'localtime')
+                  AND (
+                    (end_date IS NOT NULL AND (substr(end_date, -6, 1) IN ('+', '-') OR substr(end_date, -1) = 'Z')
+                      AND datetime(end_date) < datetime('now'))
+                    OR ((end_date IS NULL OR (substr(end_date, -6, 1) NOT IN ('+', '-') AND substr(end_date, -1) != 'Z'))
+                      AND date(substr(COALESCE(end_date, event_date), 1, 10)) < date('now', 'localtime'))
+                  )
             """)
 
     def _row_to_event(self, row) -> Event:

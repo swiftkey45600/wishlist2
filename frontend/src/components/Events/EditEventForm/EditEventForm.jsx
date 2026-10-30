@@ -3,7 +3,7 @@ import { getEventDurationDays, isValidDuration } from "../../../utils/eventDurat
 import DateTimePicker from "../DateTimePicker"
 import { useEffect, useRef, useState } from "react"
 import "../CreateEventForm/CreateEventForm.css"
-import { isPastEventDate, todayLocalDate } from "../../../utils/eventDate"
+import { isPastEventDate, todayLocalDate, withLocalOffset } from "../../../utils/eventDate"
 import { resolveImageUrl, uploadImageFile } from "../../../application/imageApplication"
 import LocationPicker from "../LocationPicker/LocationPicker"
 
@@ -74,7 +74,7 @@ function EditEventForm({ event, onSave, onCancel }) {
                 title: title.trim(),
                 description: description.trim(),
                 place: place.trim(),
-                event_date: eventDate || null,
+                ...(eventDate !== getDateTimeValue(event.event_date) ? { event_date: withLocalOffset(eventDate) } : {}),
                 duration_days: durationDays,
                 ...(uploadedCover ? { cover_image_id: uploadedCover.id } : {})
             })

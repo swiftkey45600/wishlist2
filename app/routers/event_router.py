@@ -7,7 +7,7 @@ from app.models.event import EventCopyRequest, EventCreateRequest, EventStatus, 
 from app.models.gift import GiftFilters
 from app.models.user import User
 from app.services.event_service import EventService
-from app.utils.event_dates import end_date_for_duration
+from app.utils.event_dates import end_date_for_duration, validate_future_instant
 from app.repositories.event_repository import EventRepository
 from app.repositories.gift_repository import GiftRepository
 from app.utils.jwt import get_current_user, get_optional_user
@@ -113,6 +113,8 @@ async def update_event(
 
     changes = event_request.model_dump(exclude_unset=True)
     duration = changes.pop("duration_days", None)
+    if "event_date" in changes and changes["event_date"] != event.event_date:
+        validate_future_instant(changes["event_date"])
     previous_duration = event.duration_days
     for field_name, value in changes.items():
         setattr(event, field_name, value)

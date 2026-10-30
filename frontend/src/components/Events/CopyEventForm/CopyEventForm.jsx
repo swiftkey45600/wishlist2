@@ -2,7 +2,7 @@ import EventDurationInput from "../EventDurationInput"
 import { getEventDurationDays, isValidDuration } from "../../../utils/eventDuration"
 import DateTimePicker from "../DateTimePicker"
 import { useRef, useState } from "react"
-import { isPastEventDate, todayLocalDate } from "../../../utils/eventDate"
+import { isPastEventDate, todayLocalDate, withLocalOffset } from "../../../utils/eventDate"
 
 function CopyEventForm({ event, onCopy, onCancel }) {
     const [title, setTitle] = useState(event.title || "")
@@ -27,7 +27,7 @@ function CopyEventForm({ event, onCopy, onCancel }) {
         setBusy(true)
         setError("")
         try {
-            await onCopy(title.trim(), date, durationDays)
+            await onCopy(title.trim(), withLocalOffset(date), durationDays)
         } catch {
             setError("Не удалось подтвердить создание. Проверьте список событий перед повторной попыткой.")
         } finally {
