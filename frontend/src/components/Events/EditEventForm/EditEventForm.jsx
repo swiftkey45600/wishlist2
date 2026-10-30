@@ -100,10 +100,10 @@ function EditEventForm({ event, onSave, onCancel }) {
                     Описание
                     <textarea value={description} onChange={(inputEvent) => setDescription(inputEvent.target.value)} />
                 </label>
-                <label className="create-event-field">
-                    Дата и время
+                <div className="create-event-field">
+                    <span>Дата и время</span>
                     <DateTimePicker value={eventDate} min={`${todayLocalDate()}T00:00`} onChange={(inputEvent) => { setEventDate(inputEvent.target.value); if (error === "Выберите сегодняшнюю или будущую дату") setError("") }} onBlur={() => { if (eventDate !== getDateTimeValue(event.event_date) && isPastEventDate(eventDate)) { setEventDate(getDateTimeValue(event.event_date)); setError("Выберите сегодняшнюю или будущую дату") } }} />
-                </label>
+                </div>
                 <EventDurationInput startDate={eventDate} value={durationDays} onChange={setDurationDays} />
                 <LocationPicker value={place} onChange={setPlace} />
                 <label className="create-event-field">

@@ -82,7 +82,7 @@ function CreateEventForm({ onCreateEvent, onCancel }) {
                     {error === "Введите название события" && <span id="create-event-title-error" className="create-event-error" role="alert">{error}</span>}
                 </label>
                 <label className="create-event-field">Описание<input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Описание события" /></label>
-                <label className="create-event-field">Дата и время<DateTimePicker value={eventDate} min={`${todayLocalDate()}T00:00`} onChange={(event) => { setEventDate(event.target.value); if (error === "Выберите сегодняшнюю или будущую дату") setError("") }} onBlur={() => { if (isPastEventDate(eventDate)) { setEventDate(""); setError("Выберите сегодняшнюю или будущую дату") } }} /></label>
+                <div className="create-event-field"><span>Дата и время</span><DateTimePicker value={eventDate} min={`${todayLocalDate()}T00:00`} onChange={(event) => { setEventDate(event.target.value); if (error === "Выберите сегодняшнюю или будущую дату") setError("") }} onBlur={() => { if (isPastEventDate(eventDate)) { setEventDate(""); setError("Выберите сегодняшнюю или будущую дату") } }} /></div>
                 <EventDurationInput startDate={eventDate} value={durationDays} onChange={setDurationDays} />
                 <LocationPicker value={place} onChange={setPlace} />
                 <label className="create-event-field">

@@ -40,7 +40,7 @@ function CopyEventForm({ event, onCopy, onCancel }) {
         <h2>Создать на основе этого</h2>
         <form className="create-event-form-fields" onSubmit={submit} noValidate>
             <label className="create-event-field">Название<input value={title} onChange={event => setTitle(event.target.value)} required autoFocus /></label>
-            <label className="create-event-field">Новая дата и время<DateTimePicker min={`${todayLocalDate()}T00:00`} value={date} onChange={event => { setDate(event.target.value); if (error === "Выберите сегодняшнюю или будущую дату") setError("") }} onBlur={() => { if (isPastEventDate(date)) { setDate(""); setError("Выберите сегодняшнюю или будущую дату") } }} /></label>
+            <div className="create-event-field"><span>Новая дата и время</span><DateTimePicker min={`${todayLocalDate()}T00:00`} value={date} onChange={event => { setDate(event.target.value); if (error === "Выберите сегодняшнюю или будущую дату") setError("") }} onBlur={() => { if (isPastEventDate(date)) { setDate(""); setError("Выберите сегодняшнюю или будущую дату") } }} /></div>
             <EventDurationInput startDate={date} value={durationDays} onChange={setDurationDays} />
             {error && <p className="create-event-error" role="alert">{error}</p>}
             <div className="create-event-actions">
