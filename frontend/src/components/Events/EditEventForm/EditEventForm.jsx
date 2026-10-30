@@ -47,10 +47,10 @@ function EditEventForm({ event, onSave, onCancel }) {
             return
         }
 
-        if (error === "Выберите сегодняшнюю или будущую дату") return
+        if (error === "Выберите текущие или будущие дату и время") return
 
         if (eventDate !== getDateTimeValue(event.event_date) && isPastEventDate(eventDate)) {
-            setError("Выберите сегодняшнюю или будущую дату")
+            setError("Выберите текущие или будущие дату и время")
             return
         }
 
@@ -102,7 +102,7 @@ function EditEventForm({ event, onSave, onCancel }) {
                 </label>
                 <div className="create-event-field">
                     <span>Дата и время</span>
-                    <DateTimePicker value={eventDate} min={`${todayLocalDate()}T00:00`} onChange={(inputEvent) => { setEventDate(inputEvent.target.value); if (error === "Выберите сегодняшнюю или будущую дату") setError("") }} onBlur={() => { if (eventDate !== getDateTimeValue(event.event_date) && isPastEventDate(eventDate)) { setEventDate(getDateTimeValue(event.event_date)); setError("Выберите сегодняшнюю или будущую дату") } }} />
+                    <DateTimePicker value={eventDate} min={`${todayLocalDate()}T00:00`} onChange={(inputEvent) => { setEventDate(inputEvent.target.value); if (error === "Выберите текущие или будущие дату и время") setError("") }} onBlur={() => { if (eventDate !== getDateTimeValue(event.event_date) && isPastEventDate(eventDate)) { setEventDate(getDateTimeValue(event.event_date)); setError("Выберите текущие или будущие дату и время") } }} />
                 </div>
                 <EventDurationInput startDate={eventDate} value={durationDays} onChange={setDurationDays} />
                 <LocationPicker value={place} onChange={setPlace} />
