@@ -140,8 +140,17 @@
 }
 
 @media (max-width: 800px) {
+    .body {
+        display: block;
+    }
+
     .body > main {
-        padding: 25px 16px 50px;
+        padding: 25px 16px 105px;
+    }
+
+    .create-dialog {
+        max-height: calc(100dvh - 40px);
+        overflow-y: auto;
     }
 
     .stats {
