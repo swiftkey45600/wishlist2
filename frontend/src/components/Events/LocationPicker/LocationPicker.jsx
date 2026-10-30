@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import "leaflet/dist/leaflet.css"
 import "./LocationPicker.css"
 import { getLocationCoordinates, withoutLocationCoordinates } from "./location"
@@ -47,7 +48,7 @@ function LocationPicker({ value, onChange }) {
     return <div className="location-picker">
         <label className="create-event-field">Место<input value={value} onChange={event => onChange(event.target.value)} placeholder="Город или место" /></label>
         <button type="button" className="location-map-button" onClick={showMap}>Выбрать на карте</button>
-        {open && <div className="location-overlay" onClick={event => { if (event.target === event.currentTarget) setOpen(false) }}>
+        {open && createPortal(<div className="location-overlay" onClick={event => { if (event.target === event.currentTarget) setOpen(false) }}>
             <div className="location-dialog" role="dialog" aria-modal="true" aria-labelledby="location-title">
                 <h3 id="location-title">Выберите место</h3>
                 <p>Нажмите на карту, чтобы поставить точку. Название места можно вписать вручную.</p>
@@ -55,7 +56,7 @@ function LocationPicker({ value, onChange }) {
                 {mapError && <p role="alert">Не удалось загрузить карту. Проверьте подключение или укажите место вручную.</p>}
                 <div className="location-actions"><button type="button" onClick={() => setOpen(false)}>Отмена</button><button type="button" disabled={!point} onClick={save}>Выбрать точку</button></div>
             </div>
-        </div>}
+        </div>, document.body)}
     </div>
 }
 export default LocationPicker

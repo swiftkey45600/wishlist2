@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { createPortal } from "react-dom"
 import { uploadImageFile } from "../../../application/imageApplication"
 import { createWish, editWish } from "../../../repositories/wishRepository"
 import "./PersonalWishForm.css"
@@ -40,7 +41,7 @@ function PersonalWishForm({ wish, onSaved, onCancel }) {
         finally { setBusy(false) }
     }
 
-    return <div className="personal-wish-overlay" onClick={event => { if (event.target === event.currentTarget && !busy) onCancel() }}>
+    return createPortal(<div className="personal-wish-overlay" onClick={event => { if (event.target === event.currentTarget && !busy) onCancel() }}>
         <form className="personal-wish-form" onSubmit={submit}>
             <h2>{wish ? "Изменить желание" : "Новое желание"}</h2>
             <p>Сохраните идею сейчас, а в событие добавьте позже.</p>
@@ -56,6 +57,6 @@ function PersonalWishForm({ wish, onSaved, onCancel }) {
             {error && <p className="personal-error" role="alert">{error}</p>}
             <div className="personal-actions"><button type="button" className="presents-button secondary" disabled={busy} onClick={onCancel}>Отмена</button><button className="presents-button primary" disabled={busy}>{busy ? "Сохраняем..." : "Сохранить"}</button></div>
         </form>
-    </div>
+    </div>, document.body)
 }
 export default PersonalWishForm
