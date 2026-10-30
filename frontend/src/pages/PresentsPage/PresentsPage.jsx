@@ -1,3 +1,4 @@
+import GiftFundraising from "../../components/Gifts/GiftFundraising/GiftFundraising"
 import SegmentedControl from "../../components/SegmentedControl/SegmentedControl"
 import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
@@ -329,6 +330,9 @@ function PresentsPage() {
                                             <strong className="presents-price">{gift.price == null ? "Цена не указана" : `${gift.price} ₽`}</strong>
                                         </div>
                                     </div>
+                                    {gift.contribution_goal > 0 && <div onClick={event => event.stopPropagation()}>
+                                        <GiftFundraising gift={gift} isOwner hideContributionDetails />
+                                    </div>}
                                     <div className="presents-gift-bottom">
                                         {giftTab === "active" && <button className="presents-share-one" type="button" disabled={shareBusy} onClick={event => { event.stopPropagation(); handleShare([gift]) }}>Поделиться ↗</button>}
                                         {productLink(gift.marketplace_url) && <a className="presents-market" href={productLink(gift.marketplace_url)} target="_blank" rel="noopener noreferrer" onClick={event => event.stopPropagation()}>Открыть товар ↗</a>}

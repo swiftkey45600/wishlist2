@@ -108,22 +108,43 @@ def get_shared_wishes(token: str, user: User | None = Depends(get_optional_user)
                 reserved = available and row["reservation_id"] is not None
             else:
                 row = conn.execute("""
-                    SELECT gifts.title, gifts.price, gifts.description, gifts.marketplace_url, gifts.picture_url, gifts.image_id,
+                    SELECT gifts.id AS gift_id, gifts.title, gifts.price, gifts.description, gifts.marketplace_url, gifts.picture_url, gifts.image_id,
                            gifts.received, gifts.status, gifts.contribution_goal, events.status AS event_status,
+                           events.public_token,
+                           COALESCE((SELECT SUM(amount) FROM contributions WHERE contributions.gift_id = gifts.id), 0) AS contribution_total,
                            reservations.id AS reservation_id, reservations.reserver_id
                     FROM gifts JOIN events ON events.id=gifts.event_id
                     LEFT JOIN reservations ON reservations.gift_id=gifts.id
                     WHERE gifts.id=? AND events.owner_id=?
                 """, (ref["item_id"], share["owner_id"])).fetchone()
-                available = row is not None and not row["received"] and row["event_status"] == "active" and row["contribution_goal"] is None and row["status"] != "bought"
-                reserved = available and row["status"] == "reserved"
-            status = "unavailable" if not available else "hidden" if is_owner else "reserved" if reserved else "available"
+                # A fundraising gift is available for contributions while its status is
+                # available, but it must never be exposed as reservable.
+                available = row is not None and not row["received"] and row["event_status"] == "active" and (
+                    row["contribution_goal"] is None or row["status"] == "available"
+                ) and row["status"] != "bought"
+                reserved = available and row["contribution_goal"] is None and row["status"] == "reserved"
+            fundraising_visible = (
+                ref["kind"] == "gift" and row is not None and row["contribution_goal"] is not None
+                and not row["received"] and row["event_status"] == "active" and row["status"] != "bought"
+            )
+            status = "available" if fundraising_visible else (
+                "unavailable" if not available else "hidden" if is_owner else "reserved" if reserved else "available"
+            )
             fields = ("title", "price", "description", "marketplace_url", "picture_url", "image_id")
             display = {field: row[field] for field in fields} if row is not None else dict.fromkeys(fields)
             if row is None:
                 display["title"] = "Подарок удалён"
-            items.append({**display, "image_url": signed_image_url(display["image_id"]), "position": position, "status": status,
-                          "is_mine": bool(reserved and user and row["reserver_id"] == user.id)})
+            item = {**display, "image_url": signed_image_url(display["image_id"]), "position": position, "status": status,
+                    "is_mine": bool(reserved and user and row["reserver_id"] == user.id)}
+            if ref["kind"] == "gift" and row is not None and row["contribution_goal"] is not None:
+                item["fundraising"] = {
+                    "id": row["gift_id"],
+                    "contribution_goal": row["contribution_goal"],
+                    "contribution_total": row["contribution_total"],
+                    "status": row["status"],
+                    "public_token": row["public_token"],
+                }
+            items.append(item)
         return {"items": items, "is_owner": is_owner, "legacy": not bool(refs)}
 
 

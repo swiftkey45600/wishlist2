@@ -1,3 +1,4 @@
+import GiftFundraising from "../../components/Gifts/GiftFundraising/GiftFundraising"
 import { useEffect, useRef, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { ArrowUpRight, Heart, LockKeyhole, ShieldCheck } from "lucide-react"
@@ -126,9 +127,17 @@ export default function SharedWishesPage() {
                 {item.description && <p>{item.description}</p>}
                 {item.price != null && <strong className="shared-wishes-price">{item.price.toLocaleString("ru-RU")} ₽</strong>}
                 {safeUrl(item.marketplace_url) && <a href={safeUrl(item.marketplace_url)} target="_blank" rel="noopener noreferrer">Открыть товар <ArrowUpRight size={15} /></a>}
+                {item.fundraising && <GiftFundraising
+                    gift={item.fundraising}
+                    publicToken={item.fundraising.public_token}
+                    isOwner={data.is_owner}
+                    hideContributionDetails={data.is_owner}
+                    archived={item.status === "unavailable"}
+                    onGiftChange={async () => setData(await getWishShare(token))}
+                />}
                 {item.status === "unavailable" && <p className="shared-wishes-notice">Подарок больше недоступен для бронирования.</p>}
                 {item.status === "reserved" && <p className="shared-wishes-reserved">Забронирован{item.is_mine ? " вами" : ""}</p>}
-                {item.status === "available" && <button type="button" disabled={busy} onClick={() => handleAction(item)}>Забронировать</button>}
+                {!item.fundraising && item.status === "available" && <button type="button" disabled={busy} onClick={() => handleAction(item)}>Забронировать</button>}
                 {item.status === "reserved" && (!authenticated || item.is_mine) && <button type="button" className="shared-wishes-cancel" disabled={busy} onClick={() => handleAction(item)}>Отменить бронь</button>}
             </div>
         </article>)}</div>

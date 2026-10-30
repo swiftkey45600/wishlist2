@@ -1,3 +1,7 @@
+import { useState } from "react"
+import { createPortal } from "react-dom"
+import { createWishShare } from "../../../repositories/wishRepository"
+import ShareEventModal from "../../Events/ShareEventModal/ShareEventModal"
 import "./GiftCard.css"
 import GiftImage from "../GiftImage/GiftImage"
 import GiftQuestions from "../GiftQuestions/GiftQuestions"
@@ -16,6 +20,18 @@ function marketplaceLink(value) {
 
 function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onMarkReceived, onEdit, hideReservationDetails = false,
     publicToken, isOwner = false, archived = false, onGiftChange }) {
+    const [shareLink, setShareLink] = useState("")
+    const [shareBusy, setShareBusy] = useState(false)
+    const [shareError, setShareError] = useState("")
+    async function shareGift() {
+        setShareBusy(true)
+        setShareError("")
+        try {
+            const result = await createWishShare([{ kind: "gift", id: gift.id }])
+            setShareLink(`${window.location.origin}/wishes/shared/${result.token}`)
+        } catch { setShareError("Не удалось создать ссылку. Попробуйте ещё раз.") }
+        finally { setShareBusy(false) }
+    }
     const hideStatus = hideReservationDetails
     const productUrl = marketplaceLink(gift.marketplace_url)
 
@@ -99,11 +115,14 @@ function GiftCard({ gift, onToggleStatus, onDelete, onMarkBought, onMarkReceived
 
             {publicToken && <GiftQuestions token={publicToken} giftId={gift.id} isOwner={isOwner} archived={archived} />}
 
+            {shareError && <p role="alert" className="gift-form-error">{shareError}</p>}
+            {shareLink && createPortal(<ShareEventModal event={gift} shareLink={shareLink} isWishShare onClose={() => setShareLink("")} />, document.body)}
             <div className="gift-card-footer">
                 {productUrl && (
                     <a className="gift-marketplace" href={productUrl} target="_blank" rel="noopener noreferrer">Открыть товар ↗</a>
                 )}
                 <div className="gift-actions">
+                    {isOwner && !gift.received && !archived && <button type="button" className="gift-secondary-button" disabled={shareBusy} onClick={shareGift}>Поделиться</button>}
                     {onMarkReceived && <button className="gift-secondary-button" onClick={() => onMarkReceived(gift.id)}>Мне подарили</button>}
                     {onEdit && <button className="gift-secondary-button" onClick={() => onEdit(gift)}>Изменить</button>}
                     {onDelete && <button className="gift-danger-button" onClick={() => onDelete(gift.id)}>Удалить</button>}
