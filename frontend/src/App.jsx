@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom"
 
+import { YandexCallback } from "./components/YandexAuth/YandexAuth"
 import HomePage from "./pages/HomePage/HomePage"
 import EventPage from "./pages/EventPage/EventPage"
 import ProfilePage from "./pages/ProfilePage/ProfilePage";
@@ -20,6 +21,7 @@ function App() {
 
     <Routes>
       <Route path="/wishes/shared/:token" element={<SharedWishesPage />} />
+      <Route path="/auth/yandex" element={<YandexCallback />} />
       <Route path="/forgot-password" element={<PasswordRecoveryPage />} />
       <Route path="/reset-password" element={<PasswordRecoveryPage reset />} />
       <Route 

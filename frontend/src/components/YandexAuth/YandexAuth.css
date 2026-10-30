@@ -1,0 +1,7 @@
+.yandex-auth { display: grid; gap: 8px; }
+.yandex-auth-button { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 46px; width: 100%; padding: 10px 18px; border: 1px solid var(--line); border-radius: 12px; color: var(--text); background: #faf7fd; font-weight: 700; cursor: pointer; }
+.yandex-auth-button:disabled { opacity: .6; cursor: wait; }
+.yandex-auth-mark { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; color: #fff; background: #ed1c24; font-weight: 800; }
+.yandex-auth p, .yandex-callback p[role="alert"] { color: var(--danger); }
+.yandex-callback { max-width: 520px; margin: 12vh auto; padding: 28px; color: var(--text); }
+.yandex-callback p { margin: 16px 0; }

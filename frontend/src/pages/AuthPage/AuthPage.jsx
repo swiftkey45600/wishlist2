@@ -1,3 +1,4 @@
+import { YandexButton } from "../../components/YandexAuth/YandexAuth"
 import SegmentedControl from "../../components/SegmentedControl/SegmentedControl"
 import { useState } from "react"
 import { Link, useNavigate, useSearchParams } from "react-router-dom"
@@ -169,6 +170,7 @@ function AuthPage() {
                         {isLogin ? "Войти" : "Зарегистрироваться"}
                     </button>
                 </form>
+                <YandexButton next={params.get("next") || ""} />
             </div>
             </div>
         </div>

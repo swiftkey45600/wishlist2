@@ -234,3 +234,15 @@ CREATE TABLE IF NOT EXISTS event_gift_imports (
     UNIQUE (event_id, source_wish_id),
     UNIQUE (event_id, source_gift_id)
 );
+
+CREATE TABLE IF NOT EXISTS yandex_accounts (
+    yandex_id TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS yandex_auth_states (
+    state_hash TEXT PRIMARY KEY,
+    browser_hash TEXT NOT NULL,
+    verifier TEXT NOT NULL,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    expires_at INTEGER NOT NULL
+);

@@ -9,6 +9,7 @@ from app.database import init_db
 from app.services.event_reminders import start_reminder_worker, stop_reminder_worker
 from app.models.user import UserRegisterRequest
 from app.routers import user_routers
+from app.routers import yandex_auth_router
 from app.routers import auth_router
 from app.routers import event_router
 from app.routers import reservation_router
@@ -68,6 +69,7 @@ app.add_middleware(
 
 app.include_router(user_routers.router)
 app.include_router(auth_router.router)
+app.include_router(yandex_auth_router.router)
 app.include_router(event_router.router)
 app.include_router(reservation_router.router)
 app.include_router(reservation_router.guest_router)
