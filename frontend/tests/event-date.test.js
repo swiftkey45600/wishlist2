@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
+import process from "node:process"
 import { isPastEventDate, todayLocalDate, currentLocalTime } from "../src/utils/eventDate.js"
 
 test("event date validation uses the user's local date and minute", () => {
