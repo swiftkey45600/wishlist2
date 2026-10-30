@@ -3,7 +3,7 @@ import { getEventDurationDays, isValidDuration } from "../../../utils/eventDurat
 import DateTimePicker from "../DateTimePicker"
 import { useEffect, useRef, useState } from "react"
 import "../CreateEventForm/CreateEventForm.css"
-import { isPastEventDate, todayLocalDate } from "../../../utils/eventDate"
+import { isPastEventDate, todayLocalDate, withLocalOffset } from "../../../utils/eventDate"
 import { resolveImageUrl, uploadImageFile } from "../../../application/imageApplication"
 import LocationPicker from "../LocationPicker/LocationPicker"
 
@@ -47,10 +47,10 @@ function EditEventForm({ event, onSave, onCancel }) {
             return
         }
 
-        if (error === "Выберите сегодняшнюю или будущую дату") return
+        if (error === "Выберите текущие или будущие дату и время") return
 
         if (eventDate !== getDateTimeValue(event.event_date) && isPastEventDate(eventDate)) {
-            setError("Выберите сегодняшнюю или будущую дату")
+            setError("Выберите текущие или будущие дату и время")
             return
         }
 
@@ -74,7 +74,7 @@ function EditEventForm({ event, onSave, onCancel }) {
                 title: title.trim(),
                 description: description.trim(),
                 place: place.trim(),
-                event_date: eventDate || null,
+                ...(eventDate !== getDateTimeValue(event.event_date) ? { event_date: withLocalOffset(eventDate) } : {}),
                 duration_days: durationDays,
                 ...(uploadedCover ? { cover_image_id: uploadedCover.id } : {})
             })
@@ -102,7 +102,7 @@ function EditEventForm({ event, onSave, onCancel }) {
                 </label>
                 <div className="create-event-field">
                     <span>Дата и время</span>
-                    <DateTimePicker value={eventDate} min={`${todayLocalDate()}T00:00`} onChange={(inputEvent) => { setEventDate(inputEvent.target.value); if (error === "Выберите сегодняшнюю или будущую дату") setError("") }} onBlur={() => { if (eventDate !== getDateTimeValue(event.event_date) && isPastEventDate(eventDate)) { setEventDate(getDateTimeValue(event.event_date)); setError("Выберите сегодняшнюю или будущую дату") } }} />
+                    <DateTimePicker value={eventDate} min={`${todayLocalDate()}T00:00`} onChange={(inputEvent) => { setEventDate(inputEvent.target.value); if (error === "Выберите текущие или будущие дату и время") setError("") }} onBlur={() => { if (eventDate !== getDateTimeValue(event.event_date) && isPastEventDate(eventDate)) { setEventDate(getDateTimeValue(event.event_date)); setError("Выберите текущие или будущие дату и время") } }} />
                 </div>
                 <EventDurationInput startDate={eventDate} value={durationDays} onChange={setDurationDays} />
                 <LocationPicker value={place} onChange={setPlace} />

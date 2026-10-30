@@ -20,6 +20,9 @@ function EventDetailsCard({ event, onShare, onEdit, onDelete }) {
           })
         : ""
 
+    const formattedTime = eventDate && !Number.isNaN(eventDate.getTime()) && event.event_date.includes("T")
+        ? eventDate.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : ""
+
     const endDate = event.end_date ? new Date(event.end_date) : null
     const formattedEndDate = endDate && !Number.isNaN(endDate.getTime())
         ? endDate.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" }) : ""
@@ -35,7 +38,7 @@ function EventDetailsCard({ event, onShare, onEdit, onDelete }) {
                 <div>
                     <h1>{event.title}</h1>
                     <div className="event-meta">
-                        {formattedDate && <span>{formattedDate}{formattedEndDate && formattedEndDate !== formattedDate ? ` — ${formattedEndDate}` : ""}</span>}
+                        {formattedDate && <span>{formattedDate}{formattedTime ? `, ${formattedTime}` : ""}{formattedEndDate && formattedEndDate !== formattedDate ? ` — ${formattedEndDate}` : ""}</span>}
                         {event.place && (coordinates ? <a href={`https://www.openstreetmap.org/?mlat=${coordinates[0]}&mlon=${coordinates[1]}#map=16/${coordinates[0]}/${coordinates[1]}`} target="_blank" rel="noopener noreferrer">{placeLabel} ↗</a> : <span>{event.place}</span>)}
                     </div>
                     {event.description && <p>{event.description}</p>}

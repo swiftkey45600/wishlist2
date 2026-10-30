@@ -48,7 +48,6 @@
 }
 /* Небольшие движения помогают заметить действия, не отвлекая от содержимого. */
 @media (prefers-reduced-motion: no-preference) {
-    .page-content { animation: page-appear 320ms ease backwards; }
     .event-card, .gift-card, .presents-gift-card {
         transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
     }

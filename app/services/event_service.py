@@ -10,7 +10,7 @@ from app.repositories import EventRepository
 from app.repositories import GiftRepository
 from app.repositories.image_repository import ImageRepository
 from app.utils.image_access import user_can_use_image
-from app.utils.event_dates import end_date_for_duration
+from app.utils.event_dates import end_date_for_duration, validate_future_instant
 
 
 class EventService:
@@ -34,6 +34,7 @@ class EventService:
         cover_image_id: int | None = None,
         duration_days: int | None = None,
     ) -> Event:
+        validate_future_instant(event_date)
         if duration_days is not None:
             end_date = end_date_for_duration(event_date, duration_days)
         self._validate_cover(cover_image_id, owner_id)
@@ -85,6 +86,7 @@ class EventService:
 
     def copy_event(self, event_id: int, owner_id: int, data: EventCopyRequest) -> Event:
         self._owned_event(event_id, owner_id)
+        validate_future_instant(data.event_date)
         if data.duration_days is not None:
             end_date_for_duration(data.event_date, data.duration_days)
         event = self.event_repository.copy_event(event_id, owner_id, data.title, data.event_date, data.duration_days)
@@ -117,7 +119,7 @@ class EventService:
         try:
             start_value = datetime.fromisoformat(start)
             end_value = datetime.fromisoformat(end)
-            if start_value.tzinfo is not None or end_value.tzinfo is not None:
+            if (start_value.tzinfo is None) != (end_value.tzinfo is None):
                 start_value = start_value.replace(tzinfo=None)
                 end_value = end_value.replace(tzinfo=None)
             if end_value < start_value:

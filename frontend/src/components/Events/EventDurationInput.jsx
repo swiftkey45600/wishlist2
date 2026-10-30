@@ -13,7 +13,7 @@ export default function EventDurationInput({ startDate, value, onChange }) {
     const archive = formatArchiveDay(startDate, value)
     return <div className="event-duration">
         <label className="create-event-field">Длительность события
-            <select value={custom ? "custom" : value} disabled={!startDate} onChange={event => {
+            <select value={custom ? "custom" : value} onChange={event => {
                 setCustom(event.target.value === "custom")
                 if (event.target.value !== "custom") onChange(Number(event.target.value))
             }}>
@@ -21,7 +21,7 @@ export default function EventDurationInput({ startDate, value, onChange }) {
                 <option value="custom">Другое количество дней</option>
             </select>
         </label>
-        {custom && <label className="create-event-field">Количество дней<input type="number" min="1" max="3650" step="1" value={value || ""} disabled={!startDate} onChange={event => onChange(event.target.value === "" ? 0 : Number(event.target.value))} /></label>}
-        <p className="event-duration-hint">{!startDate ? "Выберите дату начала, чтобы настроить автоархивирование." : archive ? `Событие перейдёт в архив ${archive}. Неподаренные желания останутся в «Мои подарки».` : "Укажите длительность от 1 до 3650 дней."}</p>
+        {custom && <label className="create-event-field">Количество дней<input type="number" min="1" max="3650" step="1" value={value || ""} onChange={event => onChange(event.target.value === "" ? 0 : Number(event.target.value))} /></label>}
+        <p className="event-duration-hint">{!startDate ? "Выберите дату начала, чтобы узнать, когда событие перейдёт в архив." : archive ? `Событие перейдёт в архив ${archive}${archive.endsWith(".") ? "" : "."} Неподаренные желания останутся в «Мои подарки».` : "Укажите длительность от 1 до 3650 дней."}</p>
     </div>
 }

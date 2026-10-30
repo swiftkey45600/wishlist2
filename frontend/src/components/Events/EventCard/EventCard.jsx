@@ -6,7 +6,8 @@ function formatEventDate(value) {
     if (!value) return "Дата не указана"
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) return value
-    return date.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })
+    const day = date.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })
+    return value.includes("T") ? `${day}, ${date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}` : day
 }
 
 function EventCard({ event, gifts, onOpenEvent }) {
@@ -18,7 +19,7 @@ function EventCard({ event, gifts, onOpenEvent }) {
                 <div className="event-card-info">
                     <h2 className="event-card-title">{eventTitle}</h2>
                     {event.description && <p className="event-card-description">{event.description}</p>}
-                    <p className="event-card-date">{formatEventDate(event.event_date)}{event.end_date && event.end_date.slice(0, 10) !== event.event_date?.slice(0, 10) ? ` — ${formatEventDate(event.end_date)}` : ""}{event.place ? ` · ${event.place}` : ""}</p>
+                    <p className="event-card-date">{formatEventDate(event.event_date)}{event.end_date && event.end_date.slice(0, 10) !== event.event_date?.slice(0, 10) ? ` — ${formatEventDate(event.end_date.slice(0, 10))}` : ""}{event.place ? ` · ${event.place}` : ""}</p>
                 </div>
             </div>
             <div className="event-card-gifts">
