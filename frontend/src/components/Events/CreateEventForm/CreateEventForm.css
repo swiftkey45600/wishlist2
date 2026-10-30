@@ -98,5 +98,13 @@
 .event-cover-hint { color: var(--muted); font-size: 12px; font-weight: 400; }
 
 .event-duration { display: grid; gap: 10px; }
-.event-duration select { width: 100%; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: #fafaff; color: var(--text); }
+.event-duration select {
+    width: 100%;
+    padding: 12px 42px 12px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    appearance: none;
+    background: #fafaff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23555a67' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center;
+    color: var(--text);
+}
 .event-duration-hint { font-size: 12px; color: var(--muted); line-height: 1.6; }
